@@ -790,6 +790,10 @@ async def archive_download(item: dict):
         return None
     files.sort(key=lambda file: (preferred_formats[file["format"]], file.get("source") != "original"))
     selected = files[0]
+    try:
+        size = int(str(selected.get("size") or 0))
+    except ValueError:
+        size = 0
     title = str(metadata.get("title") or item.get("title") or identifier)[:180]
     creator = metadata.get("creator") or item.get("creator") or "Autor no indicado"
     if isinstance(creator, list):
@@ -801,6 +805,9 @@ async def archive_download(item: dict):
         "license_url": license_url.replace("http://", "https://", 1),
         "item_url": f"https://archive.org/details/{identifier}",
         "download_url": f"https://archive.org/download/{identifier}/{urllib_parse.quote(selected['name'])}",
+        "file_name": selected["name"],
+        "format": str(selected.get("format", "")),
+        "size": size,
     }
 
 
@@ -828,6 +835,77 @@ async def licensed_music_downloads(query: str):
         *(archive_download(item) for item in candidates), return_exceptions=True,
     )
     return [item for item in downloads if isinstance(item, dict)]
+
+
+# Telegram bots send files up to 50 MB; keep headroom for the transfer.
+ARCHIVE_AUDIO_LIMIT = 40 * 1024 * 1024
+
+
+async def send_archive_audio(chat_id: int, item: dict):
+    """Send a licensed Internet Archive track as a direct Telegram file.
+
+    Only items whose license archive_download already verified reach this
+    function. The audio streams from archive.org straight into the chat as a
+    one-off transfer; the bot does not copy, host or store it.
+    """
+    size = item.get("size") or 0
+    if size and size > ARCHIVE_AUDIO_LIMIT:
+        log.info("Archive track too large for direct send: %s bytes", size)
+        return False
+    name = str(item.get("file_name") or "audio.mp3")
+    is_mp3 = name.lower().endswith(".mp3")
+    try:
+        async with http.stream(
+            "GET", item["download_url"], timeout=120, follow_redirects=True
+        ) as response:
+            response.raise_for_status()
+            declared = response.headers.get("content-length")
+            if declared and int(declared) > ARCHIVE_AUDIO_LIMIT:
+                log.info("Archive track too large for direct send: %s bytes", declared)
+                return False
+            chunks = []
+            received = 0
+            async for chunk in response.aiter_bytes(1 << 16):
+                received += len(chunk)
+                if received > ARCHIVE_AUDIO_LIMIT:
+                    log.info("Archive track exceeded the direct-send limit while streaming")
+                    return False
+                chunks.append(chunk)
+        payload = b"".join(chunks)
+        if not payload:
+            return False
+        await telegram("sendChatAction", chat_id=chat_id, action="upload_document")
+        caption = (
+            f"{item['title']}\n{item['artist']}\n"
+            f"Licencia: {item['license']}. Fuente: {item['item_url']}"
+        )[:1000]
+        if is_mp3:
+            response = await http.post(
+                f"{TELEGRAM_API}/sendAudio",
+                data={
+                    "chat_id": str(chat_id),
+                    "title": item["title"][:180],
+                    "performer": item["artist"][:180],
+                    "caption": caption,
+                },
+                files={"audio": (name, payload, "audio/mpeg")},
+                timeout=120,
+            )
+        else:
+            response = await http.post(
+                f"{TELEGRAM_API}/sendDocument",
+                data={"chat_id": str(chat_id), "caption": caption},
+                files={"document": (name, payload, "application/octet-stream")},
+                timeout=120,
+            )
+        if response.status_code >= 400:
+            log.error("Telegram archive audio failed: %s %s", response.status_code, response.text[:500])
+            return False
+        log.info("Sent licensed archive audio %s to chat %s", name, chat_id)
+        return True
+    except Exception:
+        log.exception("Could not send archive audio")
+        return False
 
 
 async def search_music(chat_id: int, query: str):
@@ -862,7 +940,7 @@ async def search_music(chat_id: int, query: str):
     if tracks:
         summary += " Las fichas y muestras son de Apple Music; Spotify abre su búsqueda oficial."
     if downloads:
-        summary += " Las descargas de Internet Archive tienen una licencia explícita y se abren en la fuente."
+        summary += " Las descargas de Internet Archive tienen una licencia explícita y llegan como archivo MP3 directo."
     await send_text(chat_id, summary)
     for track in tracks:
         spotify_url = spotify_music_url(f"{track['artist']} {track['title']}")
@@ -881,14 +959,23 @@ async def search_music(chat_id: int, query: str):
             reply_markup={"inline_keyboard": rows},
         )
     for item in downloads:
-        await send_text(
-            chat_id,
-            f"⬇️ {item['title']}\n{item['artist']}\nLicencia: {item['license']}. La descarga la ofrece Internet Archive; no copio ni almaceno el archivo.",
-            reply_markup={"inline_keyboard": [
-                [{"text": "Escuchar o descargar desde la fuente", "url": item["download_url"]}],
-                [{"text": "Ver licencia", "url": item["license_url"]}, {"text": "Ficha y fuente", "url": item["item_url"]}],
-            ]},
-        )
+        if await send_archive_audio(chat_id, item):
+            await send_text(
+                chat_id,
+                f"⬇️ {item['title']} llegó como archivo directo. Licencia: {item['license']}; la descarga la ofrece Internet Archive y no copio ni almaceno el archivo.",
+                reply_markup={"inline_keyboard": [
+                    [{"text": "Ver licencia", "url": item["license_url"]}, {"text": "Ficha y fuente", "url": item["item_url"]}],
+                ]},
+            )
+        else:
+            await send_text(
+                chat_id,
+                f"⬇️ {item['title']}\n{item['artist']}\nLicencia: {item['license']}. No pude adjuntar el archivo; la descarga la ofrece Internet Archive desde la fuente.",
+                reply_markup={"inline_keyboard": [
+                    [{"text": "Escuchar o descargar desde la fuente", "url": item["download_url"]}],
+                    [{"text": "Ver licencia", "url": item["license_url"]}, {"text": "Ficha y fuente", "url": item["item_url"]}],
+                ]},
+            )
 
 
 async def prepare_live_query(chat_id: int, user_text: str):
