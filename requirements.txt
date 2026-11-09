@@ -1,0 +1,5 @@
+fastapi==0.121.2
+uvicorn[standard]==0.38.0
+httpx==0.28.1
+edge-tts==7.2.7
+faster-whisper==1.2.1
