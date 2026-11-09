@@ -5,6 +5,7 @@ import re
 import sqlite3
 import tempfile
 import unicodedata
+import urllib.parse as urllib_parse
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict, deque
 from pathlib import Path
@@ -95,6 +96,7 @@ story_pairs = {}
 four_selection = {}
 pending_weather_query = {}
 pending_sports_query = {}
+pending_music_query = {}
 awaiting_name = defaultdict(lambda: False)
 pending_action = {}
 http = httpx.AsyncClient(timeout=httpx.Timeout(90.0, connect=20.0))
@@ -573,6 +575,207 @@ async def sports_context(query_text: str):
     return context, source
 
 
+def music_query_from_text(text: str):
+    """Return a music query only for explicit listening/search requests."""
+    stripped = text.strip()
+    if normalized(stripped) in {
+        "busca musica", "buscar musica", "escuchar musica", "quiero escuchar musica",
+        "pone musica", "poner musica", "reproduci musica", "reproducir musica",
+        "busca una cancion", "buscar una cancion", "busca canciones", "buscar canciones",
+    }:
+        return ""
+    patterns = (
+        r"^(?:busc[aá](?:me)?|buscar|encontr[aá](?:me)?|encontrar)\s+(?:(?:la|el|varias)\s+)?(?:canci[oó]n(?:es)?|tema|m[uú]sica)(?:\s+de)?\s+(.+)$",
+        r"^(?:quiero\s+)?escuchar\s+(?:(?:la|el|una)\s+)?(?:(?:canci[oó]n(?:es)?|tema|m[uú]sica)(?:\s+de)?\s+)?(.+)$",
+        r"^(?:pon[eé](?:me)?|poner|reproduc[ií](?:me)?|reproducir)\s+(?:(?:la|el|una)\s+)?(?:(?:canci[oó]n(?:es)?|tema|m[uú]sica)(?:\s+de)?\s+)?(.+)$",
+        r"^(?:busc[aá](?:me)?|buscar|encontr[aá](?:me)?|encontrar)\s+(.+?)\s+en\s+(?:spotify|apple\s+music|internet\s+archive)$",
+    )
+    for pattern in patterns:
+        match = re.match(pattern, stripped, flags=re.IGNORECASE)
+        if match:
+            query = match.group(1).strip(" .,;:!?")
+            if normalized(query).startswith(("una historia", "historia", "un cuento", "cuento")):
+                return None
+            return query
+    return None
+
+
+def spotify_music_url(query: str):
+    return "https://open.spotify.com/search/" + urllib_parse.quote(query, safe="")
+
+
+def archive_music_url(query: str):
+    return "https://archive.org/search?" + urllib_parse.urlencode({"query": query})
+
+
+async def apple_music_results(query: str):
+    response = await http.get(
+        "https://itunes.apple.com/search",
+        params={"term": query[:120], "entity": "song", "limit": 10, "country": "AR"},
+        timeout=20,
+    )
+    response.raise_for_status()
+    tracks = []
+    for item in response.json().get("results", []):
+        url = item.get("trackViewUrl", "")
+        if item.get("kind") != "song" or not url.startswith("https://music.apple.com/"):
+            continue
+        tracks.append({
+            "title": str(item.get("trackName", "Canción"))[:180],
+            "artist": str(item.get("artistName", "Artista"))[:180],
+            "album": str(item.get("collectionName", ""))[:180],
+            "url": url,
+            "preview": item.get("previewUrl", "")
+            if str(item.get("previewUrl", "")).startswith("https://") else None,
+        })
+    query_normalized = normalized(query)
+    tracks.sort(key=lambda track: (
+        normalized(track["artist"]) != query_normalized,
+        query_normalized not in normalized(track["artist"]),
+        query_normalized not in normalized(track["title"]),
+    ))
+    return tracks[:5]
+
+
+def archive_license(license_url: str):
+    """Accept only an explicit Creative Commons or public-domain license."""
+    url = license_url.replace("http://", "https://", 1)
+    if not url.startswith("https://creativecommons.org/"):
+        return None
+    if "/publicdomain/zero/" in url:
+        return "CC0"
+    if "/publicdomain/mark/" in url:
+        return "Dominio público"
+    match = re.search(r"/licenses/(by(?:-(?:nc|nd|sa))*)/([0-9.]+)/", url)
+    if not match:
+        return None
+    return f"CC {match.group(1).upper()} {match.group(2)}"
+
+
+async def archive_download(item: dict):
+    identifier = str(item.get("identifier", ""))
+    if not identifier or not re.fullmatch(r"[A-Za-z0-9_.-]+", identifier):
+        return None
+    response = await http.get(f"https://archive.org/metadata/{identifier}", timeout=20)
+    response.raise_for_status()
+    data = response.json()
+    metadata = data.get("metadata", {})
+    license_url = str(metadata.get("licenseurl", ""))
+    license_name = archive_license(license_url)
+    if not license_name:
+        return None
+    preferred_formats = {"VBR MP3": 0, "MP3": 1, "Ogg Vorbis": 2, "Opus": 3, "FLAC": 4, "WAVE": 5}
+    files = [
+        file for file in data.get("files", [])
+        if file.get("format") in preferred_formats
+        and str(file.get("private", "")).lower() not in ("true", "1")
+        and file.get("name")
+    ]
+    if not files:
+        return None
+    files.sort(key=lambda file: (preferred_formats[file["format"]], file.get("source") != "original"))
+    selected = files[0]
+    title = str(metadata.get("title") or item.get("title") or identifier)[:180]
+    creator = metadata.get("creator") or item.get("creator") or "Autor no indicado"
+    if isinstance(creator, list):
+        creator = ", ".join(str(value) for value in creator)
+    return {
+        "title": title,
+        "artist": str(creator)[:180],
+        "license": license_name,
+        "license_url": license_url.replace("http://", "https://", 1),
+        "item_url": f"https://archive.org/details/{identifier}",
+        "download_url": f"https://archive.org/download/{identifier}/{urllib_parse.quote(selected['name'])}",
+    }
+
+
+async def licensed_music_downloads(query: str):
+    # Plain words keep user text from changing the Archive query structure.
+    terms = re.findall(r"[^\W_]+", query, flags=re.UNICODE)[:8]
+    if not terms:
+        return []
+    archive_query = "collection:opensource_audio AND licenseurl:* AND (" + " AND ".join(terms) + ")"
+    response = await http.get(
+        "https://archive.org/advancedsearch.php",
+        params=[
+            ("q", archive_query), ("fl[]", "identifier"), ("fl[]", "title"),
+            ("fl[]", "creator"), ("fl[]", "licenseurl"), ("rows", "5"),
+            ("page", "1"), ("output", "json"),
+        ],
+        timeout=20,
+    )
+    response.raise_for_status()
+    docs = response.json().get("response", {}).get("docs", [])
+    candidates = [
+        item for item in docs if archive_license(str(item.get("licenseurl", "")))
+    ][:3]
+    downloads = await asyncio.gather(
+        *(archive_download(item) for item in candidates), return_exceptions=True,
+    )
+    return [item for item in downloads if isinstance(item, dict)]
+
+
+async def search_music(chat_id: int, query: str):
+    query = re.sub(r"\s+", " ", query).strip()[:120]
+    if not query:
+        pending_music_query[chat_id] = True
+        await send_text(chat_id, "Decime el artista, la canción o ambos. Por ejemplo: Mercedes Sosa Alfonsina y el mar.")
+        return
+    pending_music_query.pop(chat_id, None)
+    apple_result, archive_result = await asyncio.gather(
+        apple_music_results(query), licensed_music_downloads(query), return_exceptions=True,
+    )
+    tracks = apple_result if isinstance(apple_result, list) else []
+    downloads = archive_result if isinstance(archive_result, list) else []
+    if isinstance(apple_result, Exception):
+        log.warning("Apple Music search failed: %s", apple_result)
+    if isinstance(archive_result, Exception):
+        log.warning("Internet Archive music search failed: %s", archive_result)
+    if not tracks and not downloads:
+        text = (
+            f"No encontré fichas ni descargas con licencia para “{query}”. "
+            "Podés abrir la búsqueda oficial en Spotify o Internet Archive."
+            if not isinstance(apple_result, Exception)
+            else "No pude consultar el catálogo ahora. Podés abrir la búsqueda oficial en Spotify o Internet Archive."
+        )
+        await send_text(chat_id, text, reply_markup={"inline_keyboard": [
+            [{"text": "Buscar en Spotify", "url": spotify_music_url(query)}],
+            [{"text": "Buscar en Internet Archive", "url": archive_music_url(query)}],
+        ]})
+        return
+    summary = f"Resultados de música para “{query}”."
+    if tracks:
+        summary += " Las fichas y muestras son de Apple Music; Spotify abre su búsqueda oficial."
+    if downloads:
+        summary += " Las descargas de Internet Archive tienen una licencia explícita y se abren en la fuente."
+    await send_text(chat_id, summary)
+    for track in tracks:
+        spotify_url = spotify_music_url(f"{track['artist']} {track['title']}")
+        share_url = "https://t.me/share/url?" + urllib_parse.urlencode({
+            "url": track["url"], "text": f"{track['title']} - {track['artist']}",
+        })
+        rows = [
+            [{"text": "▶️ Apple Music", "url": track["url"]}, {"text": "Spotify", "url": spotify_url}],
+            [{"text": "Compartir", "url": share_url}],
+        ]
+        if track["preview"]:
+            rows.append([{"text": "Escuchar muestra oficial", "url": track["preview"]}])
+        album = f"\nÁlbum: {track['album']}" if track["album"] else ""
+        await send_text(
+            chat_id, f"🎵 {track['title']}\n{track['artist']}{album}",
+            reply_markup={"inline_keyboard": rows},
+        )
+    for item in downloads:
+        await send_text(
+            chat_id,
+            f"⬇️ {item['title']}\n{item['artist']}\nLicencia: {item['license']}. La descarga la ofrece Internet Archive; no copio ni almaceno el archivo.",
+            reply_markup={"inline_keyboard": [
+                [{"text": "Escuchar o descargar desde la fuente", "url": item["download_url"]}],
+                [{"text": "Ver licencia", "url": item["license_url"]}, {"text": "Ficha y fuente", "url": item["item_url"]}],
+            ]},
+        )
+
+
 async def prepare_live_query(chat_id: int, user_text: str):
     if chat_id in pending_weather_query:
         original = pending_weather_query.pop(chat_id)
@@ -696,6 +899,7 @@ async def welcome(chat_id: int):
         "Elegí una voz, un dúo, un trío, un cuarteto o una historia con cuatro personajes. "
         "En los modos grupales, las voces responden por turnos en un mismo audio. "
         "Podés preguntar por clima actual indicando un lugar, o por deportes y resultados indicando deporte y fecha. "
+        "Con /musica seguido de un artista o canción buscás música y obtenés enlaces para escuchar o compartir. "
         "Con /individual volvés al modo normal y con /nombre cambiás tu nombre. "
         "Con /solo_texto apagás el audio y con /con_voz lo volvés a activar."
     )
@@ -703,6 +907,7 @@ async def welcome(chat_id: int):
         [{"text": "Una voz", "callback_data": "mode:single"}],
         [{"text": "Modo dúo", "callback_data": "mode:duo"}, {"text": "Modo trío", "callback_data": "mode:trio"}],
         [{"text": "Cuarteto", "callback_data": "mode:quartet"}, {"text": "Historia", "callback_data": "mode:story"}],
+        [{"text": "Buscar música", "callback_data": "mode:music"}],
     ]
     await send_text(chat_id, text, reply_markup={"inline_keyboard": keyboard})
     await send_voice(chat_id, f"Hola, {name}. Ya estoy listo. Elegí hasta cuatro voces o una historia para empezar.")
@@ -777,10 +982,14 @@ async def handle_message(message: dict):
             return
         if text.startswith("/reset"):
             histories[chat_id].clear()
+            pending_music_query.pop(chat_id, None)
             await send_text(chat_id, "Conversación reiniciada.")
             return
         if not get_preferred_name(chat_id):
             await ask_preferred_name(chat_id)
+            return
+        if text.startswith("/musica") or text.startswith("/music"):
+            await search_music(chat_id, text.partition(" ")[2])
             return
         await telegram("sendChatAction", chat_id=chat_id, action="typing")
         if "voice" in message or "audio" in message:
@@ -792,6 +1001,13 @@ async def handle_message(message: dict):
             log.info("Voice message transcribed for chat %s (%s characters)", chat_id, len(user_text))
         else:
             user_text = text
+        if chat_id in pending_music_query:
+            await search_music(chat_id, user_text)
+            return
+        music_query = music_query_from_text(user_text)
+        if music_query is not None:
+            await search_music(chat_id, music_query)
+            return
         status, user_text, source = await prepare_live_query(chat_id, user_text)
         if status == "ask":
             await send_text(chat_id, user_text)
@@ -865,6 +1081,10 @@ async def handle_callback(callback: dict):
         kind = "quartet" if data == "mode:quartet" else "story"
         await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Cuarteto" if kind == "quartet" else "Historia")
         await start_four_mode(chat_id, kind)
+        return
+    if data == "mode:music":
+        await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Búsqueda de música")
+        await search_music(chat_id, "")
         return
     if data.startswith("four:"):
         voice = data.split(":", 1)[1]
