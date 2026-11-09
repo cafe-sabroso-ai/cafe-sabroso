@@ -184,12 +184,25 @@ async def complete(messages):
     response = await http.post(
         "https://openrouter.ai/api/v1/chat/completions",
         headers=headers,
-        json={"model": OPENROUTER_MODEL, "messages": messages, "temperature": 0.5, "max_tokens": 700},
+        json={
+            "model": OPENROUTER_MODEL,
+            "messages": messages,
+            "temperature": 0.5,
+            "max_tokens": 700,
+            "reasoning": {"exclude": True},
+        },
     )
     if response.status_code >= 400:
         log.error("OpenRouter chat failed: %s %s", response.status_code, response.text[:500])
     response.raise_for_status()
-    return response.json()["choices"][0]["message"]["content"].strip()
+    data = response.json()
+    content = data["choices"][0]["message"].get("content")
+    if isinstance(content, list):
+        content = "".join(part.get("text", "") for part in content if isinstance(part, dict))
+    if not content or not content.strip():
+        log.error("OpenRouter returned empty content: %s", str(data)[:500])
+        raise RuntimeError("OpenRouter returned an empty response")
+    return content.strip()
 
 
 def voice_name(voice: str) -> str:
