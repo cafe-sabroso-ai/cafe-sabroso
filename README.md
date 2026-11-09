@@ -9,7 +9,8 @@ A Spanish-speaking Telegram bot that answers text and voice messages with both t
 
 ## Commands
 
-- `/start` - introduction and preferred-name capture, followed by single-voice or duo selection.
+- `/start` - introduction and preferred-name capture, followed by the main mode menu.
+- `/menu` - reopen the main mode menu. Telegram's persistent Menu button also lists the available commands.
 - `/nombre` - change the name the bot uses for you.
 - `/voces` - choose from 38 Latin-American Spanish voices: 19 male and 19 female, covering Argentina, Mexico, Colombia, Chile, Uruguay, Peru, Venezuela, Bolivia, Costa Rica, Ecuador, Paraguay, Puerto Rico, the Dominican Republic, Cuba, Guatemala, Honduras, Nicaragua, Panama and El Salvador. This is the maximum balanced Latin-American set in the live Edge TTS Spanish catalog; Spain, United States and other non-Latin-American voices are excluded.
 - `/duo` - choose two different voices. Both personas answer each message in alternating turns, joined into one voice note.
@@ -49,7 +50,7 @@ The default voice is Tomás (`es-AR-TomasNeural`). Each user's preferred name is
    - `WEBHOOK_SECRET`: a long random string.
    - `PUBLIC_URL`: the final `https://<service>.onrender.com` URL, without a trailing slash.
 5. Optional: `OPENROUTER_MODEL` defaults to `openrouter/free`; `WHISPER_MODEL` defaults to `base`.
-6. Deploy. The app sets the Telegram webhook on startup and exposes `GET /` as a health check.
+6. Deploy. The app registers the Telegram command menu and default Menu button on startup, sets the Telegram webhook, and exposes `GET /` as a health check.
 
 Free Render services can sleep after inactivity. The first message after sleep can take about a minute while the service wakes. The first voice message after a restart also downloads the local Whisper model.
 
