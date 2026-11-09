@@ -16,12 +16,21 @@ A Spanish-speaking Telegram bot that answers text and voice messages with both t
 - `/trio` - choose three different voices. All three personas answer in alternating turns, joined into one voice note.
 - `/cuarteto` - choose four different voices. Four personas answer in alternating turns, joined into one voice note.
 - `/historia` - choose four different voices as four named characters, then supply a story theme. Each character speaks its own dialogue and continues the same scene in one joined voice note.
+- `/musica <artist or song>` - search for music without leaving the selected voice mode. Natural Spanish requests such as `buscá música de Mercedes Sosa`, `quiero escuchar Alfonsina y el mar` and `buscá canciones de Soda Stereo` also work.
 - `/individual` - leave duo, trio, quartet or story mode and return to the selected single voice.
 - `/solo_texto` - turn off audio replies.
 - `/con_voz` - turn audio replies back on.
 - `/reset` - clear the conversation's short-term history.
 
 The default voice is Tomás (`es-AR-TomasNeural`). Each user's preferred name is stored per chat in a local SQLite database and used by every persona. Set `DATABASE_PATH` to change the database location (default `data/cafe_sabroso.db`); durable storage across hosting replacements requires a persistent volume, which is not included in Render's free plan. In duo, trio and quartet modes, the first persona answers directly, later personas add complementary responses, and every speaker addresses the user by name. Story mode uses four selected voices as distinct characters who address the listener by name and speak sequential dialogue within a shared scene. Their spoken turns are synthesized separately and joined with FFmpeg into one OGG/Opus voice note.
+
+## Music search, sharing and permitted downloads
+
+- Apple Music's public iTunes Search API supplies up to five song choices, with exact Apple Music links and official preview links when available. No Apple key or paid API is used.
+- Every song has buttons for Apple Music, an official Spotify search and Telegram sharing. Spotify links open that service; the bot does not claim an unverified result is the requested recording.
+- A separate Internet Archive search looks only for items carrying an explicit Creative Commons or public-domain license. When a matching item has a downloadable audio file, the bot links directly to that file on Internet Archive and shows its license and source page. It does not copy, host or redistribute the audio.
+- There is no protected-music library or download button for material without an explicit reuse license. Music searches do not call OpenRouter and do not change the selected single, duo, trio, quartet or story mode.
+- Sources: https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/SearchExamples.html and https://archive.org/developers/index-apis.html .
 
 ## Live weather and sports
 
@@ -55,5 +64,7 @@ cp .env.example .env
 # fill .env, then export its values in your process environment
 uvicorn app:app --host 0.0.0.0 --port 10000
 ```
+
+Run the focused music tests with `python -m unittest -v test_music.py` after installing the application dependencies.
 
 Do not commit real tokens or API keys.
