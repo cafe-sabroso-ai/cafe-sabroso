@@ -20,7 +20,7 @@ log = logging.getLogger("telegram-voice-bot")
 TELEGRAM_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 OPENROUTER_API_KEY = os.environ["OPENROUTER_API_KEY"]
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/free")
-WHISPER_MODEL = os.getenv("WHISPER_MODEL", "base")
+WHISPER_MODEL = os.getenv("WHISPER_MODEL", "tiny")
 PUBLIC_URL = os.getenv("PUBLIC_URL", "").rstrip("/")
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "")
 DATABASE_PATH = os.getenv("DATABASE_PATH", "data/cafe_sabroso.db")
@@ -76,7 +76,10 @@ SYSTEM_PROMPT = (
     "de 120 palabras. Si una respuesta necesita más detalle, dá primero un resumen "
     "breve y ofrecé seguir. No inventes datos actuales; si no sabés algo, decilo. "
     "Devolvé únicamente la respuesta final. Nunca muestres análisis, razonamientos, "
-    "pasos, listas de consignas ni explicaciones sobre cómo respondiste."
+    "pasos, listas de consignas ni explicaciones sobre cómo respondiste. Andá directo "
+    "al contenido: no saludes, no uses el nombre guardado de la persona y no repitas "
+    "fórmulas como 'Hola' o '¿en qué te puedo ayudar?' en cada respuesta. Si la persona "
+    "pide una presentación, respondé a ese pedido de forma natural."
 )
 
 app = FastAPI(title="Telegram Spanish Voice AI Bot")
@@ -290,9 +293,7 @@ async def send_group_voice(chat_id: int, turns):
 
 async def answer(chat_id: int, user_text: str):
     history = histories[chat_id]
-    name = get_preferred_name(chat_id)
-    name_instruction = f" La persona prefiere que la llamen {name}. Usá ese nombre de forma natural." if name else ""
-    messages = [{"role": "system", "content": SYSTEM_PROMPT + name_instruction}]
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     messages.extend(history)
     messages.append({"role": "user", "content": user_text})
     result = await complete(messages)
@@ -303,8 +304,6 @@ async def answer(chat_id: int, user_text: str):
 
 async def answer_group(chat_id: int, user_text: str, voices):
     history = histories[chat_id]
-    name = get_preferred_name(chat_id)
-    name_instruction = f" La persona prefiere que la llamen {name}. Empezá tu turno usando ese nombre de forma natural." if name else ""
     names = [voice_name(voice) for voice in voices]
     replies = []
     for index, speaker in enumerate(names):
@@ -317,11 +316,13 @@ async def answer_group(chat_id: int, user_text: str, voices):
         else:
             role = f"{', '.join(names[:-1])} ya hablaron. Cerrá con una síntesis o recomendación sin repetirlos."
         prompt = (
-            SYSTEM_PROMPT + name_instruction
+            SYSTEM_PROMPT
             + f" En esta conversación de {len(voices)} voces sos {speaker}. {role} "
             "Podés reaccionar naturalmente a los comentarios anteriores. Escribí únicamente "
             "el texto final hablado de tu turno, sin análisis ni rótulos. Usá un máximo "
-            "de 60 palabras y no te presentes ni anuncies que sos una IA."
+            "de 60 palabras. No anuncies que sos una IA. No te presentes salvo que la "
+            "persona pida presentaciones; en ese caso, presentate con tu nombre y una "
+            "descripción breve."
         )
         messages = [{"role": "system", "content": prompt}]
         messages.extend(history)
@@ -355,7 +356,6 @@ async def answer_story(chat_id: int, theme: str):
     voices = story_pairs[chat_id]
     names = [voice_name(voice) for voice in voices]
     history = histories[chat_id]
-    name = get_preferred_name(chat_id)
     replies = []
     for index, speaker in enumerate(names):
         stage = (
@@ -366,10 +366,10 @@ async def answer_story(chat_id: int, theme: str):
         )
         prompt = (
             SYSTEM_PROMPT
-            + f" La persona que escucha prefiere que la llamen {name}. "
-            f"Estamos contando una historia con cuatro personajes. Vos sos {speaker}. {stage} "
+            + f"Estamos contando una historia con cuatro personajes. Vos sos {speaker}. {stage} "
             "Escribí únicamente el diálogo hablado de tu personaje, en primera persona, sin rótulos ni narración "
-            "entre comillas. Mencioná el nombre de quien escucha de forma natural. Usá entre 35 y 55 palabras "
+            "entre comillas. No uses el nombre de quien escucha salvo que la historia lo "
+            "necesite. Usá entre 35 y 55 palabras "
             "y mantené continuidad con los diálogos anteriores. No hables como asistente ni como IA."
         )
         messages = [{"role": "system", "content": prompt}]
@@ -398,7 +398,7 @@ async def transcribe(file_id: str) -> str:
         if whisper_model is None:
             from faster_whisper import WhisperModel
             whisper_model = await asyncio.to_thread(
-                WhisperModel, WHISPER_MODEL, device="cpu", compute_type="int8"
+                WhisperModel, WHISPER_MODEL, device="cpu", compute_type="int8", cpu_threads=1
             )
     with tempfile.TemporaryDirectory() as directory:
         audio_path = Path(directory) / f"telegram{suffix}"
