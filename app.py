@@ -190,8 +190,8 @@ async def complete(messages):
             "model": OPENROUTER_MODEL,
             "messages": messages,
             "temperature": 0.5,
-            "max_tokens": 700,
-            "reasoning": {"enabled": False, "exclude": True},
+            "max_tokens": 1200,
+            "reasoning": {"effort": "low", "exclude": True},
         },
     )
     if response.status_code >= 400:
