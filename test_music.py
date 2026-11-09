@@ -67,6 +67,7 @@ class MusicFlowTests(unittest.IsolatedAsyncioTestCase):
             sent.append((text, kwargs))
         with patch.object(app, "apple_music_results", AsyncMock(return_value=tracks)), \
              patch.object(app, "licensed_music_downloads", AsyncMock(return_value=[download])), \
+             patch.object(app, "send_archive_audio", AsyncMock(return_value=False)), \
              patch.object(app, "send_text", capture):
             await app.search_music(123, "Artista")
         self.assertEqual(len(sent), 5)
@@ -77,6 +78,31 @@ class MusicFlowTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(keyboard[1][0]["text"], "Compartir")
         self.assertIn("CC0", sent[4][0])
         self.assertEqual(sent[4][1]["reply_markup"]["inline_keyboard"][0][0]["url"], download["download_url"])
+
+    async def test_direct_file_sent_for_licensed_download(self):
+        download = {
+            "title": "Obra abierta", "artist": "Artista", "license": "CC BY 4.0",
+            "license_url": "https://creativecommons.org/licenses/by/4.0/",
+            "item_url": "https://archive.org/details/open",
+            "download_url": "https://archive.org/download/open/song.mp3",
+            "file_name": "song.mp3", "format": "MP3", "size": 1024,
+        }
+        sent = []
+        async def capture(chat_id, text, **kwargs):
+            sent.append((text, kwargs))
+        with patch.object(app, "apple_music_results", AsyncMock(return_value=[])), \
+             patch.object(app, "licensed_music_downloads", AsyncMock(return_value=[download])), \
+             patch.object(app, "send_archive_audio", AsyncMock(return_value=True)) as direct, \
+             patch.object(app, "send_text", capture):
+            await app.search_music(123, "Artista")
+        direct.assert_awaited_once_with(123, download)
+        self.assertIn("archivo directo", sent[1][0])
+        self.assertIn("CC BY 4.0", sent[1][0])
+        keyboard = sent[1][1]["reply_markup"]["inline_keyboard"]
+        urls = [button["url"] for row in keyboard for button in row]
+        self.assertNotIn(download["download_url"], urls)
+        self.assertIn(download["license_url"], urls)
+        self.assertIn(download["item_url"], urls)
 
     async def test_catalog_failure_still_gives_official_search(self):
         sent = []
@@ -108,6 +134,66 @@ class MusicFlowTests(unittest.IsolatedAsyncioTestCase):
              patch.object(app, "send_text", AsyncMock()):
             await app.search_music(123, "Artista")
         self.assertNotIn(123, app.pending_music_query)
+
+
+class DirectDownloadTests(unittest.IsolatedAsyncioTestCase):
+    def download(self, **overrides):
+        item = {
+            "title": "Obra abierta", "artist": "Artista", "license": "CC0",
+            "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "item_url": "https://archive.org/details/open",
+            "download_url": "https://archive.org/download/open/song.mp3",
+            "file_name": "song.mp3", "format": "MP3", "size": 1024,
+        }
+        item.update(overrides)
+        return item
+
+    async def test_known_oversize_track_is_not_downloaded(self):
+        item = self.download(size=app.ARCHIVE_AUDIO_LIMIT + 1)
+        with patch.object(app, "http", AsyncMock()) as client:
+            self.assertFalse(await app.send_archive_audio(123, item))
+        client.stream.assert_not_called()
+
+    async def test_mp3_goes_to_send_audio_with_license_caption(self):
+        class FakeStream:
+            status_code = 200
+            headers = {"content-length": "4"}
+            def raise_for_status(self):
+                pass
+            async def __aenter__(self):
+                return self
+            async def __aexit__(self, *args):
+                return False
+            async def aiter_bytes(self, size):
+                yield b"mp3!"
+
+        posts = []
+        class FakeClient:
+            def stream(self, *args, **kwargs):
+                return FakeStream()
+            async def post(self, url, **kwargs):
+                posts.append((url, kwargs))
+                return type("Resp", (), {"status_code": 200, "text": ""})()
+
+        item = self.download()
+        with patch.object(app, "http", FakeClient()), \
+             patch.object(app, "telegram", AsyncMock()):
+            self.assertTrue(await app.send_archive_audio(123, item))
+        self.assertTrue(posts[0][0].endswith("/sendAudio"))
+        data = posts[0][1]["data"]
+        self.assertEqual(data["performer"], "Artista")
+        self.assertIn("CC0", data["caption"])
+        self.assertIn(item["item_url"], data["caption"])
+        self.assertEqual(posts[0][1]["files"]["audio"][0], "song.mp3")
+        self.assertEqual(posts[0][1]["files"]["audio"][1], b"mp3!")
+
+    async def test_transfer_failure_returns_false(self):
+        class FailingClient:
+            def stream(self, *args, **kwargs):
+                raise RuntimeError("archive down")
+        with patch.object(app, "http", FailingClient()), \
+             patch.object(app, "telegram", AsyncMock()):
+            self.assertFalse(await app.send_archive_audio(123, self.download()))
 
 
 if __name__ == "__main__":
