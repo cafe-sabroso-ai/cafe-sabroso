@@ -15,6 +15,9 @@ import httpx
 from fastapi import FastAPI, Request
 
 logging.basicConfig(level=logging.INFO)
+# httpx includes Telegram's bot token in request URLs at INFO level.
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpx2").setLevel(logging.WARNING)
 log = logging.getLogger("telegram-voice-bot")
 
 TELEGRAM_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
@@ -194,6 +197,7 @@ async def send_voice(chat_id: int, text: str):
         if response.status_code >= 400:
             log.error("Telegram sendVoice failed: %s %s", response.status_code, response.text[:500])
         response.raise_for_status()
+        log.info("Sent individual voice message for chat %s", chat_id)
     except Exception:
         log.exception("Could not synthesize or send voice")
 
@@ -287,6 +291,7 @@ async def send_group_voice(chat_id: int, turns):
         if response.status_code >= 400:
             log.error("Telegram duo sendVoice failed: %s %s", response.status_code, response.text[:500])
         response.raise_for_status()
+        log.info("Sent joined %s-turn voice message for chat %s", len(turns), chat_id)
     except Exception:
         log.exception("Could not synthesize or send duo voice")
 
@@ -926,9 +931,6 @@ async def ask_preferred_name(chat_id: int, action="mode"):
 
 
 async def start_duo(chat_id: int):
-    if not get_preferred_name(chat_id):
-        await ask_preferred_name(chat_id, "duo")
-        return
     duo_first.pop(chat_id, None)
     await send_text(
         chat_id,
@@ -938,9 +940,6 @@ async def start_duo(chat_id: int):
 
 
 async def start_trio(chat_id: int):
-    if not get_preferred_name(chat_id):
-        await ask_preferred_name(chat_id, "trio")
-        return
     trio_selection[chat_id] = []
     await send_text(
         chat_id,
@@ -950,9 +949,6 @@ async def start_trio(chat_id: int):
 
 
 async def start_four_mode(chat_id: int, kind: str):
-    if not get_preferred_name(chat_id):
-        await ask_preferred_name(chat_id, kind)
-        return
     four_selection[chat_id] = {"kind": kind, "voices": []}
     if kind == "quartet":
         text = "Modo cuarteto: elige la primera de cuatro voces distintas. Responderán por turnos en un solo audio."
@@ -964,11 +960,10 @@ async def start_four_mode(chat_id: int, kind: str):
     )
 
 
-async def welcome(chat_id: int):
-    name = get_preferred_name(chat_id)
-    if not name:
-        await ask_preferred_name(chat_id)
-        return
+async def welcome(chat_id: int, fallback_name=None):
+    # A free Render filesystem is replaced on deploy. Never block the bot on a
+    # saved preference that may no longer exist; /nombre remains available.
+    name = get_preferred_name(chat_id) or fallback_name or "amigo"
     text = (
         f"📋 MENÚ PRINCIPAL\nHola, {name}. Pulsa uno de estos botones para empezar. "
         "En los modos dúo, trío y cuarteto, varias voces responden por turnos en un mismo audio. "
@@ -1013,10 +1008,10 @@ async def handle_message(message: dict):
             elif action in ("quartet", "story"):
                 await start_four_mode(chat_id, action)
             else:
-                await welcome(chat_id)
+                await welcome(chat_id, name)
             return
         if text.startswith("/start") or text.startswith("/menu"):
-            await welcome(chat_id)
+            await welcome(chat_id, message.get("from", {}).get("first_name"))
             return
         if text.startswith("/nombre"):
             await ask_preferred_name(chat_id)
@@ -1058,9 +1053,6 @@ async def handle_message(message: dict):
             histories[chat_id].clear()
             pending_music_query.pop(chat_id, None)
             await send_text(chat_id, "Conversación reiniciada.")
-            return
-        if not get_preferred_name(chat_id):
-            await ask_preferred_name(chat_id)
             return
         if text.startswith("/musica") or text.startswith("/music"):
             await search_music(chat_id, text.partition(" ")[2])
@@ -1137,7 +1129,7 @@ async def handle_callback(callback: dict):
     callback_id = callback["id"]
     if data == "mode:menu":
         await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Menú principal")
-        await welcome(chat_id)
+        await welcome(chat_id, callback.get("from", {}).get("first_name"))
         return
     if data == "mode:single":
         duo_enabled[chat_id] = False
@@ -1193,7 +1185,7 @@ async def handle_callback(callback: dict):
         story_enabled[chat_id] = kind == "story"
         selected_voice[chat_id] = voices[0]
         voice_enabled[chat_id] = True
-        name = get_preferred_name(chat_id)
+        name = get_preferred_name(chat_id) or callback.get("from", {}).get("first_name") or "amigo"
         if kind == "quartet":
             quartet_pairs[chat_id] = voices
             samples = [
@@ -1257,7 +1249,7 @@ async def handle_callback(callback: dict):
         voice_enabled[chat_id] = True
         names = [voice_name(item) for item in voices]
         await telegram("answerCallbackQuery", callback_query_id=callback_id, text=f"Trío: {', '.join(names)}")
-        name = get_preferred_name(chat_id)
+        name = get_preferred_name(chat_id) or callback.get("from", {}).get("first_name") or "amigo"
         samples = [
             f"Hola, {name}. Soy {names[0]} y vamos a conversar entre los tres.",
             f"{name}, yo soy {names[1]}. Voy a sumar otra mirada después de {names[0]}.",
@@ -1298,7 +1290,7 @@ async def handle_callback(callback: dict):
         selected_voice[chat_id] = first
         voice_enabled[chat_id] = True
         await telegram("answerCallbackQuery", callback_query_id=callback_id, text=f"Dúo: {voice_name(first)} y {voice_name(voice)}")
-        name = get_preferred_name(chat_id)
+        name = get_preferred_name(chat_id) or callback.get("from", {}).get("first_name") or "amigo"
         first_sample = f"Hola, {name}. Soy {voice_name(first)} y vamos a responder juntos, por turnos."
         second_sample = f"{name}, yo soy {voice_name(voice)}. Mandanos un mensaje o un audio para probar el modo dúo."
         await send_text(chat_id, f"{voice_name(first)}: {first_sample}\n\n{voice_name(voice)}: {second_sample}")
