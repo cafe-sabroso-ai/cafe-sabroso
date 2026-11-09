@@ -29,7 +29,7 @@ The default voice is Tomás (`es-AR-TomasNeural`). Each user's preferred name is
 
 - Apple Music's public iTunes Search API supplies up to five song choices, with exact Apple Music links and official preview links when available. No Apple key or paid API is used.
 - Every song has buttons for Apple Music, an official Spotify search and Telegram sharing. Spotify links open that service; the bot does not claim an unverified result is the requested recording.
-- A separate Internet Archive search looks only for items carrying an explicit Creative Commons or public-domain license. When a matching item has a downloadable audio file, the bot links directly to that file on Internet Archive and shows its license and source page. It does not copy, host or redistribute the audio.
+- A separate Internet Archive search looks only for items carrying an explicit Creative Commons or public-domain license. When a matching item has a downloadable audio file, the bot sends that MP3 straight into the chat as a direct Telegram file (up to 40 MB, with the license and source in the caption); larger files or transfer failures fall back to the source link. The audio streams one-off from Internet Archive: the bot does not copy, host or redistribute it.
 - There is no protected-music library or download button for material without an explicit reuse license. Music searches do not call OpenRouter and do not change the selected single, duo, trio, quartet or story mode.
 - Sources: https://developer.apple.com/library/archive/documentation/AudioVideo/Conceptual/iTuneSearchAPI/SearchExamples.html and https://archive.org/developers/index-apis.html .
 
