@@ -878,7 +878,7 @@ async def start_duo(chat_id: int):
     duo_first.pop(chat_id, None)
     await send_text(
         chat_id,
-        "Modo dúo: elegí la primera voz. Después vas a elegir la segunda y van a responder por turnos en un solo audio.",
+        "Modo dúo: elige la primera voz. Después elegirás la segunda y responderán por turnos en un solo audio.",
         reply_markup={"inline_keyboard": voice_keyboard(chat_id, "duo1")},
     )
 
@@ -890,7 +890,7 @@ async def start_trio(chat_id: int):
     trio_selection[chat_id] = []
     await send_text(
         chat_id,
-        "Modo trío: elegí la primera de tres voces. Después elegís la segunda y la tercera; responderán por turnos en un solo audio.",
+        "Modo trío: elige la primera de tres voces. Después elegirás la segunda y la tercera; responderán por turnos en un solo audio.",
         reply_markup={"inline_keyboard": voice_keyboard(chat_id, "trio1")},
     )
 
@@ -901,9 +901,9 @@ async def start_four_mode(chat_id: int, kind: str):
         return
     four_selection[chat_id] = {"kind": kind, "voices": []}
     if kind == "quartet":
-        text = "Modo cuarteto: elegí la primera de cuatro voces distintas. Responderán por turnos en un solo audio."
+        text = "Modo cuarteto: elige la primera de cuatro voces distintas. Responderán por turnos en un solo audio."
     else:
-        text = "Modo historia: elegí la primera de cuatro voces distintas. Serán cuatro personajes que continúan una misma escena."
+        text = "Modo historia: elige la primera de cuatro voces distintas. Serán cuatro personajes que continúan una misma escena."
     await send_text(
         chat_id, text,
         reply_markup={"inline_keyboard": voice_keyboard(chat_id, "four")},
@@ -929,7 +929,7 @@ async def welcome(chat_id: int):
         [{"text": "🎵 Buscar música", "callback_data": "mode:music"}],
     ]
     await send_text(chat_id, text, reply_markup={"inline_keyboard": keyboard})
-    await send_voice(chat_id, f"Hola, {name}. Ya estoy listo. Elegí hasta cuatro voces o una historia para empezar.")
+    await send_voice(chat_id, f"Hola, {name}. Ya estoy listo. Elige hasta cuatro voces o una historia para empezar.")
 
 
 async def handle_message(message: dict):
@@ -1118,14 +1118,14 @@ async def handle_callback(callback: dict):
             return
         selected = session["voices"]
         if voice in selected:
-            await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Elegí cuatro voces distintas.")
+            await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Elige cuatro voces distintas.")
             return
         selected.append(voice)
         await telegram("answerCallbackQuery", callback_query_id=callback_id, text=f"Voz {len(selected)}: {voice_name(voice)}")
         if len(selected) < 4:
             await send_text(
                 chat_id,
-                f"Voz {len(selected)}: {voice_name(voice)}. Elegí la siguiente.",
+                f"Voz {len(selected)}: {voice_name(voice)}. Elige la siguiente.",
                 reply_markup={"inline_keyboard": voice_keyboard(chat_id, "four", exclude=selected)},
             )
             return
@@ -1168,7 +1168,7 @@ async def handle_callback(callback: dict):
         trio_selection[chat_id] = [voice]
         await telegram("answerCallbackQuery", callback_query_id=callback_id, text=f"Primera voz: {voice_name(voice)}")
         await send_text(
-            chat_id, f"Primera voz: {voice_name(voice)}. Elegí la segunda.",
+            chat_id, f"Primera voz: {voice_name(voice)}. Elige la segunda.",
             reply_markup={"inline_keyboard": voice_keyboard(chat_id, "trio2", exclude=[voice])},
         )
         return
@@ -1182,7 +1182,7 @@ async def handle_callback(callback: dict):
         selection.append(voice)
         await telegram("answerCallbackQuery", callback_query_id=callback_id, text=f"Segunda voz: {voice_name(voice)}")
         await send_text(
-            chat_id, f"Segunda voz: {voice_name(voice)}. Ahora elegí la tercera.",
+            chat_id, f"Segunda voz: {voice_name(voice)}. Ahora elige la tercera.",
             reply_markup={"inline_keyboard": voice_keyboard(chat_id, "trio3", exclude=selection)},
         )
         return
@@ -1222,7 +1222,7 @@ async def handle_callback(callback: dict):
         await telegram("answerCallbackQuery", callback_query_id=callback_id, text=f"Primera voz: {voice_name(voice)}")
         await send_text(
             chat_id,
-            f"Primera voz: {voice_name(voice)}. Ahora elegí una segunda voz distinta.",
+            f"Primera voz: {voice_name(voice)}. Ahora elige una segunda voz distinta.",
             reply_markup={"inline_keyboard": voice_keyboard(chat_id, "duo2", exclude=voice)},
         )
         return
@@ -1234,7 +1234,7 @@ async def handle_callback(callback: dict):
             await start_duo(chat_id)
             return
         if voice == first:
-            await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Elegí dos voces distintas.")
+            await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Elige dos voces distintas.")
             return
         duo_pairs[chat_id] = (first, voice)
         duo_enabled[chat_id] = True
