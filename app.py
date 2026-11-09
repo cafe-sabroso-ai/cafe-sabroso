@@ -304,8 +304,14 @@ async def answer(chat_id: int, user_text: str):
 
 def parse_group_turns(text: str, names):
     """Read the labeled turns returned by one shared group completion."""
+    text = text.strip().replace("**", "")
     labels = "|".join(re.escape(name) for name in names)
-    matches = list(re.finditer(rf"(?mi)^\s*({labels})\s*:\s*", text.strip()))
+    matches = list(re.finditer(rf"(?mi)^\s*(?:[-•]\s+)?({labels})\s*(?::|\s+-\s+)\s*", text))
+    if not matches:
+        paragraphs = [part.strip() for part in re.split(r"\n\s*\n", text) if part.strip()]
+        if len(paragraphs) == len(names):
+            return [clean_turn(part, names) for part in paragraphs]
+        return None
     if len(matches) != len(names):
         return None
     if [match.group(1).casefold() for match in matches] != [name.casefold() for name in names]:
