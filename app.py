@@ -214,6 +214,13 @@ def voice_name(voice: str) -> str:
     return VOICES[voice].split(" - ", 1)[0]
 
 
+def clean_turn(text: str, names) -> str:
+    label = "(?:" + "|".join(re.escape(name) for name in names) + ")"
+    text = re.sub(rf"^\s*{label}\s*:\s*", "", text, count=1, flags=re.IGNORECASE)
+    text = re.split(rf"\n\s*{label}\s*:\s*", text, maxsplit=1, flags=re.IGNORECASE)[0]
+    return text.strip()
+
+
 async def synthesize_turns(turns):
     audio_parts = await asyncio.gather(
         *(synthesize(text, voice) for voice, text in turns)
@@ -299,7 +306,7 @@ async def answer_group(chat_id: int, user_text: str, voices):
         if previous:
             content += f"\n\n{previous}\n\nAhora respondé vos como {speaker}."
         messages.append({"role": "user", "content": content})
-        replies.append(await complete(messages))
+        replies.append(clean_turn(await complete(messages), names))
     history.append({"role": "user", "content": user_text})
     history.append({
         "role": "assistant",
@@ -348,7 +355,7 @@ async def answer_story(chat_id: int, theme: str):
         if previous:
             content += f"\nDiálogos anteriores:\n{previous}"
         messages.append({"role": "user", "content": content})
-        replies.append(await complete(messages))
+        replies.append(clean_turn(await complete(messages), names))
     history.append({"role": "user", "content": f"Historia sobre: {theme}"})
     history.append({
         "role": "assistant",
