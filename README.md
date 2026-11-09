@@ -4,7 +4,7 @@ A Spanish-speaking Telegram bot that answers text and voice messages with both t
 
 - Telegram Bot API for messages and voice notes.
 - OpenRouter's `openrouter/free` router for zero-cost text inference. It never falls back to a paid model.
-- Faster Whisper running locally in the container for Spanish voice transcription. No transcription API key is needed.
+- Faster Whisper running locally in the container for Spanish voice transcription. The default `tiny` multilingual model keeps voice-note responses practical on Render's free CPU. No transcription API key is needed.
 - Microsoft Edge neural voices through `edge-tts` for audio replies, converted to OGG/Opus with FFmpeg.
 
 ## Commands
@@ -23,7 +23,7 @@ A Spanish-speaking Telegram bot that answers text and voice messages with both t
 - `/con_voz` - turn audio replies back on.
 - `/reset` - clear the conversation's short-term history.
 
-The default voice is Tomás (`es-AR-TomasNeural`). Each user's preferred name is stored per chat in a local SQLite database and used by every persona. Set `DATABASE_PATH` to change the database location (default `data/cafe_sabroso.db`); durable storage across hosting replacements requires a persistent volume, which is not included in Render's free plan. In duo, trio and quartet modes, the first persona answers directly, later personas add complementary responses, and every speaker addresses the user by name. Story mode uses four selected voices as distinct characters who address the listener by name and speak sequential dialogue within a shared scene. Their spoken turns are synthesized separately and joined with FFmpeg into one OGG/Opus voice note.
+The default voice is Tomás (`es-AR-TomasNeural`). Each user's preferred name is stored per chat in a local SQLite database and used in onboarding and voice-selection samples. Set `DATABASE_PATH` to change the database location (default `data/cafe_sabroso.db`); durable storage across hosting replacements requires a persistent volume, which is not included in Render's free plan. Answers go directly to the question without repeating a greeting or the saved name. In duo, trio and quartet modes, the first persona answers directly, later personas add complementary responses, and each persona introduces itself when the user asks for introductions. Story mode uses four selected voices as distinct characters who speak sequential dialogue within a shared scene. Their spoken turns are synthesized separately and joined with FFmpeg into one OGG/Opus voice note.
 
 ## Music search, sharing and permitted downloads
 
@@ -49,7 +49,7 @@ The default voice is Tomás (`es-AR-TomasNeural`). Each user's preferred name is
    - `OPENROUTER_API_KEY`: an OpenRouter API key. No credits are required for `openrouter/free`.
    - `WEBHOOK_SECRET`: a long random string.
    - `PUBLIC_URL`: the final `https://<service>.onrender.com` URL, without a trailing slash.
-5. Optional: `OPENROUTER_MODEL` defaults to `openrouter/free`; `WHISPER_MODEL` defaults to `base`.
+5. Optional: `OPENROUTER_MODEL` defaults to `openrouter/free`; `WHISPER_MODEL` defaults to `tiny`.
 6. Deploy. The app registers the Telegram command menu and default Menu button on startup, sets the Telegram webhook, and exposes `GET /` as a health check.
 
 Free Render services can sleep after inactivity. The first message after sleep can take about a minute while the service wakes. The first voice message after a restart also downloads the local Whisper model.
@@ -66,6 +66,6 @@ cp .env.example .env
 uvicorn app:app --host 0.0.0.0 --port 10000
 ```
 
-Run the focused music tests with `python -m unittest -v test_music.py` after installing the application dependencies.
+Run all regression tests with `python -m unittest -v test_menu.py test_music.py test_replies.py` after installing the application dependencies.
 
 Do not commit real tokens or API keys.
