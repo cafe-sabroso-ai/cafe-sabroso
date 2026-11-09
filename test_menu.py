@@ -43,7 +43,7 @@ class MenuTests(unittest.IsolatedAsyncioTestCase):
                 "message": {"chat": {"id": 123}},
                 "data": "mode:menu",
             })
-        welcome.assert_awaited_once_with(123)
+        welcome.assert_awaited_once_with(123, None)
 
     async def test_startup_registers_commands_and_default_menu(self):
         calls = []
