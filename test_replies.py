@@ -61,6 +61,10 @@ class ReplyTests(unittest.IsolatedAsyncioTestCase):
             self.assertNotIn("Empezá tu turno", prompt)
             self.assertIn("las pida", prompt)
 
+    def test_group_turn_parser_accepts_bold_labels(self):
+        turns = app.parse_group_turns("**Tomás:** Una respuesta.\n**Elena:** Otra respuesta.", ["Tomás", "Elena"])
+        self.assertEqual(turns, ["Una respuesta.", "Otra respuesta."])
+
     def test_group_turn_parser_rejects_missing_voice(self):
         self.assertIsNone(app.parse_group_turns("Tomás: Solo una respuesta.", ["Tomás", "Elena"]))
 
