@@ -202,7 +202,7 @@ async def send_voice(chat_id: int, text: str):
         log.exception("Could not synthesize or send voice")
 
 
-async def complete(messages):
+async def complete_openrouter(messages):
     headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}", "X-Title": "Cafe Sabroso"}
     if PUBLIC_URL:
         headers["HTTP-Referer"] = PUBLIC_URL
@@ -239,6 +239,48 @@ async def complete(messages):
         log.error("OpenRouter truncated the visible response: %s", str(data)[:500])
         raise RuntimeError("OpenRouter truncated the response")
     raise RuntimeError("OpenRouter returned no usable response")
+
+
+async def complete_pollinations(messages):
+    """Anonymous free fallback; do not send an Authorization header."""
+    for attempt in range(2):
+        response = await http.post(
+            "https://text.pollinations.ai/openai",
+            json={
+                "model": "openai-fast",
+                "messages": messages,
+                "temperature": 0.5,
+                "max_tokens": 2400,
+                "stream": False,
+            },
+        )
+        if response.status_code in (402, 429) and attempt == 0:
+            match = re.search(r"Retry after (\d+)s", response.text, re.IGNORECASE)
+            delay = int(match.group(1)) if match else 45
+            delay = min(max(delay, 1), 50)
+            log.warning("Pollinations free slot opens in %s seconds; waiting once", delay)
+            await asyncio.sleep(delay)
+            continue
+        if response.status_code >= 400:
+            log.error("Pollinations chat failed: %s %s", response.status_code, response.text[:500])
+        response.raise_for_status()
+        data = response.json()
+        choice = data["choices"][0]
+        content = choice["message"].get("content")
+        if isinstance(content, list):
+            content = "".join(part.get("text", "") for part in content if isinstance(part, dict))
+        if content and content.strip() and choice.get("finish_reason") != "length":
+            return content.strip()
+        raise RuntimeError("Pollinations returned no usable response")
+    raise RuntimeError("Pollinations free fallback remained rate limited")
+
+
+async def complete(messages):
+    try:
+        return await complete_openrouter(messages)
+    except Exception as error:
+        log.warning("OpenRouter unavailable (%s); using free fallback", type(error).__name__)
+    return await complete_pollinations(messages)
 
 
 def voice_name(voice: str) -> str:
