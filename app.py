@@ -73,7 +73,9 @@ SYSTEM_PROMPT = (
     "se escuchan como notas de voz: usá frases naturales, evitá tablas y formato "
     "visual, y andá directo al punto. Para preguntas cotidianas, respondé en menos "
     "de 120 palabras. Si una respuesta necesita más detalle, dá primero un resumen "
-    "breve y ofrecé seguir. No inventes datos actuales; si no sabés algo, decilo."
+    "breve y ofrecé seguir. No inventes datos actuales; si no sabés algo, decilo. "
+    "Devolvé únicamente la respuesta final. Nunca muestres análisis, razonamientos, "
+    "pasos, listas de consignas ni explicaciones sobre cómo respondiste."
 )
 
 app = FastAPI(title="Telegram Spanish Voice AI Bot")
@@ -189,7 +191,7 @@ async def complete(messages):
             "messages": messages,
             "temperature": 0.5,
             "max_tokens": 700,
-            "reasoning": {"exclude": True},
+            "reasoning": {"enabled": False, "exclude": True},
         },
     )
     if response.status_code >= 400:
@@ -202,6 +204,9 @@ async def complete(messages):
     if not content or not content.strip():
         log.error("OpenRouter returned empty content: %s", str(data)[:500])
         raise RuntimeError("OpenRouter returned an empty response")
+    if data["choices"][0].get("finish_reason") == "length":
+        log.error("OpenRouter truncated the visible response: %s", str(data)[:500])
+        raise RuntimeError("OpenRouter truncated the response")
     return content.strip()
 
 
@@ -283,7 +288,8 @@ async def answer_group(chat_id: int, user_text: str, voices):
         prompt = (
             SYSTEM_PROMPT + name_instruction
             + f" En esta conversación de {len(voices)} voces sos {speaker}. {role} "
-            "Podés reaccionar naturalmente a los comentarios anteriores. Usá un máximo "
+            "Podés reaccionar naturalmente a los comentarios anteriores. Escribí únicamente "
+            "el texto final hablado de tu turno, sin análisis ni rótulos. Usá un máximo "
             "de 60 palabras y no te presentes ni anuncies que sos una IA."
         )
         messages = [{"role": "system", "content": prompt}]
