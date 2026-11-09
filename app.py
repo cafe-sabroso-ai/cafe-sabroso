@@ -302,7 +302,26 @@ async def answer(chat_id: int, user_text: str):
     return result
 
 
-async def answer_group(chat_id: int, user_text: str, voices):
+def parse_group_turns(text: str, names):
+    """Read the labeled turns returned by one shared group completion."""
+    labels = "|".join(re.escape(name) for name in names)
+    matches = list(re.finditer(rf"(?mi)^\s*({labels})\s*:\s*", text.strip()))
+    if len(matches) != len(names):
+        return None
+    if [match.group(1).casefold() for match in matches] != [name.casefold() for name in names]:
+        return None
+    replies = []
+    for index, match in enumerate(matches):
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        reply = clean_turn(text[match.end():end].strip(), names)
+        if not reply:
+            return None
+        replies.append(reply)
+    return replies
+
+
+async def answer_group_sequential(chat_id: int, user_text: str, voices):
+    """Compatibility fallback when a model does not follow the group format."""
     history = histories[chat_id]
     names = [voice_name(voice) for voice in voices]
     replies = []
@@ -332,6 +351,35 @@ async def answer_group(chat_id: int, user_text: str, voices):
             content += f"\n\n{previous}\n\nAhora respondé vos como {speaker}."
         messages.append({"role": "user", "content": content})
         replies.append(clean_turn(await complete(messages), names))
+    history.append({"role": "user", "content": user_text})
+    history.append({
+        "role": "assistant",
+        "content": "\n".join(f"{speaker}: {reply}" for speaker, reply in zip(names, replies)),
+    })
+    return replies
+
+
+async def answer_group(chat_id: int, user_text: str, voices):
+    history = histories[chat_id]
+    names = [voice_name(voice) for voice in voices]
+    labels = ", ".join(names)
+    prompt = (
+        SYSTEM_PROMPT
+        + f" En esta conversación participan {len(voices)} voces: {labels}. "
+        "Respondé al pedido con exactamente un turno por voz, en ese orden. "
+        "La primera responde de forma útil y concreta; las siguientes aportan "
+        "ideas complementarias sin repetir. Escribí cada turno en una línea que "
+        "empiece con el nombre de la voz y dos puntos, por ejemplo 'Nombre: texto'. "
+        "Usá un máximo de 60 palabras por turno. No agregues ningún otro rótulo. "
+        "No anuncies que son IA. No incluyas presentaciones salvo que la persona "
+        "las pida; en ese caso, cada voz se presenta con su nombre y una descripción breve."
+    )
+    messages = [{"role": "system", "content": prompt}]
+    messages.extend(history)
+    messages.append({"role": "user", "content": user_text})
+    replies = parse_group_turns(await complete(messages), names)
+    if replies is None:
+        return await answer_group_sequential(chat_id, user_text, voices)
     history.append({"role": "user", "content": user_text})
     history.append({
         "role": "assistant",
