@@ -183,31 +183,38 @@ async def complete(messages):
     headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}", "X-Title": "Cafe Sabroso"}
     if PUBLIC_URL:
         headers["HTTP-Referer"] = PUBLIC_URL
-    response = await http.post(
-        "https://openrouter.ai/api/v1/chat/completions",
-        headers=headers,
-        json={
-            "model": OPENROUTER_MODEL,
-            "messages": messages,
-            "temperature": 0.5,
-            "max_tokens": 1200,
-            "reasoning": {"effort": "low", "exclude": True},
-        },
-    )
-    if response.status_code >= 400:
-        log.error("OpenRouter chat failed: %s %s", response.status_code, response.text[:500])
-    response.raise_for_status()
-    data = response.json()
-    content = data["choices"][0]["message"].get("content")
-    if isinstance(content, list):
-        content = "".join(part.get("text", "") for part in content if isinstance(part, dict))
-    if not content or not content.strip():
-        log.error("OpenRouter returned empty content: %s", str(data)[:500])
-        raise RuntimeError("OpenRouter returned an empty response")
-    if data["choices"][0].get("finish_reason") == "length":
+    for max_tokens in (1200, 2400):
+        response = await http.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers=headers,
+            json={
+                "model": OPENROUTER_MODEL,
+                "messages": messages,
+                "temperature": 0.5,
+                "max_tokens": max_tokens,
+                "reasoning": {"effort": "low", "exclude": True},
+            },
+        )
+        if response.status_code >= 400:
+            log.error("OpenRouter chat failed: %s %s", response.status_code, response.text[:500])
+        response.raise_for_status()
+        data = response.json()
+        choice = data["choices"][0]
+        content = choice["message"].get("content")
+        if isinstance(content, list):
+            content = "".join(part.get("text", "") for part in content if isinstance(part, dict))
+        truncated = choice.get("finish_reason") == "length"
+        if content and content.strip() and not truncated:
+            return content.strip()
+        if truncated and max_tokens < 2400:
+            log.warning("OpenRouter used the response budget; retrying with a larger budget")
+            continue
+        if not content or not content.strip():
+            log.error("OpenRouter returned empty content: %s", str(data)[:500])
+            raise RuntimeError("OpenRouter returned an empty response")
         log.error("OpenRouter truncated the visible response: %s", str(data)[:500])
         raise RuntimeError("OpenRouter truncated the response")
-    return content.strip()
+    raise RuntimeError("OpenRouter returned no usable response")
 
 
 def voice_name(voice: str) -> str:
