@@ -178,7 +178,7 @@ async def send_voice(chat_id: int, text: str):
 
 
 async def complete(messages):
-    headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}", "X-Title": "Café Sabroso"}
+    headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}", "X-Title": "Cafe Sabroso"}
     if PUBLIC_URL:
         headers["HTTP-Referer"] = PUBLIC_URL
     response = await http.post(
