@@ -13,12 +13,19 @@ A Spanish-speaking Telegram bot that answers text and voice messages with both t
 - `/nombre` - change the name the bot uses for you.
 - `/voces` - choose from 12 male or female Spanish voices from Argentina, Spain, Mexico, United States, Colombia or Chile.
 - `/duo` - choose two different voices. Both personas answer each message in alternating turns, joined into one voice note.
-- `/individual` - leave duo mode and return to the selected single voice.
+- `/trio` - choose three different voices. All three personas answer in alternating turns, joined into one voice note.
+- `/individual` - leave duo or trio mode and return to the selected single voice.
 - `/solo_texto` - turn off audio replies.
 - `/con_voz` - turn audio replies back on.
 - `/reset` - clear the conversation's short-term history.
 
-The default voice is Tomás (`es-AR-TomasNeural`). Each user's preferred name is stored per chat in a local SQLite database and used by both duo personas. Set `DATABASE_PATH` to change the database location (default `data/cafe_sabroso.db`); durable storage across hosting replacements requires a persistent volume, which is not included in Render's free plan. In duo mode, the first persona answers directly and the second adds a complementary response; both address the user by name. Their spoken turns are synthesized separately and joined with FFmpeg into one OGG/Opus voice note. Voice selections, duo settings and chat history are in memory, so they reset when the free service restarts.
+The default voice is Tomás (`es-AR-TomasNeural`). Each user's preferred name is stored per chat in a local SQLite database and used by every persona. Set `DATABASE_PATH` to change the database location (default `data/cafe_sabroso.db`); durable storage across hosting replacements requires a persistent volume, which is not included in Render's free plan. In duo and trio modes, the first persona answers directly, later personas add complementary responses, and every speaker addresses the user by name. Their spoken turns are synthesized separately and joined with FFmpeg into one OGG/Opus voice note.
+
+## Live weather and sports
+
+- Weather questions use Open-Meteo geocoding and current conditions. If no place is supplied, the bot asks for one. Responses include the source's update time and a link to https://open-meteo.com/ as required by its CC BY 4.0 attribution terms. Non-commercial API use does not require a key or card; usage limits and commercial terms are at https://open-meteo.com/.
+- Sports questions use ESPN's current public scoreboard feed. Supported queries cover general football and several mapped competitions (Argentina, Champions League, Libertadores, Premier League and Spain), plus NBA, NFL, MLB and NHL. The bot supports today, yesterday and tomorrow, filters recognized team names, and asks for sport/league or other details when the request is ambiguous or returns no events. ESPN's feed is not a committed or paid API and its availability or schema may change.
+- Retrieved facts and the original question are passed to the selected persona flow with instructions not to invent additional values. If geocoding, the weather feed, or the sports feed fails, the bot returns a clarification or source-unavailable message instead of generating a forecast or result. Voice selections, duo settings and chat history are in memory, so they reset when the free service restarts.
 
 ## Deploy on Render free
 
