@@ -11,15 +11,17 @@ A Spanish-speaking Telegram bot that answers text and voice messages with both t
 
 - `/start` - introduction and preferred-name capture, followed by single-voice or duo selection.
 - `/nombre` - change the name the bot uses for you.
-- `/voces` - choose from 12 male or female Spanish voices from Argentina, Spain, Mexico, United States, Colombia or Chile.
+- `/voces` - choose from 38 Latin-American Spanish voices: 19 male and 19 female, covering Argentina, Mexico, Colombia, Chile, Uruguay, Peru, Venezuela, Bolivia, Costa Rica, Ecuador, Paraguay, Puerto Rico, the Dominican Republic, Cuba, Guatemala, Honduras, Nicaragua, Panama and El Salvador. This is the maximum balanced Latin-American set in the live Edge TTS Spanish catalog; Spain, United States and other non-Latin-American voices are excluded.
 - `/duo` - choose two different voices. Both personas answer each message in alternating turns, joined into one voice note.
 - `/trio` - choose three different voices. All three personas answer in alternating turns, joined into one voice note.
-- `/individual` - leave duo or trio mode and return to the selected single voice.
+- `/cuarteto` - choose four different voices. Four personas answer in alternating turns, joined into one voice note.
+- `/historia` - choose four different voices as four named characters, then supply a story theme. Each character speaks its own dialogue and continues the same scene in one joined voice note.
+- `/individual` - leave duo, trio, quartet or story mode and return to the selected single voice.
 - `/solo_texto` - turn off audio replies.
 - `/con_voz` - turn audio replies back on.
 - `/reset` - clear the conversation's short-term history.
 
-The default voice is Tomás (`es-AR-TomasNeural`). Each user's preferred name is stored per chat in a local SQLite database and used by every persona. Set `DATABASE_PATH` to change the database location (default `data/cafe_sabroso.db`); durable storage across hosting replacements requires a persistent volume, which is not included in Render's free plan. In duo and trio modes, the first persona answers directly, later personas add complementary responses, and every speaker addresses the user by name. Their spoken turns are synthesized separately and joined with FFmpeg into one OGG/Opus voice note.
+The default voice is Tomás (`es-AR-TomasNeural`). Each user's preferred name is stored per chat in a local SQLite database and used by every persona. Set `DATABASE_PATH` to change the database location (default `data/cafe_sabroso.db`); durable storage across hosting replacements requires a persistent volume, which is not included in Render's free plan. In duo, trio and quartet modes, the first persona answers directly, later personas add complementary responses, and every speaker addresses the user by name. Story mode uses four selected voices as distinct characters who address the listener by name and speak sequential dialogue within a shared scene. Their spoken turns are synthesized separately and joined with FFmpeg into one OGG/Opus voice note.
 
 ## Live weather and sports
 
