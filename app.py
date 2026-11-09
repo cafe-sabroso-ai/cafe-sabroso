@@ -100,6 +100,20 @@ pending_music_query = {}
 awaiting_name = defaultdict(lambda: False)
 pending_action = {}
 http = httpx.AsyncClient(timeout=httpx.Timeout(90.0, connect=20.0))
+BOT_COMMANDS = [
+    {"command": "menu", "description": "Abrir el menú principal"},
+    {"command": "individual", "description": "Elegir una sola voz"},
+    {"command": "voces", "description": "Ver todas las voces"},
+    {"command": "duo", "description": "Conversar con dos voces"},
+    {"command": "trio", "description": "Conversar con tres voces"},
+    {"command": "cuarteto", "description": "Conversar con cuatro voces"},
+    {"command": "historia", "description": "Crear una historia con cuatro personajes"},
+    {"command": "musica", "description": "Buscar un artista o una canción"},
+    {"command": "nombre", "description": "Cambiar cómo te llama el bot"},
+    {"command": "solo_texto", "description": "Desactivar las respuestas de audio"},
+    {"command": "con_voz", "description": "Activar las respuestas de audio"},
+    {"command": "reset", "description": "Reiniciar la conversación"},
+]
 whisper_model = None
 whisper_lock = asyncio.Lock()
 
@@ -837,17 +851,24 @@ def voice_keyboard(chat_id: int, prefix: str, exclude=None):
 
 
 async def show_voices(chat_id: int):
+    keyboard = voice_keyboard(chat_id, "voice")
+    keyboard.append([{"text": "⬅️ Volver al menú principal", "callback_data": "mode:menu"}])
     await send_text(
         chat_id,
-        "Elegí una voz. Después de elegirla te mando una muestra.",
-        reply_markup={"inline_keyboard": voice_keyboard(chat_id, "voice")},
+        "🎙️ ELEGIR UNA VOZ\nPulsa el nombre de una voz en los botones de abajo. Después te envío una muestra.",
+        reply_markup={"inline_keyboard": keyboard},
     )
 
 
 async def ask_preferred_name(chat_id: int, action="mode"):
     awaiting_name[chat_id] = True
     pending_action[chat_id] = action
-    await send_text(chat_id, "Antes de empezar, ¿cómo querés que te llame? Podés escribir tu nombre o decirlo en un audio.")
+    await send_text(
+        chat_id,
+        "👋 PASO 1 DE 2: TU NOMBRE\n"
+        "Antes de mostrarte el menú, ¿cómo quieres que te llame? "
+        "Escribe solamente tu nombre o dilo en un audio. Después verás los botones para elegir una o varias voces.",
+    )
 
 
 async def start_duo(chat_id: int):
@@ -895,19 +916,17 @@ async def welcome(chat_id: int):
         await ask_preferred_name(chat_id)
         return
     text = (
-        f"Hola, {name}. Escribime o mandame una nota de voz y te respondo en texto y audio. "
-        "Elegí una voz, un dúo, un trío, un cuarteto o una historia con cuatro personajes. "
-        "En los modos grupales, las voces responden por turnos en un mismo audio. "
-        "Podés preguntar por clima actual indicando un lugar, o por deportes y resultados indicando deporte y fecha. "
-        "Con /musica seguido de un artista o canción buscás música y obtenés enlaces para escuchar o compartir. "
-        "Con /individual volvés al modo normal y con /nombre cambiás tu nombre. "
-        "Con /solo_texto apagás el audio y con /con_voz lo volvés a activar."
+        f"📋 MENÚ PRINCIPAL\nHola, {name}. Pulsa uno de estos botones para empezar. "
+        "En los modos dúo, trío y cuarteto, varias voces responden por turnos en un mismo audio. "
+        "Después de elegir el modo, pulsa las voces en los botones que aparecen.\n\n"
+        "También puedes escribirme o enviarme una nota de voz. Para volver a ver estos botones, "
+        "pulsa el botón Menú de Telegram junto al campo de mensaje o escribe /menu."
     )
     keyboard = [
-        [{"text": "Una voz", "callback_data": "mode:single"}],
-        [{"text": "Modo dúo", "callback_data": "mode:duo"}, {"text": "Modo trío", "callback_data": "mode:trio"}],
-        [{"text": "Cuarteto", "callback_data": "mode:quartet"}, {"text": "Historia", "callback_data": "mode:story"}],
-        [{"text": "Buscar música", "callback_data": "mode:music"}],
+        [{"text": "🎙️ Individual: elegir una voz", "callback_data": "mode:single"}],
+        [{"text": "👥 Dúo: 2 voces", "callback_data": "mode:duo"}, {"text": "👥 Trío: 3 voces", "callback_data": "mode:trio"}],
+        [{"text": "👥 Cuarteto: 4 voces", "callback_data": "mode:quartet"}, {"text": "📖 Historia: 4 personajes", "callback_data": "mode:story"}],
+        [{"text": "🎵 Buscar música", "callback_data": "mode:music"}],
     ]
     await send_text(chat_id, text, reply_markup={"inline_keyboard": keyboard})
     await send_voice(chat_id, f"Hola, {name}. Ya estoy listo. Elegí hasta cuatro voces o una historia para empezar.")
@@ -942,7 +961,7 @@ async def handle_message(message: dict):
             else:
                 await welcome(chat_id)
             return
-        if text.startswith("/start"):
+        if text.startswith("/start") or text.startswith("/menu"):
             await welcome(chat_id)
             return
         if text.startswith("/nombre"):
@@ -965,8 +984,9 @@ async def handle_message(message: dict):
             trio_enabled[chat_id] = False
             quartet_enabled[chat_id] = False
             story_enabled[chat_id] = False
-            await send_text(chat_id, f"Volviste al modo de una voz: {VOICES[selected_voice[chat_id]]}.")
+            await send_text(chat_id, f"Modo individual activado. Tu voz actual es {VOICES[selected_voice[chat_id]]}. Elige otra abajo si quieres cambiarla.")
             await send_voice(chat_id, "Modo individual activado. Seguimos con una sola voz.")
+            await show_voices(chat_id)
             return
         if text.startswith("/voces") or text.startswith("/voices") or text.startswith("/voz"):
             await show_voices(chat_id)
@@ -1061,6 +1081,10 @@ async def handle_callback(callback: dict):
     chat_id = callback["message"]["chat"]["id"]
     data = callback.get("data", "")
     callback_id = callback["id"]
+    if data == "mode:menu":
+        await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Menú principal")
+        await welcome(chat_id)
+        return
     if data == "mode:single":
         duo_enabled[chat_id] = False
         trio_enabled[chat_id] = False
@@ -1257,6 +1281,12 @@ async def process_update(update: dict):
 
 @app.on_event("startup")
 async def startup():
+    try:
+        await telegram("setMyCommands", commands=BOT_COMMANDS)
+        await telegram("setChatMenuButton", menu_button={"type": "commands"})
+        log.info("Telegram command menu configured with %s commands", len(BOT_COMMANDS))
+    except Exception:
+        log.exception("Could not configure Telegram command menu")
     if PUBLIC_URL:
         payload = {"url": f"{PUBLIC_URL}/webhook", "drop_pending_updates": True}
         if WEBHOOK_SECRET:
