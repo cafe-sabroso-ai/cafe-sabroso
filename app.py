@@ -193,6 +193,7 @@ async def complete(messages):
                 "temperature": 0.5,
                 "max_tokens": max_tokens,
                 "reasoning": {"effort": "low", "exclude": True},
+                "provider": {"require_parameters": True},
             },
         )
         if response.status_code >= 400:
