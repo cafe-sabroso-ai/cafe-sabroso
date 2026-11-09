@@ -24,11 +24,17 @@ TELEGRAM_FILE = f"https://api.telegram.org/file/bot{TELEGRAM_TOKEN}"
 
 VOICES = {
     "es-AR-TomasNeural": "Tomás - argentino",
+    "es-AR-ElenaNeural": "Elena - argentina",
     "es-ES-AlvaroNeural": "Álvaro - España",
+    "es-ES-ElviraNeural": "Elvira - España",
     "es-MX-JorgeNeural": "Jorge - México",
+    "es-MX-DaliaNeural": "Dalia - México",
     "es-US-AlonsoNeural": "Alonso - Estados Unidos",
+    "es-US-PalomaNeural": "Paloma - Estados Unidos",
     "es-CO-GonzaloNeural": "Gonzalo - Colombia",
+    "es-CO-SalomeNeural": "Salome - Colombia",
     "es-CL-LorenzoNeural": "Lorenzo - Chile",
+    "es-CL-CatalinaNeural": "Catalina - Chile",
 }
 DEFAULT_VOICE = "es-AR-TomasNeural"
 SYSTEM_PROMPT = (
@@ -159,7 +165,7 @@ async def show_voices(chat_id: int):
 async def welcome(chat_id: int):
     text = (
         "Listo, ya funciono. Escribime o mandame una nota de voz y te respondo en texto y audio. "
-        "Con /voces elegís entre varias voces masculinas en español. La inicial es Tomás, de Argentina. "
+        "Con /voces elegís entre doce voces masculinas y femeninas en español. La inicial es Tomás, de Argentina. "
         "Con /solo_texto apagás el audio y con /con_voz lo volvés a activar."
     )
     await send_text(chat_id, text)
