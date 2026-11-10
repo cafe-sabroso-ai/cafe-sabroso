@@ -325,7 +325,7 @@ MARCAS_MC = [
     ("¿Qué marca de autos tiene cuatro aros en el logo?", ["Audi", "BMW", "Mercedes"], 0),
     ("¿Qué marca de tecnología tiene una manzana mordida?", ["Apple", "Samsung", "Xiaomi"], 0),
     ("¿Qué marca deportiva usa el lema 'Just Do It'?", ["Nike", "Adidas", "Puma"], 0),
-    ("��Qué marca de yerba mate argentina viene en paquete verde?", ["Taragüi", "Rosamonte", "Playadito"], 0),
+    ("¿Qué marca de yerba mate argentina viene en paquete verde?", ["Taragüi", "Rosamonte", "Playadito"], 0),
     ("¿Qué marca de hamburguesas tiene un arco dorado?", ["McDonald's", "Burger King", "Wendy's"], 0),
     ("¿Qué marca de chocolate suizo es famosa por sus barritas con leche y miel?", ["Toblerone", "Lindt", "Nestlé"], 0),
     ("¿Qué marca de aviones es la más grande del mundo junto con Airbus?", ["Boeing", "Embraer", "Bombardier"], 0),
