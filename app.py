@@ -1289,9 +1289,11 @@ async def search_music(chat_id: int, query: str):
     await send_text(chat_id, summary + "\n\nPodés decirme otra canción o artista, o 'salir' para dejar la música.")
     total = len(tracks) + len(downloads)
     canciones = "una canción" if total == 1 else f"{total} canciones"
+    top = tracks[0] if tracks else downloads[0]
     await send_voice(
         chat_id,
-        f"Encontré {canciones} para {query}. Te paso la lista abajo: cada ficha "
+        f"Encontré {canciones} para {query}. El primero de la lista es "
+        f"{top['title']}, de {top['artist']}. Te paso la lista abajo: cada ficha "
         "tiene botones para escuchar la muestra, abrir Spotify o descargar el MP3. "
         "Podés pedirme otra canción cuando quieras.",
     )
