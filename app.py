@@ -40,12 +40,27 @@ ESPEAK_VOICES = {
     "espeak-es-419-f1": {"espeak_voice": "es-419+f1", "rate": 175},
     "espeak-es-419-f2": {"espeak_voice": "es-419+f2", "rate": 175},
 }
+# Free Piper neural voices synthesized locally in the container, keyed apart
+# from the Edge TTS IDs so synthesize can route them.
+PIPER_VOICES = {
+    "piper-es-ar-daniela": {"model": "es_AR-daniela-high"},
+    "piper-es-mx-claude": {"model": "es_MX-claude-high"},
+    "piper-es-mx-ald": {"model": "es_MX-ald-medium"},
+    "piper-es-es-davefx": {"model": "es_ES-davefx-medium"},
+    "piper-es-es-sharvard": {"model": "es_ES-sharvard-medium"},
+}
+PIPER_DIR = Path(os.environ.get("PIPER_DIR", "/app/piper-voices"))
 VOICES = {
     "espeak-es-419": "Voz Lector 1 - estilo NVDA",
     "espeak-es-419-m1": "Voz Lector 2 - estilo NVDA, masculina",
     "espeak-es-419-m3": "Voz Lector 3 - estilo NVDA, grave",
     "espeak-es-419-f1": "Voz Lector 4 - estilo NVDA, femenina",
     "espeak-es-419-f2": "Voz Lector 5 - estilo NVDA, aguda",
+    "piper-es-ar-daniela": "Daniela - argentina (Piper)",
+    "piper-es-mx-claude": "Claude - México (Piper)",
+    "piper-es-mx-ald": "Ald - México (Piper)",
+    "piper-es-es-davefx": "Davefx - España (Piper)",
+    "piper-es-es-sharvard": "Sharvard - España (Piper)",
     "es-AR-TomasNeural": "Tomás - argentino",
     "es-AR-ElenaNeural": "Elena - argentina",
     "es-MX-JorgeNeural": "Jorge - México",
@@ -222,6 +237,19 @@ async def synthesize(text: str, voice: str) -> bytes:
             _, stderr = await process.communicate(speech_text(text).encode())
             if process.returncode:
                 raise RuntimeError(f"espeak-ng failed: {stderr.decode()[:300]}")
+        elif voice in PIPER_VOICES:
+            model = PIPER_VOICES[voice]["model"]
+            process = await asyncio.create_subprocess_exec(
+                "python3", "-m", "piper",
+                "--model", str(PIPER_DIR / f"{model}.onnx"),
+                "--config", str(PIPER_DIR / f"{model}.onnx.json"),
+                "--output_file", str(source),
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+            )
+            _, stderr = await process.communicate(speech_text(text).encode())
+            if process.returncode:
+                raise RuntimeError(f"piper failed: {stderr.decode()[:300]}")
         else:
             await edge_tts.Communicate(speech_text(text), voice).save(str(source))
         process = await asyncio.create_subprocess_exec(
@@ -1227,6 +1255,27 @@ async def ask_preferred_name(chat_id: int, action="mode"):
 
 async def start_group_mode(chat_id: int, kind: str):
     group_selection[chat_id] = {"kind": kind, "voices": []}
+    own = selected_voice[chat_id]
+    await send_text(
+        chat_id,
+        f"¿Sumás tu voz actual ({voice_name(own)}) a la conversación? "
+        "Tu voz sería una de las que charlan entre ellas.",
+        reply_markup={"inline_keyboard": [[
+            {"text": f"🙋 Sí, sumar a {voice_name(own)}", "callback_data": f"gself:{kind}:yes"},
+            {"text": "🎙️ No, elijo todas", "callback_data": f"gself:{kind}:no"},
+        ]]},
+    )
+
+
+async def pick_group_voices(chat_id: int, kind: str, include_self: bool):
+    session = group_selection.get(chat_id) or {"kind": kind, "voices": []}
+    session["kind"] = kind
+    group_selection[chat_id] = session
+    if include_self:
+        own = selected_voice[chat_id]
+        if own not in session["voices"]:
+            session["voices"].insert(0, own)
+    voices = session["voices"]
     size = GROUP_MODE_SIZES[kind]
     numbers = {2: "dos", 3: "tres", 4: "cuatro", 5: "cinco", 6: "seis"}
     if kind == "story":
@@ -1238,9 +1287,14 @@ async def start_group_mode(chat_id: int, kind: str):
             f"Modo {GROUP_MODE_LABELS[kind]}: elige la primera de {numbers[size]} voces distintas. "
             "Conversarán entre ellas en un solo audio."
         )
+    if voices:
+        text = (
+            f"Modo {GROUP_MODE_LABELS[kind]}: tu voz ({voice_name(voices[0])}) ya participa. "
+            f"Elige la siguiente ({len(voices) + 1} de {size})."
+        )
     await send_text(
         chat_id, text,
-        reply_markup={"inline_keyboard": voice_keyboard(chat_id, f"gsel:{kind}")},
+        reply_markup={"inline_keyboard": voice_keyboard(chat_id, f"gsel:{kind}", exclude=voices)},
     )
 
 
@@ -1529,6 +1583,18 @@ async def handle_callback(callback: dict):
         kind, label = mode_kinds[data]
         await telegram("answerCallbackQuery", callback_query_id=callback_id, text=label)
         await start_group_mode(chat_id, kind)
+        return
+    if data.startswith("gself:"):
+        _, kind, answer = data.split(":", 2)
+        if kind not in GROUP_MODE_SIZES:
+            await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Empecemos de nuevo.")
+            return
+        include_self = answer == "yes"
+        await telegram(
+            "answerCallbackQuery", callback_query_id=callback_id,
+            text="Tu voz participa" if include_self else "Elegís todas las voces",
+        )
+        await pick_group_voices(chat_id, kind, include_self)
         return
     if data == "mode:music":
         await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Búsqueda de música")
