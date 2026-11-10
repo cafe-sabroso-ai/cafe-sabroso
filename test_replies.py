@@ -57,7 +57,7 @@ class ReplyTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(sent_voice), 2)
         for call in complete.await_args_list:
             prompt = call.args[0][0]["content"]
-            self.assertNotIn("jefe 22", prompt)
+            self.assertIn("jefe 22", prompt)
             self.assertNotIn("Empezá tu turno", prompt)
             self.assertIn("las pida", prompt)
 
@@ -129,6 +129,33 @@ class EspeakVoiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("es_AR-daniela-high.onnx", calls[0][calls[0].index("--model") + 1])
         self.assertEqual(calls[1][0], "ffmpeg")
         self.assertEqual(audio, b"RIFF")
+
+    async def test_piper_synth_unloads_cached_whisper_to_free_memory(self):
+        """On Render's 512 MB free plan, whisper must be dropped before piper runs."""
+        from pathlib import Path
+
+        class FakeProcess:
+            def __init__(self, args):
+                self.args = list(args)
+                self.returncode = 0
+
+            async def communicate(self, input=None):
+                Path(self.args[-1]).write_bytes(b"RIFF")
+                return (b"", b"")
+
+        async def fake_exec(*args, **kwargs):
+            proc = FakeProcess(args)
+            if "-m" in args and "piper" in args:
+                Path(args[args.index("--output_file") + 1]).write_bytes(b"RIFF")
+            return proc
+
+        app.whisper_model = object()
+        try:
+            with patch.object(app.asyncio, "create_subprocess_exec", fake_exec):
+                await app.synthesize("Hola.", "piper-es-mx-ald")
+            self.assertIsNone(app.whisper_model)
+        finally:
+            app.whisper_model = None
 
     def test_piper_voices_are_listed_after_the_screen_reader_voices(self):
         piper_keys = ["piper-es-ar-daniela", "piper-es-mx-claude", "piper-es-mx-ald",
