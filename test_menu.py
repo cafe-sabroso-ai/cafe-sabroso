@@ -60,5 +60,16 @@ class MenuTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(calls[2][0], "setWebhook")
 
 
+class GroupCapTests(unittest.TestCase):
+    def test_group_modes_go_up_to_ten_voices(self):
+        self.assertEqual(app.GROUP_MODE_SIZES["decet"], 10)
+        for kind in ("septet", "octet", "nonet", "decet"):
+            self.assertIn(kind, app.GROUP_MODE_LABELS)
+            self.assertIn(kind, app.GROUP_MODE_FLAGS)
+            self.assertIn(kind, app.DIALOGUE_KINDS)
+        commands = {entry["command"] for entry in app.BOT_COMMANDS}
+        self.assertTrue({"septeto", "octeto", "noneto", "deceto"} <= commands)
+
+
 if __name__ == "__main__":
     unittest.main()
