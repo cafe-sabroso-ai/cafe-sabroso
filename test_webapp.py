@@ -210,10 +210,12 @@ class CountryModeTests(unittest.IsolatedAsyncioTestCase):
         room = make_room("Ana", "Beto", mode="paises", capacity=2)
         player, narr = await self.spin_country(room)
         self.assertIn(room["country"], self.FAKE_COUNTRIES)
-        self.assertEqual(room["phase"], "spin_ready")
+        self.assertEqual(room["phase"], "question")
         self.assertIn(room["country"], narr.await_args_list[0][0][1])
-        turns = [m for m in player["ws"].messages if m["event"] == "your_turn"]
-        self.assertEqual(turns[-1]["kind"], "category")
+        question = next(m for m in player["ws"].messages if m["event"] == "question")
+        self.assertEqual(len(question["options"]),4)
+        self.assertFalse(question["clock_started"])
+        self.assertTrue(any("automáticamente" in call.args[1] for call in narr.await_args_list))
 
     async def test_correct_answer_keeps_the_player_and_levels_up(self):
         room = make_room("Ana", "Beto", mode="paises", capacity=2)
@@ -1299,7 +1301,8 @@ class QuestionDeliveryTests(unittest.IsolatedAsyncioTestCase):
              patch.object(webapp.asyncio, 'sleep', side_effect=sleep), \
              patch.object(webapp, 'narrate', new=AsyncMock()):
             await webapp.do_country_spin(room, room['players'][0])
-        self.assertEqual(room['phase'], 'spin_ready')
+        self.assertEqual(room['phase'], 'question')
+        self.assertIsNone(room['timer_task'])
 
     def test_client_restores_question_and_requires_ready_for_clock(self):
         self.assertIn('onQuestion(msg.question)', webapp.PAGE)
