@@ -334,15 +334,19 @@ async def ask_preferred_name(user: dict, user_key: str, action="mode"):
 async def start_group_mode(user: dict, user_key: str, kind: str):
     group_selection[user_key] = {"kind": kind, "voices": []}
     size = GROUP_MODE_SIZES[kind]
-    intros = {
-        "duo": "Modo dúo: elige la primera voz. Después elegirás la segunda y responderán por turnos en un solo audio.",
-        "trio": "Modo trío: elige la primera de tres voces. Responderán por turnos en un solo audio.",
-        "quartet": "Modo cuarteto: elige la primera de cuatro voces distintas. Responderán por turnos en un solo audio.",
-        "story": "Modo historia: elige la primera de cuatro voces distintas. Serán cuatro personajes que continúan una misma escena.",
-    }
+    numbers = {2: "dos", 3: "tres", 4: "cuatro", 5: "cinco", 6: "seis"}
+    if kind == "story":
+        intro = "Modo historia: elige la primera de cuatro voces distintas. Serán cuatro personajes que continúan una misma escena."
+    elif kind == "duo":
+        intro = "Modo dúo: elige la primera voz. Después elegirás la segunda y conversarán entre ellas en un solo audio."
+    else:
+        intro = (
+            f"Modo {GROUP_MODE_LABELS[kind]}: elige la primera de {numbers[size]} voces distintas. "
+            "Conversarán entre ellas en un solo audio."
+        )
     await send_text(
         user,
-        f"{intros[kind]}\nEscribe /voces para ver la lista y después /voz seguido del número "
+        f"{intro}\nEscribe /voces para ver la lista y después /voz seguido del número "
         f"(por ejemplo, /voz 3). Llevas 0 de {size}.",
     )
 
@@ -372,43 +376,15 @@ async def advance_group_selection(user: dict, user_key: str, voice: str):
 
 async def complete_group_selection(user: dict, user_key: str, kind: str, voices):
     voices = tuple(voices)
-    cafe.duo_enabled[user_key] = kind == "duo"
-    cafe.trio_enabled[user_key] = kind == "trio"
-    cafe.quartet_enabled[user_key] = kind == "quartet"
-    cafe.story_enabled[user_key] = kind == "story"
+    cafe.clear_group_modes(user_key)
+    flags, pairs = cafe.GROUP_MODE_FLAGS[kind]
+    flags[user_key] = True
+    pairs[user_key] = voices
     cafe.selected_voice[user_key] = voices[0]
     cafe.voice_enabled[user_key] = True
     names = [cafe.voice_name(item) for item in voices]
     name = get_preferred_name(user_key) or user.get("profile_name") or "amigo"
-    if kind == "duo":
-        cafe.duo_pairs[user_key] = voices
-        samples = [
-            f"Hola, {name}. Soy {names[0]} y vamos a responder juntos, por turnos.",
-            f"{name}, yo soy {names[1]}. Mandanos un mensaje o un audio para probar el modo dúo.",
-        ]
-    elif kind == "trio":
-        cafe.trio_pairs[user_key] = voices
-        samples = [
-            f"Hola, {name}. Soy {names[0]} y vamos a conversar entre los tres.",
-            f"{name}, yo soy {names[1]}. Voy a sumar otra mirada después de {names[0]}.",
-            f"Y yo soy {names[2]}, {name}. Cierro el turno con una idea práctica. Mandanos tu pregunta.",
-        ]
-    elif kind == "quartet":
-        cafe.quartet_pairs[user_key] = voices
-        samples = [
-            f"Hola, {name}. Soy {names[0]} y empiezo el cuarteto.",
-            f"{name}, yo soy {names[1]} y sigo después de {names[0]}.",
-            f"Soy {names[2]}, {name}. Voy a aportar otra mirada.",
-            f"Y yo soy {names[3]}, {name}. Cierro con una recomendación. Mandanos tu pregunta.",
-        ]
-    else:
-        cafe.story_pairs[user_key] = voices
-        samples = [
-            f"{name}, soy {names[0]}, el primer personaje de nuestra historia.",
-            f"Yo soy {names[1]}, {name}, y continuaré lo que empiece {names[0]}.",
-            f"Soy {names[2]}, {name}. Mi personaje traerá un giro a la escena.",
-            f"Y yo soy {names[3]}, {name}. Mi personaje cerrará la escena. Decinos el tema de la historia.",
-        ]
+    samples = cafe.group_samples(kind, names, name)
     combined = "\n\n".join(f"{speaker}: {sample}" for speaker, sample in zip(names, samples))
     await send_text(user, combined)
     await send_group_voice(user, list(zip(voices, samples)), user_key)
@@ -419,11 +395,14 @@ async def welcome(user: dict, user_key: str, fallback_name=None):
     name = get_preferred_name(user_key) or fallback_name or "amigo"
     text = (
         f"📋 MENÚ PRINCIPAL\nHola, {name}. Escribe uno de estos comandos para empezar. "
-        "En los modos dúo, trío y cuarteto, varias voces responden por turnos en un mismo audio.\n\n"
+        "En los modos dúo, trío, cuarteto, quinteto y sexteto, las voces conversan entre ellas "
+        "y se llaman por su nombre en un mismo audio.\n\n"
         "/voces - elegir una voz\n"
         "/duo - conversar con dos voces\n"
         "/trio - conversar con tres voces\n"
         "/cuarteto - conversar con cuatro voces\n"
+        "/quinteto - conversar con cinco voces\n"
+        "/sexteto - conversar con seis voces\n"
         "/historia - crear una historia con cuatro personajes\n"
         "/musica - buscar un artista o una canción\n"
         "/nombre - cambiar cómo te llamo\n"
@@ -433,7 +412,7 @@ async def welcome(user: dict, user_key: str, fallback_name=None):
         "También puedes escribirme o enviarme una nota de voz. Para volver a ver este menú, escribe /menu."
     )
     await send_text(user, text)
-    await send_voice(user, f"Hola, {name}. Ya estoy listo. Elige hasta cuatro voces o una historia para empezar.", user_key)
+    await send_voice(user, f"Hola, {name}. Ya estoy listo. Elige hasta seis voces o una historia para empezar.", user_key)
 
 
 def make_user(message: dict, contact: dict) -> dict:
@@ -486,15 +465,18 @@ async def handle_message(message: dict, contact: dict):
         if text.startswith("/cuarteto"):
             await start_group_mode(user, user_key, "quartet")
             return
+        if text.startswith("/quinteto"):
+            await start_group_mode(user, user_key, "quintet")
+            return
+        if text.startswith("/sexteto"):
+            await start_group_mode(user, user_key, "sextet")
+            return
         if text.startswith("/historia"):
             await start_group_mode(user, user_key, "story")
             return
         if text.startswith("/individual"):
             group_selection.pop(user_key, None)
-            cafe.duo_enabled[user_key] = False
-            cafe.trio_enabled[user_key] = False
-            cafe.quartet_enabled[user_key] = False
-            cafe.story_enabled[user_key] = False
+            cafe.clear_group_modes(user_key)
             await send_text(
                 user,
                 f"Modo individual activado. Tu voz actual es {VOICES[cafe.selected_voice[user_key]]}. "
@@ -514,10 +496,7 @@ async def handle_message(message: dict, contact: dict):
             voice, label = VOICE_ITEMS[index - 1]
             if await advance_group_selection(user, user_key, voice):
                 return
-            cafe.duo_enabled[user_key] = False
-            cafe.trio_enabled[user_key] = False
-            cafe.quartet_enabled[user_key] = False
-            cafe.story_enabled[user_key] = False
+            cafe.clear_group_modes(user_key)
             cafe.selected_voice[user_key] = voice
             cafe.voice_enabled[user_key] = True
             sample = f"Elegiste {label}. Así sueno ahora. Mandame un mensaje o un audio y seguimos probando."
@@ -586,33 +565,17 @@ async def handle_message(message: dict, contact: dict):
             await send_text(user, combined + source_text)
             await send_group_voice(user, list(zip(voices, replies)), user_key)
             return
-        if cafe.quartet_enabled[user_key]:
-            voices = cafe.quartet_pairs[user_key]
-            replies = await cafe.answer_quartet(user_key, user_text)
-            combined = "\n\n".join(
-                f"{cafe.voice_name(voice)}: {reply}" for voice, reply in zip(voices, replies)
-            )
-            await send_text(user, combined + source_text)
-            await send_group_voice(user, list(zip(voices, replies)), user_key)
-            return
-        if cafe.trio_enabled[user_key]:
-            voices = cafe.trio_pairs[user_key]
-            replies = await cafe.answer_trio(user_key, user_text)
-            combined = "\n\n".join(
-                f"{cafe.voice_name(voice)}: {reply}" for voice, reply in zip(voices, replies)
-            )
-            await send_text(user, combined + source_text)
-            await send_group_voice(user, list(zip(voices, replies)), user_key)
-            return
-        if cafe.duo_enabled[user_key]:
-            voices = cafe.duo_pairs[user_key]
-            replies = await cafe.answer_duo(user_key, user_text)
-            combined = "\n\n".join(
-                f"{cafe.voice_name(voice)}: {reply}" for voice, reply in zip(voices, replies)
-            )
-            await send_text(user, combined + source_text)
-            await send_group_voice(user, list(zip(voices, replies)), user_key)
-            return
+        for kind in cafe.DIALOGUE_KINDS:
+            enabled, pairs = cafe.GROUP_MODE_FLAGS[kind]
+            if enabled[user_key]:
+                voices = pairs[user_key]
+                replies = await cafe.answer_dialogue(user_key, user_text, voices)
+                combined = "\n\n".join(
+                    f"{cafe.voice_name(voice)}: {reply}" for voice, reply in zip(voices, replies)
+                )
+                await send_text(user, combined + source_text)
+                await send_group_voice(user, list(zip(voices, replies)), user_key)
+                return
         result = await cafe.answer(user_key, user_text)
         await send_text(user, result + source_text)
         await send_voice(user, result, user_key)
