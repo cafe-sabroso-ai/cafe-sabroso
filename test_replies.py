@@ -58,6 +58,7 @@ class ReplyTests(unittest.IsolatedAsyncioTestCase):
         for call in complete.await_args_list:
             prompt = call.args[0][0]["content"]
             self.assertIn("jefe 22", prompt)
+            self.assertIn("nombró a una voz", prompt)
             self.assertNotIn("Empezá tu turno", prompt)
             self.assertIn("las pida", prompt)
 
