@@ -460,7 +460,82 @@ async def answer_group(chat_id: int, user_text: str, voices):
 
 
 async def answer_duo(chat_id: int, user_text: str):
-    return await answer_group(chat_id, user_text, duo_pairs[chat_id])
+    """Two voices in a real dialogue: they address each other by name."""
+    voices = duo_pairs[chat_id]
+    history = histories[chat_id]
+    names = [voice_name(voice) for voice in voices]
+    prompt = (
+        SYSTEM_PROMPT
+        + f" En esta conversación participan dos voces: {names[0]} y {names[1]}. "
+        "Respondé al pedido como un diálogo entre las dos: cada una habla exactamente "
+        f"una vez, en ese orden. {names[0]} responde al pedido y se dirige a {names[1]} "
+        "por su nombre, comentándole algo o haciéndole una pregunta. "
+        f"{names[1]} le contesta a {names[0]}, también llamándola por su nombre, "
+        "y cierra la idea. Escribí cada turno en una línea que empiece con el nombre "
+        "de la voz y dos puntos, por ejemplo 'Nombre: texto'. Usá un máximo de 60 "
+        "palabras por turno. No agregues ningún otro rótulo. No anuncies que son IA. "
+        "No incluyas presentaciones salvo que la persona las pida; en ese caso, cada "
+        "voz se presenta con su nombre y una descripción breve."
+    )
+    messages = [{"role": "system", "content": prompt}]
+    messages.extend(history)
+    messages.append({"role": "user", "content": user_text})
+    replies = parse_group_turns(await complete(messages), names)
+    if replies is None:
+        return await answer_duo_sequential(chat_id, user_text, voices)
+    history.append({"role": "user", "content": user_text})
+    history.append({
+        "role": "assistant",
+        "content": "\n".join(f"{speaker}: {reply}" for speaker, reply in zip(names, replies)),
+    })
+    return replies
+
+
+async def answer_duo_sequential(chat_id: int, user_text: str, voices):
+    """Compatibility fallback when a model does not follow the dialogue format."""
+    history = histories[chat_id]
+    names = [voice_name(voice) for voice in voices]
+    replies = []
+    for index, speaker in enumerate(names):
+        other = names[1 - index]
+        if index == 0:
+            role = (
+                f"Respondé primero al pedido y dirigite a {other} por su nombre: "
+                "comentale algo o hacéle una pregunta."
+            )
+        else:
+            role = (
+                f"{names[0]} ya habló y te nombró. Respondéle a {names[0]} por su "
+                "nombre, contestando lo que te dijo, y cerrá la idea."
+            )
+        prompt = (
+            SYSTEM_PROMPT
+            + f" En esta conversación de dos voces sos {speaker} y la otra voz es {other}. {role} "
+            "Podés reaccionar naturalmente al comentario anterior. Escribí únicamente "
+            "el texto final hablado de tu turno, sin análisis ni rótulos. Usá un máximo "
+            "de 60 palabras. No anuncies que sos una IA. No te presentes salvo que la "
+            "persona pida presentaciones; en ese caso, presentate con tu nombre y una "
+            "descripción breve."
+        )
+        messages = [{"role": "system", "content": prompt}]
+        messages.extend(history)
+        previous = "\n\n".join(f"{speaker_name} respondió: {reply}" for speaker_name, reply in zip(names, replies))
+        content = user_text
+        if previous:
+            content += f"\n\n{previous}\n\nAhora respondé vos como {speaker}."
+        messages.append({"role": "user", "content": content})
+        reply = clean_turn(await complete(messages), names)
+        if not reply:
+            reply = clean_turn(await complete(messages), names)
+        if not reply:
+            reply = "Perdón, se me cortó la voz. ¿Me repetís?"
+        replies.append(reply)
+    history.append({"role": "user", "content": user_text})
+    history.append({
+        "role": "assistant",
+        "content": "\n".join(f"{speaker}: {reply}" for speaker, reply in zip(names, replies)),
+    })
+    return replies
 
 
 async def answer_trio(chat_id: int, user_text: str):
@@ -1350,8 +1425,8 @@ async def complete_group_selection(chat_id: int, callback: dict, kind: str, voic
     if kind == "duo":
         duo_pairs[chat_id] = voices
         samples = [
-            f"Hola, {name}. Soy {names[0]} y vamos a responder juntos, por turnos.",
-            f"{name}, yo soy {names[1]}. Mandanos un mensaje o un audio para probar el modo dúo.",
+            f"Hola, {name}. Soy {names[0]}. {names[1]}, ¿arrancamos charlando con {name}?",
+            f"¡Vamos, {names[0]}! {name}, yo soy {names[1]}. Mandanos un mensaje o un audio y charlamos entre los dos.",
         ]
     elif kind == "trio":
         trio_pairs[chat_id] = voices
