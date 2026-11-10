@@ -1306,3 +1306,34 @@ class QuestionDeliveryTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn('lastQuestion = null;', webapp.PAGE)
         self.assertIn('action:"question-ready"', webapp.PAGE)
         self.assertIn('Repetir pregunta', webapp.PAGE)
+
+class SeatReconnectTests(unittest.IsolatedAsyncioTestCase):
+    async def test_same_browser_key_reclaims_live_seat_and_pauses_clock(self):
+        from fastapi import WebSocketDisconnect
+        room = make_room('Ana', mode='solo_paises', capacity=1)
+        old = FakeWS();room['players'][0]['ws']=old
+        room['players'][0]['seat_key']='browser-test-key'
+        room['phase']='question'
+        room['question']={'id':1,'q':'¿Capital?','category':'cultura','options':['a','b','c','d'],
+                          'correct':1,'clock_started':True,'audio':'/audio/test.mp3','audio_ready':True}
+        ws=FakeWS()
+        async def receive():raise WebSocketDisconnect()
+        ws.receive_text=receive;webapp.rooms['SEAT']=room
+        try:
+            with patch.object(webapp,'narrate',new=AsyncMock()):
+                await webapp.sala_ws(ws,'SEAT',name='Ana',seat_key='browser-test-key')
+            welcome=next(m for m in ws.messages if m['event']=='welcome')
+            self.assertEqual(welcome['id'],1)
+            self.assertFalse(welcome['spectator'])
+            self.assertEqual(len(room['players']),1)
+            self.assertEqual(old.closed,4001)
+            self.assertFalse(room['question']['clock_started'])
+            self.assertTrue(any(m['event']=='question' for m in ws.messages))
+            self.assertTrue(any(m['event']=='say' and m.get('question_id')==1 for m in ws.messages))
+        finally:
+            for task in room.get('disconnect_tasks',{}).values():task.cancel()
+            webapp.rooms.pop('SEAT',None)
+
+    def test_browser_retains_room_specific_key(self):
+        self.assertIn('sessionStorage.getItem(seatStorage)', webapp.PAGE)
+        self.assertIn('&seat_key=', webapp.PAGE)
