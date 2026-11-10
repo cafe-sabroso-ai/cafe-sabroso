@@ -127,9 +127,9 @@ class GroupSelectionTests(unittest.IsolatedAsyncioTestCase):
              patch.object(app, "complete", fake_complete):
             await app.handle_message({"chat": {"id": CHAT}, "text": "saluden entre ustedes"})
         prompt = captured[0]
-        self.assertIn("diálogo", prompt)
+        self.assertIn("conversación", prompt)
+        self.assertIn("se dirige a Elena", prompt)
         self.assertIn("Tomás", prompt)
-        self.assertIn("Elena", prompt)
         self.assertIn("por su nombre", prompt)
 
     async def test_duo_sequential_fallback_keeps_dialogue(self):
@@ -156,7 +156,43 @@ class GroupSelectionTests(unittest.IsolatedAsyncioTestCase):
             await app.handle_message({"chat": {"id": CHAT}, "text": "hola"})
         self.assertEqual(len(calls), 3)
         self.assertIn("dirigite a Elena", calls[1])
-        self.assertIn("Respondéle a Tomás", calls[2])
+        self.assertIn("Ya hablaron Tomás", calls[2])
+        self.assertIn("por su nombre", calls[2])
+        self.assertIn("Cerrá la conversación", calls[2])
+
+    async def test_quintet_and_sextet_complete_with_all_voices(self):
+        await tap("mode:sextet")
+        picks = ("espeak-es-419", "es-AR-TomasNeural", "es-MX-DaliaNeural", "es-CL-CatalinaNeural", "es-BO-SofiaNeural")
+        for voice in picks:
+            await tap(f"gsel:sextet:{voice}")
+        _, texts, group_voice = await tap("gsel:sextet:es-UY-ValentinaNeural")
+        self.assertTrue(app.sextet_enabled[CHAT])
+        self.assertEqual(len(app.sextet_pairs[CHAT]), 6)
+        turns = group_voice.call_args[0][1]
+        self.assertEqual(len(turns), 6)
+        self.assertEqual(turns[0][0], "espeak-es-419")
+        self.assertIn("Voz Lector: ", texts[0])
+        self.assertIn("charlamos entre todos", texts[0])
+
+    async def test_trio_dialogue_prompt_includes_every_name(self):
+        app.trio_enabled[CHAT] = True
+        app.trio_pairs[CHAT] = ("es-AR-TomasNeural", "es-AR-ElenaNeural", "es-MX-JorgeNeural")
+        captured = []
+
+        async def fake_complete(messages):
+            captured.append(messages[0]["content"])
+            return "Tomás: Elena, ¿qué decís?\nElena: Jorge, vos primero.\nJorge: Gracias, Elena."
+
+        with patch.object(app, "telegram", new=AsyncMock()), \
+             patch.object(app, "send_text", new=AsyncMock()), \
+             patch.object(app, "send_group_voice", new=AsyncMock()), \
+             patch.object(app, "complete", fake_complete):
+            await app.handle_message({"chat": {"id": CHAT}, "text": "charlen entre ustedes"})
+        prompt = captured[0]
+        for name in ("Tomás", "Elena", "Jorge"):
+            self.assertIn(name, prompt)
+        self.assertIn("conversación", prompt)
+        self.assertIn("por su nombre", prompt)
 
     async def test_trio_and_quartet_complete_with_all_voices(self):
         await tap("mode:trio")
