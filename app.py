@@ -35,9 +35,17 @@ TELEGRAM_FILE = f"https://api.telegram.org/file/bot{TELEGRAM_TOKEN}"
 # keyed apart from the Edge TTS IDs so synthesize can route them.
 ESPEAK_VOICES = {
     "espeak-es-419": {"espeak_voice": "es-419", "rate": 175},
+    "espeak-es-419-m1": {"espeak_voice": "es-419+m1", "rate": 175},
+    "espeak-es-419-m3": {"espeak_voice": "es-419+m3", "rate": 175},
+    "espeak-es-419-f1": {"espeak_voice": "es-419+f1", "rate": 175},
+    "espeak-es-419-f2": {"espeak_voice": "es-419+f2", "rate": 175},
 }
 VOICES = {
     "espeak-es-419": "Voz Lector - estilo NVDA",
+    "espeak-es-419-m1": "Voz Lector Masculina - estilo NVDA",
+    "espeak-es-419-m3": "Voz Lector Grave - estilo NVDA",
+    "espeak-es-419-f1": "Voz Lector Femenina - estilo NVDA",
+    "espeak-es-419-f2": "Voz Lector Aguda - estilo NVDA",
     "es-AR-TomasNeural": "Tomás - argentino",
     "es-AR-ElenaNeural": "Elena - argentina",
     "es-MX-JorgeNeural": "Jorge - México",
