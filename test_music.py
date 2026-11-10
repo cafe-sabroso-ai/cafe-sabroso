@@ -68,7 +68,8 @@ class MusicFlowTests(unittest.IsolatedAsyncioTestCase):
         with patch.object(app, "apple_music_results", AsyncMock(return_value=tracks)), \
              patch.object(app, "licensed_music_downloads", AsyncMock(return_value=[download])), \
              patch.object(app, "send_archive_audio", AsyncMock(return_value=False)), \
-             patch.object(app, "send_text", capture):
+             patch.object(app, "send_text", capture), \
+             patch.object(app, "send_voice", AsyncMock()):
             await app.search_music(123, "Artista")
         self.assertEqual(len(sent), 5)
         for index in range(1, 4):
@@ -93,7 +94,8 @@ class MusicFlowTests(unittest.IsolatedAsyncioTestCase):
         with patch.object(app, "apple_music_results", AsyncMock(return_value=[])), \
              patch.object(app, "licensed_music_downloads", AsyncMock(return_value=[download])), \
              patch.object(app, "send_archive_audio", AsyncMock(return_value=True)) as direct, \
-             patch.object(app, "send_text", capture):
+             patch.object(app, "send_text", capture), \
+             patch.object(app, "send_voice", AsyncMock()):
             await app.search_music(123, "Artista")
         direct.assert_awaited_once_with(123, download)
         self.assertIn("archivo directo", sent[1][0])
@@ -110,7 +112,8 @@ class MusicFlowTests(unittest.IsolatedAsyncioTestCase):
             sent.append((text, kwargs))
         with patch.object(app, "apple_music_results", AsyncMock(side_effect=RuntimeError("down"))), \
              patch.object(app, "licensed_music_downloads", AsyncMock(return_value=[])), \
-             patch.object(app, "send_text", capture):
+             patch.object(app, "send_text", capture), \
+             patch.object(app, "send_voice", AsyncMock()):
             await app.search_music(123, "Artista")
         self.assertIn("No pude consultar", sent[0][0])
         self.assertEqual(sent[0][1]["reply_markup"]["inline_keyboard"][0][0]["text"], "Buscar en Spotify")
@@ -198,3 +201,43 @@ class DirectDownloadTests(unittest.IsolatedAsyncioTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MusicVoiceStatusTests(unittest.IsolatedAsyncioTestCase):
+    async def test_found_status_is_spoken(self):
+        tracks = [
+            {"title": "Tema 1", "artist": "Artista", "album": "", "url": "https://music.apple.com/ar/song/1", "preview": None},
+            {"title": "Tema 2", "artist": "Artista", "album": "", "url": "https://music.apple.com/ar/song/2", "preview": None},
+        ]
+        with patch.object(app, "apple_music_results", AsyncMock(return_value=tracks)), \
+             patch.object(app, "licensed_music_downloads", AsyncMock(return_value=[])), \
+             patch.object(app, "send_text", AsyncMock()), \
+             patch.object(app, "send_voice", AsyncMock()) as voice:
+            await app.search_music(123, "Artista")
+        spoken = voice.await_args[0][1]
+        self.assertIn("2 canciones", spoken)
+        self.assertIn("Artista", spoken)
+
+    async def test_not_found_status_is_spoken(self):
+        with patch.object(app, "apple_music_results", AsyncMock(return_value=[])), \
+             patch.object(app, "licensed_music_downloads", AsyncMock(return_value=[])), \
+             patch.object(app, "send_text", AsyncMock()), \
+             patch.object(app, "send_voice", AsyncMock()) as voice:
+            await app.search_music(123, "xyz inexistente")
+        spoken = voice.await_args[0][1]
+        self.assertIn("No encontré nada", spoken)
+        self.assertIn("xyz inexistente", spoken)
+
+    async def test_catalog_failure_status_is_spoken(self):
+        with patch.object(app, "apple_music_results", AsyncMock(side_effect=RuntimeError("down"))), \
+             patch.object(app, "licensed_music_downloads", AsyncMock(return_value=[])), \
+             patch.object(app, "send_text", AsyncMock()), \
+             patch.object(app, "send_voice", AsyncMock()) as voice:
+            await app.search_music(123, "Artista")
+        self.assertIn("No pude consultar el catálogo", voice.await_args[0][1])
+
+    async def test_empty_query_prompts_by_voice(self):
+        with patch.object(app, "send_text", AsyncMock()), \
+             patch.object(app, "send_voice", AsyncMock()) as voice:
+            await app.search_music(123, "")
+        self.assertIn("artista o la canción", voice.await_args[0][1])
