@@ -69,5 +69,51 @@ class ReplyTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(app.parse_group_turns("Tomás: Solo una respuesta.", ["Tomás", "Elena"]))
 
 
+class EspeakVoiceTests(unittest.IsolatedAsyncioTestCase):
+    async def test_screen_reader_voice_routes_to_espeak_ng(self):
+        """The Voz Lector voice synthesizes locally with espeak-ng, not Edge TTS."""
+        from pathlib import Path
+        calls = []
+
+        class FakeProcess:
+            def __init__(self, args):
+                self.args = args
+                self.returncode = 0
+
+            async def communicate(self, input=None):
+                Path(self.args[-1]).write_bytes(b"RIFF")
+                return (b"", b"")
+
+        async def fake_exec(*args, **kwargs):
+            calls.append(args)
+            return FakeProcess(args)
+
+        with patch.object(app.asyncio, "create_subprocess_exec", fake_exec), \
+             patch.object(app.edge_tts, "Communicate", side_effect=AssertionError("must not use Edge TTS")):
+            audio = await app.synthesize("Hola Elena, ¿cómo estás?", "espeak-es-419")
+        self.assertEqual(calls[0][0], "espeak-ng")
+        self.assertIn("es-419", calls[0])
+        self.assertEqual(calls[1][0], "ffmpeg")
+        self.assertEqual(audio, b"RIFF")
+
+    def test_screen_reader_voice_is_listed_first_with_name(self):
+        self.assertEqual(app.VOICE_ITEMS[0][0] if hasattr(app, "VOICE_ITEMS") else list(app.VOICES)[0], "espeak-es-419")
+        self.assertEqual(app.voice_name("espeak-es-419"), "Voz Lector")
+
+    def test_all_screen_reader_variants_are_listed_first(self):
+        expected = ["espeak-es-419", "espeak-es-419-m1", "espeak-es-419-m3", "espeak-es-419-f1", "espeak-es-419-f2"]
+        self.assertEqual(list(app.VOICES)[:5], expected)
+        for key in expected:
+            self.assertIn(key, app.ESPEAK_VOICES)
+            self.assertTrue(app.voice_name(key).startswith("Voz Lector"))
+
+    def test_dialogue_samples_name_each_other(self):
+        samples = app.group_samples("trio", ["Tomás", "Elena", "Jorge"], "David")
+        self.assertEqual(len(samples), 3)
+        self.assertIn("Elena", samples[0])
+        self.assertIn("Tomás", samples[1])
+        self.assertIn("Jorge", samples[2])
+
+
 if __name__ == "__main__":
     unittest.main()
