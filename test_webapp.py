@@ -37,6 +37,8 @@ def make_room(*names, mode="sala", capacity=None):
         "voice": "es-AR-ElenaNeural", "question_voice": "es-UY-ValentinaNeural",
         "game": ("paises" if mode in ("solo_paises", "paises")
                  else "ahorcado" if mode in ("solo_ahorcado", "ahorcado")
+                 else "bomba" if mode in ("solo_bomba", "bomba")
+                 else "misterio" if mode in ("solo_misterio", "misterio")
                  else None if mode == "sala"
                  else "categorias"),
         "country": None, "country_done": set(), "countries_won": {},
@@ -44,6 +46,11 @@ def make_room(*names, mode="sala", capacity=None):
                      "guessed": set(), "wrong": set(), "attempts": 0},
         "cat_progress": {},
         "chat_voices": {},
+        "bomba": {"lives": {}, "prompt": None, "keywords": [], "said": set(),
+                  "used": set(), "fuse": 0},
+        "misterio": {"lives": {}, "solved": {}, "used": set(), "case": None,
+                     "case_idx": -1},
+        "teams": None,
     }
     for key in webapp.MC_USED_KEYS.values():
         room[key] = set()
@@ -117,7 +124,7 @@ class RoomTests(unittest.TestCase):
         self.assertEqual(beto["score"], 3)
 
     def test_capacity_is_capped(self):
-        self.assertEqual(webapp.MAX_PLAYERS, 20)
+        self.assertEqual(webapp.MAX_PLAYERS, 100)
 
 
 class SpinTests(unittest.IsolatedAsyncioTestCase):
@@ -215,12 +222,13 @@ class CountryModeTests(unittest.IsolatedAsyncioTestCase):
         with patch.object(webapp, "narrate", new=AsyncMock()) as narr, \
              patch.object(webapp, "begin_turn", new=AsyncMock()):
             await webapp.ask_question(room, player, "cultura", f", por {room['country']}")
-            await webapp.resolve_answer(room, player, room["question"]["correct"])
+            for _ in range(5):
+                await webapp.resolve_answer(room, player, room["question"]["correct"])
         self.assertIn("cultura", room["country_done"])
         self.assertEqual(webapp.current_player(room)["name"], player["name"])
         self.assertIn("Pasó al nivel 2", narr.await_args_list[-1][0][1])
 
-    async def test_wrong_answer_passes_the_turn(self):
+    async def test_wrong_answer_loses_life_but_keeps_category(self):
         room = make_room("Ana", "Beto", mode="paises", capacity=2)
         await self.spin_country(room)
         player = webapp.current_player(room)
@@ -228,9 +236,10 @@ class CountryModeTests(unittest.IsolatedAsyncioTestCase):
              patch.object(webapp, "begin_turn", new=AsyncMock()):
             await webapp.ask_question(room, player, "cultura")
             await webapp.resolve_answer(room, player, (room["question"]["correct"] + 1) % 3)
-        self.assertEqual(webapp.current_player(room)["name"], "Beto")
+        self.assertEqual(webapp.current_player(room)["name"], "Ana")
+        self.assertEqual(webapp.quiz_lives(room, player), 3)
         texts = [c[0][1] for c in narr.await_args_list]
-        self.assertTrue(any("Perdió Ana" in t and "ahora gira beto" in t.lower() for t in texts))
+        self.assertTrue(any("Perdiste una vida, te quedan tres" in t for t in texts))
 
     async def test_completing_all_categories_wins_the_country(self):
         room = make_room("Ana", mode="solo_paises", capacity=1)
@@ -241,7 +250,8 @@ class CountryModeTests(unittest.IsolatedAsyncioTestCase):
         with patch.object(webapp, "narrate", new=AsyncMock()) as narr, \
              patch.object(webapp, "begin_turn", new=AsyncMock()):
             await webapp.ask_question(room, player, "cultura")
-            await webapp.resolve_answer(room, player, room["question"]["correct"])
+            for _ in range(5):
+                await webapp.resolve_answer(room, player, room["question"]["correct"])
         self.assertEqual(room["countries_won"].get(player["id"]), 1)
         self.assertIsNone(room["country"])
         texts = [c[0][1] for c in narr.await_args_list]
@@ -257,7 +267,8 @@ class CountryModeTests(unittest.IsolatedAsyncioTestCase):
              patch.object(webapp, "start_match", new=AsyncMock()), \
              patch("asyncio.sleep", new=AsyncMock()):
             await webapp.ask_question(room, player, "cultura")
-            await webapp.resolve_answer(room, player, room["question"]["correct"])
+            for _ in range(5):
+                await webapp.resolve_answer(room, player, room["question"]["correct"])
         self.assertEqual(room["phase"], "gameover")
         texts = [c[0][1] for c in narr.await_args_list]
         self.assertTrue(any("Ganó Ana" in t and "Le ganó a Beto" in t for t in texts))
@@ -336,12 +347,12 @@ class AhorcadoTests(unittest.IsolatedAsyncioTestCase):
 
 
 class CategoryLevelTests(unittest.IsolatedAsyncioTestCase):
-    async def test_three_correct_answers_pass_the_category(self):
+    async def test_five_correct_answers_pass_the_category(self):
         room = make_room("Ana", mode="solo", capacity=1)
         player = room["players"][0]
         with patch.object(webapp, "narrate", new=AsyncMock()) as narr, \
              patch.object(webapp, "turn_clock", new=fake_clock):
-            for _ in range(3):
+            for _ in range(5):
                 room["phase"] = "spin_ready"
                 room["turn"] = 0
                 await webapp.ask_question(room, player, "cultura")
@@ -352,7 +363,7 @@ class CategoryLevelTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_passed_categories_leave_the_wheel_pool(self):
         room = make_room("Ana", mode="solo", capacity=1)
-        room["cat_progress"] = {1: {"cultura": 3, "historia": 1}}
+        room["cat_progress"] = {1: {"cultura": 5, "historia": 1}}
         pools = []
         real_choice = webapp.random.choice
 
@@ -371,12 +382,13 @@ class CategoryLevelTests(unittest.IsolatedAsyncioTestCase):
     async def test_passing_three_categories_wins_the_game(self):
         room = make_room("Ana", "Beto", mode="solo", capacity=2)
         player = room["players"][0]
-        room["cat_progress"] = {1: {"cultura": 3, "historia": 3, "ciencia": 2}}
+        room["cat_progress"] = {1: {"cultura": 5, "historia": 5}}
         with patch.object(webapp, "narrate", new=AsyncMock()) as narr, \
              patch.object(webapp, "start_match", new=AsyncMock()), \
              patch("asyncio.sleep", new=AsyncMock()):
             await webapp.ask_question(room, player, "ciencia")
-            await webapp.resolve_answer(room, player, room["question"]["correct"])
+            for _ in range(5):
+                await webapp.resolve_answer(room, player, room["question"]["correct"])
         self.assertEqual(room["phase"], "gameover")
         self.assertTrue(any("Ganó Ana" in c[0][1] for c in narr.await_args_list))
 
@@ -405,7 +417,7 @@ class QuestionTests(unittest.IsolatedAsyncioTestCase):
         player = await self.ask(room)
         qs = [m for m in room["players"][1]["ws"].messages if m["event"] == "question"]
         self.assertEqual(len(qs), 1)
-        self.assertEqual(len(qs[0]["options"]), 3)
+        self.assertEqual(len(qs[0]["options"]), 4)
         self.assertEqual(qs[0]["player"], player["id"])
         self.assertEqual(room["phase"], "question")
 
@@ -415,14 +427,14 @@ class QuestionTests(unittest.IsolatedAsyncioTestCase):
         two = webapp.pick_mc(room, "cultura")
         self.assertNotEqual(one[0], two[0])
 
-    async def test_correct_answer_scores_and_passes_the_turn(self):
+    async def test_correct_answer_keeps_run_and_turn(self):
         room = make_room("Ana", "Beto")
         player = await self.ask(room)
         with patch.object(webapp, "narrate", new=AsyncMock()), \
              patch.object(webapp, "turn_clock", new=fake_clock):
             await webapp.resolve_answer(room, player, room["question"]["correct"])
-        self.assertEqual(room["cat_progress"][player["id"]]["cultura"], 1)
-        self.assertEqual(webapp.current_player(room)["name"], "Beto")
+        self.assertEqual(room["quiz_run"]["correct"], 1)
+        self.assertEqual(webapp.current_player(room)["name"], "Ana")
 
     async def test_wrong_answer_says_the_right_one_and_scores_nothing(self):
         room = make_room("Ana", "Beto")
@@ -438,7 +450,7 @@ class QuestionTests(unittest.IsolatedAsyncioTestCase):
 
 
 def question_right_letter_and_text(room):
-    letters = ["A", "B", "C"]
+    letters = ["A", "B", "C", "D"]
     q = room["question"]
     return f"Es la {letters[q['correct']]}: {q['options'][q['correct']]}."
 
@@ -471,18 +483,34 @@ class ScoreTests(unittest.IsolatedAsyncioTestCase):
 
 
 class TimerTests(unittest.IsolatedAsyncioTestCase):
-    async def test_timeout_warns_twice_and_passes_the_turn(self):
+    async def test_frequent_chatter_sleeps_six_seconds_and_timeout_passes(self):
         room = make_room("Ana", "Beto")
         room["phase"] = "spin_ready"
         with patch.object(webapp, "narrate", new=AsyncMock()) as narr, \
              patch.object(webapp, "begin_turn", new=AsyncMock()), \
-             patch("asyncio.sleep", new=AsyncMock()):
+             patch.object(webapp, "turn_chatter", new=AsyncMock()), \
+             patch("asyncio.sleep", new=AsyncMock()) as sleep:
             await webapp.turn_clock(room, 1)
         self.assertEqual(room["turn"], 1)
-        texts = [c[0][1] for c in narr.await_args_list]
-        self.assertTrue(any("30 segundos" in t for t in texts))
-        self.assertTrue(any("10 segundos" in t for t in texts))
-        self.assertTrue(any("Se acabó el tiempo" in t for t in texts))
+        self.assertEqual(sleep.await_count, 10)
+        self.assertTrue(all(c.args == (6,) for c in sleep.await_args_list))
+        self.assertTrue(any("Se acabó el tiempo" in c.args[1] for c in narr.await_args_list))
+
+    async def test_chatter_suppressed_while_capturing(self):
+        room = make_room("Ana")
+        room["mic_until"] = asyncio.get_running_loop().time() + 15
+        with patch.object(webapp, "broadcast", new=AsyncMock()) as out:
+            await webapp.turn_chatter(room, room["players"][0])
+        out.assert_not_awaited()
+
+    def test_four_options_and_d_match(self):
+        for bank in webapp.MC_BANKS.values():
+            for q, options, correct in bank:
+                self.assertEqual(len(options), 4, q)
+                self.assertEqual(len(set(options)), 4, q)
+                self.assertIn(correct, range(4))
+        for phrase in ("D", "la D", "opción d", "la cuarta"):
+            self.assertEqual(webapp.match_option(phrase, ["uno", "dos", "tres", "cuatro"]), 3)
 
 
 class JoinTests(unittest.IsolatedAsyncioTestCase):
@@ -523,13 +551,16 @@ class JoinTests(unittest.IsolatedAsyncioTestCase):
         finally:
             webapp.rooms.pop("TEST", None)
 
-    async def test_a_full_sala_turns_people_away(self):
+    async def test_a_full_sala_joins_overflow_as_spectator(self):
         room = make_room("Ana", "Beto", capacity=2)
         room["phase"] = "spin_ready"
         try:
             ws, _ = await self.join(room, name="Pepe")
-            self.assertEqual(ws.closed, 4009)
-            self.assertIn("llena", says(ws)[0]["text"])
+            self.assertIsNone(ws.closed)
+            welcome = next(m for m in ws.messages if m["event"] == "welcome")
+            self.assertTrue(welcome["spectator"])
+            self.assertTrue(room["players"][-1]["spectator"])
+            self.assertIsNot(webapp.current_player(room), room["players"][-1])
         finally:
             webapp.rooms.pop("TEST", None)
 
@@ -677,3 +708,523 @@ class PageTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BundleTests(unittest.IsolatedAsyncioTestCase):
+    async def test_descripcion_speaks_game_summary_to_the_asker(self):
+        from fastapi import WebSocketDisconnect
+        room = make_room("Ana", capacity=5)
+        room["code"] = "TEST"
+        webapp.rooms["TEST"] = room
+        try:
+            ws = FakeWS()
+            sent = [False]
+
+            async def receive():
+                if not sent[0]:
+                    sent[0] = True
+                    return json.dumps({"action": "descripcion", "game": "ahorcado"})
+                raise WebSocketDisconnect()
+
+            ws.receive_text = receive
+            with patch.object(webapp, "narrate", new=AsyncMock()) as narr, \
+                 patch.object(webapp, "say", new=AsyncMock()), \
+                 patch.object(webapp, "turn_clock", new=fake_clock):
+                await webapp.sala_ws(ws, "TEST", name="Pepe")
+            calls = [c for c in narr.await_args_list if "ahorcado" in c[0][1].lower()]
+            self.assertTrue(calls, narr.await_args_list)
+            self.assertTrue(all(c.kwargs.get("to") is not None for c in calls))
+        finally:
+            webapp.rooms.pop("TEST", None)
+
+    def test_empty_transcription_is_narrated_not_silent(self):
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+        app = FastAPI()
+        app.include_router(webapp.router)
+        room = make_room("Ana", capacity=5)
+        room["code"] = "TESTV"
+        room["phase"] = "question"
+        webapp.rooms["TESTV"] = room
+        try:
+            with patch.object(webapp, "transcribe_clip", new=AsyncMock(return_value="")), \
+                 patch.object(webapp, "narrate", new=AsyncMock()) as narr, \
+                 patch.object(webapp, "say", new=AsyncMock()):
+                res = TestClient(app).post(
+                    "/amor-con-aroma-a-cafe/api/voz-respuesta/TESTV?sender=" + str(room["players"][0]["id"]),
+                    content=b"RIFF" + b"\x00" * 100)
+            self.assertEqual(res.status_code, 200)
+            self.assertEqual(res.json(), {"heard": False})
+            self.assertTrue(any("No te escuché" in c[0][1] for c in narr.await_args_list),
+                            narr.await_args_list)
+        finally:
+            webapp.rooms.pop("TESTV", None)
+
+
+class VozTextoTests(unittest.IsolatedAsyncioTestCase):
+    async def drive(self, room, text, narr, res):
+        from fastapi import WebSocketDisconnect
+        ws = FakeWS()
+        sent = [False]
+
+        async def receive():
+            if not sent[0]:
+                sent[0] = True
+                room["phase"] = "question"
+                room["question"] = {"category": "Capitales", "q": "¿Capital de Francia?",
+                                    "options": ["Londres", "París", "Madrid"], "correct": 1}
+                return json.dumps({"action": "voz-texto", "text": text})
+            raise WebSocketDisconnect()
+
+        ws.receive_text = receive
+        room["code"] = "TESTV"
+        webapp.rooms["TESTV"] = room
+        try:
+            with patch.object(webapp, "resolve_answer", res), \
+                 patch.object(webapp, "narrate", narr), \
+                 patch.object(webapp, "say", new=AsyncMock()), \
+                 patch.object(webapp, "turn_clock", new=fake_clock):
+                await webapp.sala_ws(ws, "TESTV", name="Ana")
+        finally:
+            webapp.rooms.pop("TESTV", None)
+
+    async def test_ruleta_text_answer_is_matched_to_an_option(self):
+        room = make_room(capacity=5)
+        narr, res = AsyncMock(), AsyncMock()
+        await self.drive(room, "París", narr, res)
+        self.assertEqual(res.await_args_list[0][0][2], 1)
+
+    async def test_unmatched_text_gets_a_spoken_retry_not_silence(self):
+        room = make_room(capacity=5)
+        narr, res = AsyncMock(), AsyncMock()
+        await self.drive(room, "no lo sé", narr, res)
+        res.assert_not_awaited()
+        self.assertTrue(any("No te entendí" in c[0][1] for c in narr.await_args_list),
+                        narr.await_args_list)
+
+
+class BombaTests(unittest.IsolatedAsyncioTestCase):
+    def make_bomba_room(self, *names):
+        room = make_room(*names, mode="bomba" if len(names) > 1 else "solo_bomba",
+                         capacity=max(1, len(names)))
+        webapp.rooms["BBBB"] = room
+        self.addCleanup(webapp.rooms.pop, "BBBB", None)
+        return room
+
+    async def start(self, room):
+        with patch.object(webapp, "narrate", new=AsyncMock()), \
+             patch.object(webapp, "bb_fuse_clock", new=fake_clock):
+            await webapp.start_match(room)
+        return room["bomba"]
+
+    async def test_match_opens_with_prompt_and_lives(self):
+        room = self.make_bomba_room("Ana", "Beto")
+        bb = await self.start(room)
+        self.assertEqual(room["phase"], "bomba")
+        self.assertIsNotNone(bb["prompt"])
+        self.assertEqual(bb["lives"], {1: webapp.BOMBA_LIVES, 2: webapp.BOMBA_LIVES})
+        self.assertTrue(0 < bb["fuse"] <= webapp.BOMBA_FUSE_MAX)
+
+    async def test_valid_answer_passes_the_bomb(self):
+        room = self.make_bomba_room("Ana", "Beto")
+        bb = await self.start(room)
+        with patch.object(webapp, "narrate", new=AsyncMock()), \
+             patch.object(webapp, "bb_fuse_clock", new=fake_clock), \
+             patch.object(webapp, "judge_bomba", new=AsyncMock(return_value=True)):
+            await webapp.bb_answer(room, room["players"][0], "cuchara")
+        self.assertEqual(webapp.current_player(room)["name"], "Beto")
+        self.assertIn("cuchara", bb["said"])
+
+    async def test_invalid_answer_explodes_and_costs_a_life(self):
+        room = self.make_bomba_room("Ana", "Beto")
+        bb = await self.start(room)
+        with patch.object(webapp, "narrate", new=AsyncMock()), \
+             patch.object(webapp, "bb_fuse_clock", new=fake_clock), \
+             patch.object(webapp, "judge_bomba", new=AsyncMock(return_value=False)):
+            await webapp.bb_answer(room, room["players"][0], "xyz no vale")
+        self.assertEqual(bb["lives"][1], webapp.BOMBA_LIVES - 1)
+        self.assertEqual(room["scores"][1], webapp.BOMBA_LIVES - 1)
+
+    async def test_repeated_answer_is_rejected_without_explosion(self):
+        room = self.make_bomba_room("Ana", "Beto")
+        bb = await self.start(room)
+        bb["said"].add("cuchara")
+        with patch.object(webapp, "narrate", new=AsyncMock()) as narr, \
+             patch.object(webapp, "bb_fuse_clock", new=fake_clock):
+            await webapp.bb_answer(room, room["players"][0], "¡Cuchara!")
+        self.assertIn("ya la dijeron", narr.await_args_list[-1][0][1])
+        self.assertEqual(bb["lives"][1], webapp.BOMBA_LIVES)
+        self.assertEqual(webapp.current_player(room)["name"], "Ana")
+
+    async def test_third_explosion_eliminates_and_last_standing_wins(self):
+        room = self.make_bomba_room("Ana", "Beto")
+        bb = await self.start(room)
+        with patch.object(webapp, "narrate", new=AsyncMock()), \
+             patch.object(webapp, "bb_fuse_clock", new=fake_clock), \
+             patch.object(webapp, "start_match", new=AsyncMock()), \
+             patch("asyncio.sleep", new=AsyncMock()), \
+             patch.object(webapp, "judge_bomba", new=AsyncMock(return_value=False)):
+            for _ in range(webapp.BOMBA_LIVES):
+                # Ana holds the bomb each time: after an explosion the turn passes,
+                # so hand it back to her before the next invalid answer.
+                room["turn"] = 0
+                await webapp.bb_answer(room, room["players"][0], "no vale nada")
+        self.assertTrue(room["players"][0].get("out"))
+        self.assertEqual(room["phase"], "gameover")
+
+    async def test_not_the_holder_cannot_answer(self):
+        room = self.make_bomba_room("Ana", "Beto")
+        bb = await self.start(room)
+        with patch.object(webapp, "narrate", new=AsyncMock()) as narr, \
+             patch.object(webapp, "judge_bomba", new=AsyncMock(return_value=True)):
+            await webapp.bb_answer(room, room["players"][1], "cuchara")
+        narr.assert_not_called()
+        self.assertEqual(bb["said"], set())
+
+class MisterioTests(unittest.IsolatedAsyncioTestCase):
+    def make_misterio_room(self, *names):
+        room = make_room(*names, mode="misterio" if len(names) > 1 else "solo_misterio",
+                         capacity=max(1, len(names)))
+        webapp.rooms["MMMM"] = room
+        self.addCleanup(webapp.rooms.pop, "MMMM", None)
+        return room
+
+    async def start(self, room):
+        with patch.object(webapp, "narrate", new=AsyncMock()), \
+             patch.object(webapp, "mst_case_clock", new=fake_clock):
+            await webapp.start_match(room)
+        return room["misterio"]
+
+    async def test_match_opens_with_a_case_and_lives(self):
+        room = self.make_misterio_room("Ana", "Beto")
+        mst = await self.start(room)
+        self.assertEqual(room["phase"], "misterio")
+        self.assertIsNotNone(mst["case"])
+        self.assertEqual(mst["lives"], {1: webapp.MISTERIO_LIVES, 2: webapp.MISTERIO_LIVES})
+
+    async def test_keyword_hit_solves_without_groq(self):
+        room = self.make_misterio_room("Ana", "Beto")
+        mst = await self.start(room)
+        hit = mst["case"][3][0]
+        with patch.object(webapp, "narrate", new=AsyncMock()) as narr, \
+             patch.object(webapp, "mst_case_clock", new=fake_clock):
+            await webapp.mst_guess(room, room["players"][0], f"es lo del {hit}")
+        self.assertEqual(mst["solved"][1], 1)
+        self.assertEqual(room["scores"][1], 1)
+        self.assertTrue(any("resolvió el misterio" in c[0][1]
+                            for c in narr.await_args_list))
+
+    async def test_cerca_costs_no_life(self):
+        room = self.make_misterio_room("Ana", "Beto")
+        mst = await self.start(room)
+        with patch.object(webapp, "narrate", new=AsyncMock()) as narr, \
+             patch.object(webapp, "judge_misterio", new=AsyncMock(return_value="cerca")):
+            await webapp.mst_guess(room, room["players"][0], "una teoría")
+        self.assertIn("está cerca", narr.await_args_list[-1][0][1])
+        self.assertEqual(mst["lives"][1], webapp.MISTERIO_LIVES)
+
+    async def test_lejos_costs_a_life_and_three_strikes_eliminate(self):
+        room = self.make_misterio_room("Ana", "Beto")
+        mst = await self.start(room)
+        with patch.object(webapp, "narrate", new=AsyncMock()), \
+             patch.object(webapp, "start_match", new=AsyncMock()), \
+             patch("asyncio.sleep", new=AsyncMock()), \
+             patch.object(webapp, "judge_misterio", new=AsyncMock(return_value="lejos")):
+            for _ in range(webapp.MISTERIO_LIVES):
+                await webapp.mst_guess(room, room["players"][0], "una teoría mala")
+        self.assertTrue(room["players"][0].get("out"))
+        self.assertEqual(room["phase"], "gameover")  # Beto is the last one standing
+
+    async def test_solving_two_cases_wins_the_match(self):
+        room = self.make_misterio_room("Ana", "Beto")
+        mst = await self.start(room)
+        with patch.object(webapp, "narrate", new=AsyncMock()), \
+             patch.object(webapp, "mst_case_clock", new=fake_clock), \
+             patch.object(webapp, "start_match", new=AsyncMock()), \
+             patch("asyncio.sleep", new=AsyncMock()), \
+             patch.object(webapp, "judge_misterio", new=AsyncMock(return_value="acierto")):
+            for _ in range(webapp.MISTERIO_TO_WIN):
+                await webapp.mst_guess(room, room["players"][0], "la solución")
+        self.assertEqual(room["phase"], "gameover")
+
+class JudgeTests(unittest.TestCase):
+    def test_norm_strips_accents_and_case(self):
+        self.assertEqual(webapp.norm("¡Héladera, María!"), "heladera maria")
+
+    def test_kw_hit_matches_whole_words(self):
+        self.assertTrue(webapp.kw_hit("es un paracaídas", ["paracaidas"]))
+        self.assertFalse(webapp.kw_hit("es un paracaidista", ["caida"]))
+
+
+class TeamTests(unittest.IsolatedAsyncioTestCase):
+    def test_team_turns_alternate_and_members_rotate(self):
+        room = make_room("Roja 1", "Azul 1", "Roja 2", "Azul 2")
+        room["team_count"] = 2
+        for i, player in enumerate(room["players"]):
+            player["team"] = i % 2
+        order = []
+        for turn in range(8):
+            room["turn"] = turn
+            order.append(webapp.current_player(room)["name"])
+        self.assertEqual(order, ["Roja 1", "Azul 1", "Roja 2", "Azul 2"] * 2)
+
+    async def test_quiz_progress_shared_between_teammates(self):
+        room = make_room("Ana", "Beto", "Ceci", mode="solo")
+        room["team_count"] = 2
+        for player, team in zip(room["players"], (0,1,0)):
+            player["team"] = team
+        player = room["players"][0]
+        with patch.object(webapp, "narrate", new=AsyncMock()), \
+             patch.object(webapp, "end_turn", new=AsyncMock()), \
+             patch.object(webapp, "turn_clock", new=fake_clock):
+            await webapp.ask_question(room, player, "cultura")
+            for _ in range(5):
+                await webapp.resolve_answer(room, player, room["question"]["correct"])
+        self.assertEqual(room["scores"][1],1)
+        self.assertEqual(room["scores"][3],1)
+        self.assertEqual(room["scores"][2],0)
+
+    def test_surviving_team_wins_with_two_members(self):
+        room = make_room("Ana", "Beto", "Ceci")
+        room["team_count"] = 2
+        for player, team in zip(room["players"], (0,1,0)):
+            player["team"] = team
+        alive = [room["players"][0], room["players"][2]]
+        self.assertIs(webapp.survivor_winner(room, alive),alive[0])
+
+    async def test_explicit_spectator_cannot_answer(self):
+        from fastapi import WebSocketDisconnect
+        room = make_room("Ana", capacity=5)
+        room["code"] = "WATCH"
+        room["phase"] = "misterio"
+        webapp.rooms["WATCH"] = room
+        ws = FakeWS(); calls = [0]
+        async def receive():
+            calls[0] += 1
+            if calls[0] == 1:
+                return json.dumps({"action":"guess", "text":"una teoría"})
+            raise WebSocketDisconnect()
+        ws.receive_text = receive
+        try:
+            with patch.object(webapp, "narrate",new=AsyncMock()), \
+                 patch.object(webapp, "mst_guess",new=AsyncMock()) as guess:
+                await webapp.sala_ws(ws,"WATCH",name="Mirón",spectator=True)
+            guess.assert_not_awaited()
+        finally:
+            webapp.rooms.pop("WATCH",None)
+
+
+class TeamConfigTests(unittest.IsolatedAsyncioTestCase):
+    async def test_host_configures_teams_then_picks_team(self):
+        from fastapi import WebSocketDisconnect
+        room = make_room(capacity=5)
+        room["code"] = "TEAMS"
+        webapp.rooms["TEAMS"] = room
+        ws = FakeWS()
+        messages = iter([{"action":"equipos", "count":3}, {"action":"equipo", "team":2}])
+        async def receive():
+            try:
+                return json.dumps(next(messages))
+            except StopIteration:
+                raise WebSocketDisconnect()
+        ws.receive_text = receive
+        try:
+            with patch.object(webapp,"narrate",new=AsyncMock()), patch.object(webapp,"say",new=AsyncMock()):
+                await webapp.sala_ws(ws,"TEAMS",name="Host")
+            self.assertEqual(room["team_count"],3)
+            self.assertEqual(room["players"][0]["team"],2)
+        finally:
+            webapp.rooms.pop("TEAMS",None)
+
+    def test_first_spectator_does_not_become_host(self):
+        room = make_room("Observer", "Host")
+        room["players"][0]["spectator"] = True
+        self.assertIs(webapp.host_player(room),room["players"][1])
+
+
+class FiveQuestionPlumbingTests(unittest.TestCase):
+    def test_four_lives_and_loss_per_wrong_answer(self):
+        room = make_room("Ana")
+        player = room["players"][0]
+        webapp.new_quiz_run(room, player, "cultura")
+        self.assertEqual(webapp.quiz_lives(room, player), 4)
+        webapp.record_quiz_answer(room, player, False)
+        self.assertEqual(webapp.quiz_lives(room, player), 3)
+        self.assertEqual(room["quiz_run"]["mistakes"],1)
+
+    def test_five_clean_answers_gift_one_life_once(self):
+        room = make_room("Ana")
+        player = room["players"][0]
+        webapp.new_quiz_run(room, player, "cultura")
+        for _ in range(5):
+            webapp.record_quiz_answer(room, player, True)
+        self.assertTrue(webapp.quiz_bonus(room,player))
+        self.assertEqual(webapp.quiz_lives(room,player),4)
+        self.assertFalse(webapp.quiz_bonus(room,player))
+        self.assertEqual(webapp.quiz_lives(room,player),4)
+
+    def test_mistake_blocks_bonus_and_lives_remain_personal_in_teams(self):
+        room = make_room("Ana","Beto")
+        room["team_count"]=2
+        for player in room["players"]:
+            player["team"]=0
+        a,b=room["players"]
+        webapp.new_quiz_run(room,a,"cultura")
+        webapp.record_quiz_answer(room,a,False)
+        for _ in range(5):
+            webapp.record_quiz_answer(room,a,True)
+        self.assertTrue(webapp.quiz_bonus(room,a))
+        self.assertEqual(webapp.quiz_lives(room,a),4)
+        self.assertEqual(webapp.quiz_lives(room,b),4)
+
+
+class FinalRunRulesTests(unittest.IsolatedAsyncioTestCase):
+    async def test_wrong_then_five_correct_streak_recovers_life(self):
+        room = make_room("Ana", "Beto", mode="solo")
+        player=room["players"][0]
+        with patch.object(webapp,"narrate",new=AsyncMock()) as narr, \
+             patch.object(webapp,"end_turn",new=AsyncMock()), \
+             patch.object(webapp,"turn_clock",new=fake_clock):
+            await webapp.ask_question(room,player,"cultura")
+            await webapp.resolve_answer(room,player,(room["question"]["correct"]+1)%4)
+            self.assertEqual(webapp.quiz_lives(room,player),3)
+            self.assertEqual(room["quiz_run"]["answered"],1)
+            for _ in range(5):
+                await webapp.resolve_answer(room,player,room["question"]["correct"])
+        self.assertEqual(webapp.quiz_lives(room,player),4)
+        self.assertEqual(room["quiz_run"]["answered"],6)
+        self.assertEqual(room["scores"][player["id"]],1)
+        self.assertTrue(any("Cinco correctas seguidas" in c.args[1] for c in narr.await_args_list))
+
+    async def test_nonconsecutive_five_pass_without_bonus(self):
+        room = make_room("Ana", "Beto", mode="solo")
+        player=room["players"][0]
+        with patch.object(webapp,"narrate",new=AsyncMock()), \
+             patch.object(webapp,"end_turn",new=AsyncMock()), \
+             patch.object(webapp,"turn_clock",new=fake_clock):
+            await webapp.ask_question(room,player,"cultura")
+            for correct in [True,False,True,True,True,True]:
+                idx=room["question"]["correct"]
+                await webapp.resolve_answer(room,player,idx if correct else (idx+1)%4)
+        self.assertEqual(webapp.quiz_lives(room,player),3)
+        self.assertEqual(room["scores"][player["id"]],1)
+
+    async def test_zero_lives_restarts_player_in_room(self):
+        room=make_room("Ana","Beto",mode="solo")
+        player=room["players"][0]
+        room["cat_progress"]={1:{"cultura":5}}
+        room["scores"][1]=1
+        with patch.object(webapp,"narrate",new=AsyncMock()), \
+             patch.object(webapp,"begin_turn",new=AsyncMock()) as restart, \
+             patch.object(webapp,"turn_clock",new=fake_clock):
+            await webapp.ask_question(room,player,"historia")
+            for _ in range(4):
+                await webapp.resolve_answer(room,player,(room["question"]["correct"]+1)%4)
+        restart.assert_awaited_once()
+        self.assertFalse(player.get("out",False))
+        self.assertEqual(webapp.quiz_lives(room,player),4)
+        self.assertEqual(room["scores"][1],0)
+        self.assertNotIn(1,room["cat_progress"])
+
+    async def test_no_ten_attempt_ceiling(self):
+        room=make_room("Ana",mode="solo")
+        player=room["players"][0]
+        with patch.object(webapp,"narrate",new=AsyncMock()), \
+             patch.object(webapp,"end_turn",new=AsyncMock()) as end, \
+             patch.object(webapp,"turn_clock",new=fake_clock):
+            await webapp.ask_question(room,player,"cultura")
+            room["quiz_run"].update(answered=10,correct=3,mistakes=7,streak=0)
+            await webapp.resolve_answer(room,player,room["question"]["correct"])
+        end.assert_not_awaited()
+        self.assertEqual(room["phase"],"question")
+        self.assertEqual(room["quiz_run"]["correct"],4)
+
+    async def test_team_zero_lives_keeps_shared_progress(self):
+        room=make_room("Ana","Beto","Ceci",mode="solo")
+        room["team_count"]=2
+        for p,t in zip(room["players"],(0,1,0)):
+            p["team"]=t
+        player=room["players"][0]
+        room["cat_progress"]={"equipo:0":{"cultura":5}}
+        webapp.sync_score(room,player,1)
+        with patch.object(webapp,"narrate",new=AsyncMock()), \
+             patch.object(webapp,"begin_turn",new=AsyncMock()), \
+             patch.object(webapp,"turn_clock",new=fake_clock):
+            await webapp.ask_question(room,player,"historia")
+            room["quiz_lives"][1]=1
+            await webapp.resolve_answer(room,player,(room["question"]["correct"]+1)%4)
+        self.assertEqual(room["scores"][1],1)
+        self.assertEqual(room["scores"][3],1)
+        self.assertEqual(room["cat_progress"]["equipo:0"]["cultura"],5)
+        self.assertEqual(webapp.quiz_lives(room,player),4)
+
+    async def test_zero_lives_solo_restarts_without_elimination(self):
+        room=make_room("Ana",mode="solo",capacity=1)
+        player=room["players"][0]
+        with patch.object(webapp,"narrate",new=AsyncMock()), \
+             patch.object(webapp,"begin_turn",new=AsyncMock()) as restart, \
+             patch.object(webapp,"turn_clock",new=fake_clock):
+            await webapp.ask_question(room,player,"cultura")
+            room["quiz_lives"][1]=1
+            await webapp.resolve_answer(room,player,(room["question"]["correct"]+1)%4)
+        restart.assert_awaited_once()
+        self.assertFalse(player.get("out",False))
+        self.assertEqual(webapp.quiz_lives(room,player),4)
+
+
+class RunTimerTests(unittest.IsolatedAsyncioTestCase):
+    async def test_question_timeout_is_one_missed_answer(self):
+        room=make_room("Ana","Beto",mode="solo")
+        room["phase"]="question"
+        room["question"]={"category":"cultura","options":["a","b","c","d"],"correct":2}
+        with patch("asyncio.sleep",new=AsyncMock()), \
+             patch.object(webapp,"turn_chatter",new=AsyncMock()), \
+             patch.object(webapp,"narrate",new=AsyncMock()), \
+             patch.object(webapp,"resolve_answer",new=AsyncMock()) as resolve, \
+             patch.object(webapp,"begin_turn",new=AsyncMock()) as turn:
+            await webapp.turn_clock(room,1)
+        resolve.assert_awaited_once_with(room,room["players"][0],-1)
+        turn.assert_not_awaited()
+
+    async def test_duplicate_answer_is_ignored_during_narration(self):
+        room=make_room("Ana",mode="solo")
+        player=room["players"][0]
+        room["phase"]="question"
+        room["question"]={"category":"cultura","options":["a","b","c","d"],"correct":2}
+        webapp.new_quiz_run(room,player,"cultura")
+        entered=asyncio.Event();release=asyncio.Event()
+        async def narrate(*args,**kwargs):
+            entered.set()
+            await release.wait()
+        with patch.object(webapp,"narrate",side_effect=narrate), \
+             patch.object(webapp,"ask_question",new=AsyncMock()):
+            first=asyncio.create_task(webapp.resolve_answer(room,player,2))
+            await entered.wait()
+            await webapp.resolve_answer(room,player,2)
+            release.set()
+            await first
+        self.assertEqual(room["quiz_run"]["correct"],1)
+
+    def test_life_total_persists_between_categories(self):
+        room=make_room("Ana")
+        player=room["players"][0]
+        webapp.new_quiz_run(room,player,"cultura")
+        webapp.record_quiz_answer(room,player,False)
+        webapp.new_quiz_run(room,player,"historia")
+        self.assertEqual(webapp.quiz_lives(room,player),3)
+        self.assertEqual(room["quiz_run"]["answered"],0)
+
+
+class SpokenOptionTests(unittest.IsolatedAsyncioTestCase):
+    async def test_options_read_text_only(self):
+        room=make_room("Ana",mode="solo")
+        with patch.object(webapp,"narrate",new=AsyncMock()) as narr, \
+             patch.object(webapp,"turn_clock",new=fake_clock):
+            await webapp.ask_question(room,room["players"][0],"cultura")
+        text=narr.await_args_list[0].args[1]
+        for opt in room["question"]["options"]:
+            self.assertIn(opt,text)
+        for letter in "ABCD":
+            self.assertNotIn("Opción "+letter+":",text)
+        self.assertNotIn("de 10",text)
+        self.assertIn("4 vidas",text)
