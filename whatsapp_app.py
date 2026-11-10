@@ -332,22 +332,14 @@ async def ask_preferred_name(user: dict, user_key: str, action="mode"):
 
 
 async def start_group_mode(user: dict, user_key: str, kind: str):
-    group_selection[user_key] = {"kind": kind, "voices": []}
+    group_selection[user_key] = {"kind": kind, "voices": [], "awaiting_self": True}
     size = GROUP_MODE_SIZES[kind]
-    numbers = {2: "dos", 3: "tres", 4: "cuatro", 5: "cinco", 6: "seis"}
-    if kind == "story":
-        intro = "Modo historia: elige la primera de cuatro voces distintas. Serán cuatro personajes que continúan una misma escena."
-    elif kind == "duo":
-        intro = "Modo dúo: elige la primera voz. Después elegirás la segunda y conversarán entre ellas en un solo audio."
-    else:
-        intro = (
-            f"Modo {GROUP_MODE_LABELS[kind]}: elige la primera de {numbers[size]} voces distintas. "
-            "Conversarán entre ellas en un solo audio."
-        )
+    own = cafe.selected_voice[user_key]
     await send_text(
         user,
-        f"{intro}\nEscribe /voces para ver la lista y después /voz seguido del número "
-        f"(por ejemplo, /voz 3). Llevas 0 de {size}.",
+        f"Modo {GROUP_MODE_LABELS[kind]}: ¿sumás tu voz actual ({cafe.voice_name(own)}) "
+        f"a la conversación? Tu voz sería una de las {size} que charlan entre ellas. "
+        "Escribí SUMAR o NO.",
     )
 
 
@@ -404,6 +396,7 @@ async def welcome(user: dict, user_key: str, fallback_name=None):
         "/quinteto - conversar con cinco voces\n"
         "/sexteto - conversar con seis voces\n"
         "/historia - crear una historia con cuatro personajes\n"
+        "(en los modos de grupo podés escribir SUMAR para que tu voz participe)\n"
         "/musica - buscar un artista o una canción\n"
         "/nombre - cambiar cómo te llamo\n"
         "/solo_texto - desactivar las respuestas de audio\n"
@@ -486,6 +479,30 @@ async def handle_message(message: dict, contact: dict):
             return
         if text.startswith("/voces") or text.startswith("/voices"):
             await show_voices(user, user_key)
+            return
+        pending = group_selection.get(user_key)
+        if pending and pending.get("awaiting_self"):
+            size = GROUP_MODE_SIZES[pending["kind"]]
+            answer = re.sub(r"\s+", " ", text.strip().lower())
+            if answer in ("sumar", "si", "sí", "sumala", "sumalo", "sumá"):
+                own = cafe.selected_voice[user_key]
+                if own not in pending["voices"]:
+                    pending["voices"].insert(0, own)
+                pending["awaiting_self"] = False
+                await send_text(
+                    user,
+                    f"Tu voz ({cafe.voice_name(own)}) ya participa (1 de {size}). "
+                    "Elegí la siguiente con /voz y el número. Escribí /voces para ver la lista.",
+                )
+            elif answer == "no":
+                pending["awaiting_self"] = False
+                await send_text(
+                    user,
+                    "Perfecto, elegís todas las voces. Escribí /voces para ver la lista "
+                    f"y /voz con el número de la primera (llevas 0 de {size}).",
+                )
+            else:
+                await send_text(user, "Escribí SUMAR para que tu voz participe en la conversación, o NO para elegir todas las voces.")
             return
         match = re.fullmatch(r"/?voz\s+(\d{1,2})", text, re.IGNORECASE)
         if match:
