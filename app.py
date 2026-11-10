@@ -1512,3 +1512,15 @@ async def webhook(request: Request):
     update = await request.json()
     asyncio.create_task(process_update(update))
     return {"ok": True}
+
+
+# One Render service hosts both bots: when the WhatsApp Cloud API is
+# configured, its webhook lives under /whatsapp (verify and receive at
+# /whatsapp/webhook) on the same uvicorn process.
+if os.getenv("WHATSAPP_ACCESS_TOKEN"):
+    try:
+        from whatsapp_app import router as whatsapp_router
+        app.include_router(whatsapp_router, prefix="/whatsapp")
+        log.info("WhatsApp webhook mounted at /whatsapp/webhook")
+    except Exception:
+        log.exception("Could not mount the WhatsApp webhook router")
