@@ -638,13 +638,25 @@ def cache_audio(mp3: bytes) -> str:
     return key
 
 
+async def bounded_voice_mp3(text, voice):
+    """A stalled remote voice must never hold a room's narration lock forever."""
+    from app import synthesize, synthesize_once
+    try:
+        return await asyncio.wait_for(ogg_to_mp3(await asyncio.wait_for(
+            synthesize(text, voice), timeout=6)), timeout=4)
+    except Exception:
+        log.warning("Web voice slow/unavailable; using local Spanish voice")
+        return await asyncio.wait_for(ogg_to_mp3(await asyncio.wait_for(
+            synthesize_once(text, "espeak-es-419"), timeout=6)), timeout=4)
+
+
 async def say(room, text: str, voice=None, to=None):
     """Synthesize ONCE server-side and send to everyone (or one player)."""
     from app import synthesize  # local import: app.py mounts this router
 
     voice = voice or room.get("voice") or "es-AR-ElenaNeural"
     try:
-        mp3 = await ogg_to_mp3(await synthesize(text, voice))
+        mp3 = await bounded_voice_mp3(text, voice)
         url = f"/amor-con-aroma-a-cafe/audio/{cache_audio(mp3)}.mp3"
     except Exception:
         log.exception("Web sala: synthesis failed; sending text only")
@@ -722,7 +734,7 @@ async def turn_chatter(room, player):
         text = random.choice(lines[voice]).format(name=player["name"])
         from app import synthesize
         try:
-            data = await ogg_to_mp3(await synthesize(text, voice))
+            data = await asyncio.wait_for(ogg_to_mp3(await synthesize(text, voice)), timeout=3)
         except Exception:
             log.exception("Chatter synthesis failed")
             return
