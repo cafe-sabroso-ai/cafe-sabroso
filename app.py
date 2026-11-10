@@ -41,11 +41,11 @@ ESPEAK_VOICES = {
     "espeak-es-419-f2": {"espeak_voice": "es-419+f2", "rate": 175},
 }
 VOICES = {
-    "espeak-es-419": "Voz Lector - estilo NVDA",
-    "espeak-es-419-m1": "Voz Lector Masculina - estilo NVDA",
-    "espeak-es-419-m3": "Voz Lector Grave - estilo NVDA",
-    "espeak-es-419-f1": "Voz Lector Femenina - estilo NVDA",
-    "espeak-es-419-f2": "Voz Lector Aguda - estilo NVDA",
+    "espeak-es-419": "Voz Lector 1 - estilo NVDA",
+    "espeak-es-419-m1": "Voz Lector 2 - estilo NVDA, masculina",
+    "espeak-es-419-m3": "Voz Lector 3 - estilo NVDA, grave",
+    "espeak-es-419-f1": "Voz Lector 4 - estilo NVDA, femenina",
+    "espeak-es-419-f2": "Voz Lector 5 - estilo NVDA, aguda",
     "es-AR-TomasNeural": "Tomás - argentino",
     "es-AR-ElenaNeural": "Elena - argentina",
     "es-MX-JorgeNeural": "Jorge - México",
