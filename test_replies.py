@@ -164,7 +164,43 @@ class EspeakVoiceTests(unittest.IsolatedAsyncioTestCase):
         for key in piper_keys:
             self.assertIn(key, app.PIPER_VOICES)
         self.assertEqual(app.voice_name("piper-es-ar-daniela"), "Daniela")
-        self.assertEqual(len(app.VOICES), 48)
+        self.assertEqual(list(app.VOICES)[10], "rhvoice-mateo")
+        self.assertEqual(app.voice_name("rhvoice-mateo"), "Mateo RH")
+        self.assertEqual(len(app.VOICES), 52)
+
+    async def test_rhvoice_voice_routes_to_local_rhvoice(self):
+        """The Mateo RHVoice voice synthesizes locally with RHVoice-test."""
+        from pathlib import Path
+        calls = []
+
+        class FakeProcess:
+            def __init__(self, args):
+                self.args = list(args)
+                self.returncode = 0
+
+            async def communicate(self, input=None):
+                if "RHVoice-test" in self.args[0]:
+                    Path(self.args[self.args.index("-o") + 1]).write_bytes(b"RIFF")
+                else:
+                    Path(self.args[-1]).write_bytes(b"RIFF")
+                return (b"", b"")
+
+        async def fake_exec(*args, **kwargs):
+            calls.append(args)
+            return FakeProcess(args)
+
+        with patch.object(app, "RHVOICE_BIN", "/opt/rhvoice/bin/RHVoice-test"), \
+             patch.object(app.asyncio, "create_subprocess_exec", fake_exec), \
+             patch.object(app.edge_tts, "Communicate", side_effect=AssertionError("must not use Edge TTS")):
+            audio = await app.synthesize("Hola, soy Mateo.", "rhvoice-mateo")
+        self.assertIn("RHVoice-test", calls[0][0])
+        self.assertIn("Mateo", calls[0])
+
+    def test_spain_voices_are_listed(self):
+        self.assertEqual(app.VOICES["es-ES-ElviraNeural"], "Elvira - España")
+        self.assertEqual(app.VOICES["es-ES-XimenaNeural"], "Ximena - España")
+        self.assertEqual(app.VOICES["es-GQ-TeresaNeural"], "Teresa - España (Guinea Ecuatorial)")
+        self.assertEqual(app.voice_name("es-GQ-TeresaNeural"), "Teresa")
 
     def test_all_screen_reader_variants_are_listed_first(self):
         expected = ["espeak-es-419", "espeak-es-419-m1", "espeak-es-419-m3", "espeak-es-419-f1", "espeak-es-419-f2"]
