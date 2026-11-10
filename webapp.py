@@ -551,6 +551,7 @@ def room_state(room) -> dict:
         "event": "state",
         "quiz_lives": room.get("quiz_lives", {}),
         "quiz_run": room.get("quiz_run"),
+        "question": public_question(room),
         "team_count": room.get("team_count", 0),
         "team_names": TEAM_NAMES[:room.get("team_count", 0)],
         "players": [
@@ -650,7 +651,7 @@ async def bounded_voice_mp3(text, voice):
             synthesize_once(text, "espeak-es-419"), timeout=6)), timeout=4)
 
 
-async def say(room, text: str, voice=None, to=None):
+async def say(room, text: str, voice=None, to=None, question_id=None):
     """Synthesize ONCE server-side and send to everyone (or one player)."""
     from app import synthesize  # local import: app.py mounts this router
 
@@ -662,16 +663,22 @@ async def say(room, text: str, voice=None, to=None):
         log.exception("Web sala: synthesis failed; sending text only")
         url = None
     message = {"event": "say", "text": text, "audio": url}
+    if question_id is not None:
+        message["question_id"] = question_id
+        q = room.get("question")
+        if q and q.get("id") == question_id:
+            q["audio"] = url
+            q["audio_ready"] = True
     if to is not None:
         await tell(to, message)
     else:
         await broadcast(room, message)
 
 
-async def narrate(room, text: str, voice=None, to=None):
+async def narrate(room, text: str, voice=None, to=None, question_id=None):
     """Serialized per room so announcements never talk over each other."""
     async with room["audio_lock"]:
-        await say(room, text, voice=voice, to=to)
+        await say(room, text, voice=voice, to=to, question_id=question_id)
 
 
 def pick_mc(room, category):
@@ -908,6 +915,7 @@ async def game_over(room, winner):
 
 async def do_category_spin(room, player, chosen=None):
     """The wheel lands on a category (random unless the player picked one)."""
+    cancel_timer(room)
     room["spinning"] = True
     if room["game"] == "paises":
         pool = [c for c in MC_BANKS if c not in room["country_done"]]
@@ -939,6 +947,7 @@ async def do_country_spin(room, player):
     """La ruleta de países: lands the country the room plays for."""
     from app import TRIVIA_COUNTRIES
 
+    cancel_timer(room)
     room["spinning"] = True
     await broadcast(room, {
         "event": "spin_start", "player": player["name"],
@@ -959,6 +968,7 @@ async def do_country_spin(room, player):
 
 async def do_spin(room, player):
     """Verdad o Reto: the wheel spins, then the card is read aloud."""
+    cancel_timer(room)
     room["spinning"] = True
     segment = random.choice(SEGMENTS)
     bank, used = (RETOS, room["used_retos"]) if segment == "reto" else (VERDADES, room["used_verdades"])
@@ -987,31 +997,53 @@ async def do_spin(room, player):
     await broadcast(room, room_state(room))
 
 
+def public_question(room):
+    q = room.get("question")
+    if not q or room["phase"] != "question":
+        return None
+    player = current_player(room)
+    return {"event": "question", "id": q.get("id"), "category": q["category"],
+            "q": q["q"], "options": q["options"], "player": player["id"] if player else None,
+            "audio": q.get("audio"), "audio_ready": q.get("audio_ready", False),
+            "clock_started": q.get("clock_started", False)}
+
+
+async def start_question_clock(room, player, question_id):
+    q = room.get("question")
+    if (room["phase"] != "question" or not q or q.get("id") != question_id
+            or current_player(room) is not player or q.get("clock_started")):
+        return
+    q["clock_started"] = True
+    cancel_timer(room)
+    await broadcast(room, {"event": "question_clock", "id": question_id, "seconds": TURN_SECONDS})
+    room["timer_task"] = asyncio.create_task(turn_clock(room, player["id"]))
+
+
 async def ask_question(room, player, category, where=""):
     cancel_timer(room)
     run = room.get("quiz_run")
     if not run or run["player"] != player["id"] or run["category"] != category:
         run = new_quiz_run(room, player, category)
-    pick = pick_mc(room, category)
-    question, options, correct = pick
+    question, options, correct = pick_mc(room, category)
     options = list(options)
     correct_text = options[correct]
     random.shuffle(options)
     correct = options.index(correct_text)
-    room["question"] = {"category": category, "q": question, "options": options, "correct": correct}
+    room["question_seq"] = room.get("question_seq", 0) + 1
+    qid = room["question_seq"]
+    room["question"] = {"id": qid, "category": category, "q": question, "options": options,
+                        "correct": correct, "clock_started": False, "audio_ready": False}
     room["phase"] = "question"
-    letters = ["A", "B", "C", "D", "E", "F"]
+    # Text and controls arrive before any slow voice request. No clock yet.
+    await broadcast(room, public_question(room))
+    await broadcast(room, room_state(room))
     spoken = question + " " + " ".join(f"{opt}." for opt in options)
+    life_count = quiz_lives(room, player)
     await narrate(room, f"Categoría {CATEGORIES[category]}{where}, para {player['name']}. "
                   f"Llevás {run['correct']} de 5 correctas. "
-                  f"Tenés {quiz_lives(room, player)} vidas. {spoken}",
-                  voice=room["question_voice"])
-    await broadcast(room, {
-        "event": "question", "category": category, "q": question,
-        "options": options, "player": player["id"],
-    })
-    await broadcast(room, room_state(room))
-    room["timer_task"] = asyncio.create_task(turn_clock(room, player["id"]))
+                  f"Tenés {life_count} {'vida' if life_count == 1 else 'vidas'}. {spoken}",
+                  voice=room["question_voice"], question_id=qid)
+    # The owning browser arms the clock after playback, or its explicit button.
 
 
 QUIZ_START_LIVES = 4
@@ -1736,6 +1768,9 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bo
     if seat is None and room["capacity"] and len(active) >= room["capacity"]:
         spectator = True
     if seat is not None:
+        pending_disconnect = room.get("disconnect_tasks", {}).pop(seat["id"], None)
+        if pending_disconnect:
+            pending_disconnect.cancel()
         seat["ws"] = websocket
         player = seat
     else:
@@ -1768,6 +1803,12 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bo
     else:
         await narrate(room, f"Se unió {player['name']}. Ahora son {count} en la sala.")
     await broadcast(room, room_state(room))
+    if seat is not None and room["phase"] == "question" and current_player(room) is player:
+        q = room.get("question")
+        if q:
+            await tell(player, public_question(room))
+            await tell(player, {"event":"say", "question_id":q.get("id"),
+                                "text":q["q"] + " " + ". ".join(q["options"]), "audio":q.get("audio")})
     # Solo starts at once; a sala starts when full or when the host taps Empezar.
     if not player.get("spectator") and room["phase"] == "lobby" and room["capacity"] == 1:
         await start_match(room)
@@ -1787,6 +1828,19 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bo
             if player.get("spectator") and action not in ("descripcion", "chat", "rename"):
                 continue
 
+            if action == "question-ready":
+                await start_question_clock(room, player, message.get("id"))
+                continue
+            if action == "repetir-pregunta" and current is player and room["phase"] == "question":
+                q = room.get("question")
+                if q:
+                    cancel_timer(room)
+                    q["clock_started"] = False
+                    await tell(player, public_question(room))
+                    await tell(player, {"event":"say", "question_id":q.get("id"),
+                                        "text":q["q"] + " " + ". ".join(q["options"]),
+                                        "audio":q.get("audio")})
+                continue
             if action == "equipos" and room["phase"] == "lobby" and player is host_player(room):
                 try:
                     count = int(message.get("count", 0))
@@ -1919,19 +1973,37 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bo
     finally:
         if player["ws"] is websocket:
             player["ws"] = None
+            if room["phase"] == "question" and current_player(room) is player and room.get("question"):
+                cancel_timer(room)
+                room["question"]["clock_started"] = False
         log.info("Web sala %s: %s disconnected", code, player["name"])
-        remaining = [p for p in room["players"] if not p.get("gone") and p["ws"] is not None]
+        # A mobile reconnect should not erase the room or the current question.
+        if player["ws"] is None:
+            tasks = room.setdefault("disconnect_tasks", {})
+            old = tasks.pop(player["id"], None)
+            if old:
+                old.cancel()
+            tasks[player["id"]] = asyncio.create_task(retire_disconnected(room, code, player))
+
+
+async def retire_disconnected(room, code, player):
+    try:
+        await asyncio.sleep(30)
+        if player.get("ws") is not None or rooms.get(code) is not room:
+            return
+        remaining = [p for p in room["players"] if not p.get("gone") and p.get("ws") is not None]
         if not remaining:
             cancel_timer(room)
             rooms.pop(code, None)
-        elif room["phase"] not in ("lobby",):
+        elif room["phase"] != "lobby":
             await narrate(room, f"{player['name']} se fue de la mesa.")
-            current = current_player(room)
-            if current is player:
+            if current_player(room) is player:
                 room["turn"] += 1
                 await begin_turn(room)
             else:
                 await broadcast(room, room_state(room))
+    except asyncio.CancelledError:
+        pass
 
 
 async def handle_chat(room, player, message):
@@ -2355,7 +2427,9 @@ PAGE = """<!DOCTYPE html>
 
       <p id="quiz-progreso" role="status"></p>
       <div id="pregunta" hidden>
-        <p id="pregunta-texto" role="status"></p>
+        <p id="pregunta-texto" role="status" tabindex="-1"></p>
+        <button id="btn-pregunta-repetir" class="secondary" aria-label="Repetir la pregunta y las opciones">Repetir pregunta</button>
+        <button id="btn-pregunta-lista" class="secondary" aria-label="Ya escuché o leí la pregunta, empezar el tiempo para responder">Empezar a responder</button>
         <button class="opcion secondary" data-idx="0"></button>
         <button class="opcion secondary" data-idx="1"></button>
         <button class="opcion secondary" data-idx="2"></button>
@@ -2493,22 +2567,23 @@ renderMusic();
 // --- One queue for every sound: nothing talks over anything else. ---
 const audioQueue = [];
 let playing = false;
-function queueAudio(url) {
+function queueAudio(url, done = null) {
   if (!url) return;
-  audioQueue.push(url);
+  audioQueue.push({url, done});
   pumpAudio();
 }
 function pumpAudio() {
   if (playing || micActive || !audioQueue.length || !audioUnlocked) return;
   playing = true;
-  const url = audioQueue.shift();
+  const item = audioQueue.shift();
+  const url = item.url;
   player.src = url;
-  player.onended = () => { playing = false; pumpAudio(); };
+  player.onended = () => { playing = false; if (item.done) item.done(); pumpAudio(); };
   player.onerror = () => { playing = false; pumpAudio(); };
   player.play().catch(() => {
     // Autoplay blocked anyway: put it back; the next tap retries it.
     playing = false;
-    audioQueue.unshift(url);
+    audioQueue.unshift(item);
   });
 }
 
@@ -2802,6 +2877,7 @@ function connect(code, name) {
     const msg = JSON.parse(ev.data);
     if (msg.event === "welcome") {
       myId = msg.id; myName = msg.name;
+      lastQuestion = null;
       watching = !!msg.spectator;
       $("editar-nombre").value = myName;
       localStorage.setItem("cafe_nombre", myName);
@@ -2828,13 +2904,23 @@ function connect(code, name) {
       $("carta-texto").textContent = msg.label + ": " + msg.card;
     } else if (msg.event === "question") {
       onQuestion(msg);
+    } else if (msg.event === "question_clock") {
+      if (lastQuestion && lastQuestion.id === msg.id) {
+        startClock(msg.seconds); startTicking(msg.seconds);
+        $("btn-pregunta-lista").hidden = true;
+      }
     } else if (msg.event === "chatter") {
       if (!micActive && !playing && !audioQueue.length) {
         queueAudio(msg.audio);
       }
     } else if (msg.event === "say") {
       announce(msg.text);
-      queueAudio(msg.audio);
+      if (msg.question_id != null) {
+        if (!lastQuestion || lastQuestion.id !== msg.question_id) return;
+        // A question must not wait behind stale encouragement or room greetings.
+        player.pause(); playing = false; audioQueue.length = 0;
+        queueAudio(msg.audio, () => readyQuestion(msg.question_id));
+      } else queueAudio(msg.audio);
     } else if (msg.event === "chat") {
       const who = msg.to === "all" ? "" : " (privado)";
       addChatLine(msg.from_name + who + ": " + msg.text);
@@ -2879,6 +2965,9 @@ function onState(msg) {
   $("btn-girar-text").textContent = msg.spinning ? "Girando..." : (mine ? girarText : "Esperando a " + (msg.turn_name || "alguien"));
   $("reto-verdad").hidden = !(mine && msg.phase === "verdad_reto");
   if (msg.phase !== "question") { $("pregunta").hidden = true; }
+  else if (msg.question && (!lastQuestion || lastQuestion.id !== msg.question.id || $("pregunta").hidden)) {
+    onQuestion(msg.question);
+  }
   $("btn-empezar").hidden = !(msg.phase === "lobby" && msg.game && msg.players.some(p => !p.spectator && p.id === myId && msg.players.find(x => !x.spectator).id === myId) && msg.capacity !== 1);
   const host = msg.players.find(p => !p.spectator);
   const imHost = !!host && host.id === myId;
@@ -2933,25 +3022,40 @@ function onState(msg) {
     $("mst-vidas").textContent = (myLives != null ? "Tus vidas: " + myLives + ". " : "") +
       "Casos tuyos: " + mySolved + " de " + mst.to_win + ".";
   }
-  if (newTurn && msg.phase !== "lobby" && msg.phase !== "gameover") { startClock(msg.game === "bomba" && bb ? bb.fuse : msg.game === "misterio" ? 150 : 60); startTicking(msg.game === "bomba" && bb ? bb.fuse : msg.game === "misterio" ? 150 : 60); }
+  if (newTurn && !["question", "spin_ready", "country_spin_ready", "verdad_reto_ready"].includes(msg.phase) && msg.phase !== "lobby" && msg.phase !== "gameover") { startClock(msg.game === "bomba" && bb ? bb.fuse : msg.game === "misterio" ? 150 : 60); startTicking(msg.game === "bomba" && bb ? bb.fuse : msg.game === "misterio" ? 150 : 60); }
   if (msg.phase === "lobby" || msg.phase === "gameover") { stopTicking(); lastHint = null; }
   if (msg.phase === "gameover") { clearInterval(timerInterval); $("temporizador").textContent = ""; }
 }
 
+function readyQuestion(id) {
+  if (ws && ws.readyState === 1 && lastQuestion && lastQuestion.id === id && lastQuestion.player === myId)
+    ws.send(JSON.stringify({action:"question-ready", id}));
+}
+$("btn-pregunta-lista").addEventListener("click", () => { if (lastQuestion) readyQuestion(lastQuestion.id); });
+$("btn-pregunta-repetir").addEventListener("click", () => {
+  unlockAudio();
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify({action:"repetir-pregunta"}));
+});
 function onQuestion(msg) {
-  startClock(60);
-  startTicking(60);
+  clearInterval(timerInterval); stopTicking();
+  $("temporizador").textContent = "El tiempo empieza al terminar la lectura o al tocar Empezar a responder.";
   lastQuestion = msg;
   $("pregunta").hidden = false;
   const letters = ["A", "B", "C", "D"];
   $("pregunta-texto").textContent = msg.q;
   const mine = msg.player === myId;
+  $("btn-pregunta-lista").hidden = !mine || !!msg.clock_started;
+  $("btn-pregunta-repetir").disabled = !mine;
   document.querySelectorAll("#pregunta .opcion").forEach((btn, i) => {
     btn.textContent = "Opción " + letters[i] + ": " + msg.options[i];
     btn.setAttribute("aria-label", "Opción " + letters[i] + ": " + msg.options[i]);
     btn.disabled = !mine;
   });
   $("btn-voz-resp").disabled = !mine;
+  if (mine) {
+    announce("Pregunta: " + msg.q + " " + msg.options.join(". "));
+    $("pregunta-texto").focus();
+  }
   if (!mine) announce("Pregunta para " + (lastState ? lastState.turn_name : "otro jugador") + ": " + msg.q);
 }
 
