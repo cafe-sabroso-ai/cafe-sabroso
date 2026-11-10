@@ -51,6 +51,10 @@ PIPER_VOICES = {
     "piper-es-es-sharvard": {"model": "es_ES-sharvard-medium"},
 }
 PIPER_DIR = Path(os.environ.get("PIPER_DIR", "/app/piper-voices"))
+RHVOICE_VOICES = {
+    "rhvoice-mateo": {"rhvoice_voice": "Mateo"},
+}
+RHVOICE_BIN = os.environ.get("RHVOICE_BIN", "/opt/rhvoice/bin/RHVoice-test")
 VOICES = {
     "espeak-es-419": "Voz Lector 1 - estilo NVDA",
     "espeak-es-419-m1": "Voz Lector 2 - estilo NVDA, masculina",
@@ -62,6 +66,7 @@ VOICES = {
     "piper-es-mx-ald": "Ald - México (Piper)",
     "piper-es-es-davefx": "Davefx - España (Piper)",
     "piper-es-es-sharvard": "Sharvard - España (Piper)",
+    "rhvoice-mateo": "Mateo RH - voz de la comunidad ciega (RHVoice)",
     "es-AR-TomasNeural": "Tomás - argentino",
     "es-AR-ElenaNeural": "Elena - argentina",
     "es-MX-JorgeNeural": "Jorge - México",
@@ -100,6 +105,9 @@ VOICES = {
     "es-PA-MargaritaNeural": "Margarita - Panamá",
     "es-SV-RodrigoNeural": "Rodrigo - El Salvador",
     "es-SV-LorenaNeural": "Lorena - El Salvador",
+    "es-ES-ElviraNeural": "Elvira - España",
+    "es-ES-XimenaNeural": "Ximena - España",
+    "es-GQ-TeresaNeural": "Teresa - España (Guinea Ecuatorial)",
 }
 DEFAULT_VOICE = "es-AR-TomasNeural"
 SYSTEM_PROMPT = (
@@ -285,6 +293,16 @@ async def synthesize(text: str, voice: str) -> bytes:
                 _, stderr = await process.communicate(speech_text(text).encode())
             if process.returncode:
                 raise RuntimeError(f"piper failed: {stderr.decode()[:300]}")
+        elif voice in RHVOICE_VOICES:
+            process = await asyncio.create_subprocess_exec(
+                RHVOICE_BIN, "-p", RHVOICE_VOICES[voice]["rhvoice_voice"],
+                "-o", str(source),
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+            )
+            _, stderr = await process.communicate(speech_text(text).encode())
+            if process.returncode:
+                raise RuntimeError(f"rhvoice failed: {stderr.decode()[:300]}")
         else:
             await edge_tts.Communicate(speech_text(text), voice).save(str(source))
         process = await asyncio.create_subprocess_exec(
