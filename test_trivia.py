@@ -327,7 +327,7 @@ class RoutingTests(unittest.IsolatedAsyncioTestCase):
              patch.object(app, "send_text", side_effect=lambda c, t, **k: sent_text.append(t)):
             await app.handle_message({"chat": {"id": chat_id}, "text": "salir"})
         self.assertNotIn(chat_id, app.trivia_games)
-        self.assertIn("Se terminó la ruleta", sent_text[0])
+        self.assertIn("TERMINÓ LA RULETA", sent_text[0])
 
     async def test_gira_respins(self):
         chat_id = 7404
@@ -635,6 +635,77 @@ class TimerTests(unittest.IsolatedAsyncioTestCase):
              patch.object(app, "send_text", new=AsyncMock()) as send_text:
             await app.trivia_timer_warning(chat_id, 3, 30)
         send_text.assert_not_awaited()
+
+
+class TidyChatTests(unittest.IsolatedAsyncioTestCase):
+    async def test_second_keyboard_retires_the_first(self):
+        chat_id = 7701
+        app.trivia_last_keyboard.pop(chat_id, None)
+        ids = iter([100, 101])
+        with patch.object(app, "telegram", new=AsyncMock(
+                side_effect=lambda *a, **k: {"message_id": next(ids)}
+                if a and a[0] == "sendMessage" else {})) as telegram:
+            await app.trivia_menu(chat_id)
+            await app.trivia_menu(chat_id)
+        clears = [c for c in telegram.await_args_list
+                  if c.args and c.args[0] == "editMessageReplyMarkup"]
+        self.assertEqual(len(clears), 1)
+        self.assertEqual(clears[0].kwargs["message_id"], 100)
+        self.assertEqual(clears[0].kwargs["reply_markup"], {"inline_keyboard": []})
+        self.assertEqual(app.trivia_last_keyboard[chat_id], 101)
+        app.trivia_last_keyboard.pop(chat_id, None)
+
+    async def test_salir_deletes_the_game_flow(self):
+        chat_id = 7702
+        game = fresh_game(chat_id)
+        game["sent_ids"] = [11, 12, 13]
+        game["phase"] = "question"
+        game["current"] = {"options": ["a", "b", "c", "d"], "correct": 0}
+        sent_text = []
+        with patch.object(app, "telegram", new=AsyncMock()) as telegram, \
+             patch.object(app, "send_text", side_effect=lambda c, t, **k: sent_text.append(t)):
+            await app.handle_message({"chat": {"id": chat_id}, "text": "salir"})
+        deletes = [c for c in telegram.await_args_list
+                   if c.args and c.args[0] == "deleteMessage"]
+        self.assertEqual([c.kwargs["message_id"] for c in deletes], [11, 12, 13])
+        self.assertNotIn(chat_id, app.trivia_games)
+        self.assertIn("TERMINÓ LA RULETA", sent_text[0])
+
+    async def test_game_over_deletes_the_flow(self):
+        chat_id = 7703
+        game = fresh_game(chat_id)
+        game["lives"] = 1
+        game["sent_ids"] = [21, 22]
+        current_question(game)
+        with patch.object(app, "get_preferred_name", return_value="Escorpio"), \
+             patch.object(app, "telegram", new=AsyncMock(return_value={"message_id": 30})) as telegram, \
+             patch.object(app, "send_text", new=AsyncMock(return_value={"message_id": 30})), \
+             patch.object(app, "send_voice_audio", new=AsyncMock()), \
+             patch.object(app, "synthesize", new=AsyncMock(return_value=b"ogg")), \
+             patch.object(app, "complete", new=AsyncMock(return_value="uff")):
+            await app.trivia_handle_answer(chat_id, 0)
+        deletes = [c.kwargs["message_id"] for c in telegram.await_args_list
+                   if c.args and c.args[0] == "deleteMessage"]
+        # 21/22 = seeded flow; 30 = the feedback message (mocked id), also flow.
+        self.assertEqual(deletes, [21, 22, 30])
+        self.assertNotIn(chat_id, app.trivia_games)
+
+    async def test_answer_leaves_one_live_keyboard(self):
+        chat_id = 7704
+        game = fresh_game(chat_id)
+        current_question(game)
+        app.trivia_last_keyboard[chat_id] = 555  # the question's keyboard
+        with patch.object(app, "get_preferred_name", return_value="Escorpio"), \
+             patch.object(app, "telegram", new=AsyncMock(return_value={"message_id": 42})), \
+             patch.object(app, "send_text", new=AsyncMock(return_value={"message_id": 42})), \
+             patch.object(app, "send_voice_audio", new=AsyncMock()), \
+             patch.object(app, "synthesize", new=AsyncMock(return_value=b"ogg")), \
+             patch.object(app, "complete", new=AsyncMock(return_value="bien")):
+            await app.trivia_handle_answer(chat_id, 1)
+        # The question keyboard was retired; the seguimos keyboard is the live one.
+        self.assertEqual(app.trivia_last_keyboard[chat_id], 42)
+        self.assertIn(42, game["sent_ids"])
+        app.trivia_last_keyboard.pop(chat_id, None)
 
 
 if __name__ == "__main__":
