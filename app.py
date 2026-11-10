@@ -45,9 +45,10 @@ ESPEAK_VOICES = {
 }
 # Free Piper neural voices synthesized locally in the container, keyed apart
 # from the Edge TTS IDs so synthesize can route them.
+# Only "medium" piper models: the "high" ones (daniela, claude) need ~215 MB
+# per synthesis and OOM-crashed on Render's 512 MB plan, silently killing
+# game voice notes.
 PIPER_VOICES = {
-    "piper-es-ar-daniela": {"model": "es_AR-daniela-high"},
-    "piper-es-mx-claude": {"model": "es_MX-claude-high"},
     "piper-es-mx-ald": {"model": "es_MX-ald-medium"},
     "piper-es-es-davefx": {"model": "es_ES-davefx-medium"},
     "piper-es-es-sharvard": {"model": "es_ES-sharvard-medium"},
@@ -63,8 +64,6 @@ VOICES = {
     "espeak-es-419-m3": "Voz Lector 3 - estilo NVDA, grave",
     "espeak-es-419-f1": "Voz Lector 4 - estilo NVDA, femenina",
     "espeak-es-419-f2": "Voz Lector 5 - estilo NVDA, aguda",
-    "piper-es-ar-daniela": "Daniela - argentina (Piper)",
-    "piper-es-mx-claude": "Claude - México (Piper)",
     "piper-es-mx-ald": "Ald - México (Piper)",
     "piper-es-es-davefx": "Davefx - España (Piper)",
     "piper-es-es-sharvard": "Sharvard - España (Piper)",
@@ -265,7 +264,28 @@ def speech_text(text: str) -> str:
     return text.strip()[:5000]
 
 
+# When a voice engine fails, the beat still gets read aloud: fall back to a
+# free neural voice (edge-tts), then to fully-local eSpeak. A blind user must
+# never get a silent beat.
+FALLBACK_VOICES = ("es-AR-ElenaNeural", "espeak-es-419")
+
+
 async def synthesize(text: str, voice: str) -> bytes:
+    try:
+        return await synthesize_once(text, voice)
+    except Exception:
+        log.exception("Voice %s failed; trying fallback voices", voice)
+    for fallback in FALLBACK_VOICES:
+        if fallback == voice:
+            continue
+        try:
+            return await synthesize_once(text, fallback)
+        except Exception:
+            log.exception("Fallback voice %s failed too", fallback)
+    raise RuntimeError(f"Every voice engine failed for: {text[:80]}")
+
+
+async def synthesize_once(text: str, voice: str) -> bytes:
     with tempfile.TemporaryDirectory() as directory:
         source = Path(directory) / "reply.src"
         ogg = Path(directory) / "reply.ogg"
@@ -279,7 +299,7 @@ async def synthesize(text: str, voice: str) -> bytes:
             )
             _, stderr = await process.communicate(speech_text(text).encode())
             if process.returncode:
-                raise RuntimeError(f"espeak-ng failed: {stderr.decode()[:300]}")
+                raise RuntimeError(f"espeak-ng failed: {stderr.decode()[:600]}")
         elif voice in PIPER_VOICES:
             global whisper_model
             model = PIPER_VOICES[voice]["model"]
@@ -300,7 +320,7 @@ async def synthesize(text: str, voice: str) -> bytes:
                 )
                 _, stderr = await process.communicate(speech_text(text).encode())
             if process.returncode:
-                raise RuntimeError(f"piper failed: {stderr.decode()[:300]}")
+                raise RuntimeError(f"piper failed: {stderr.decode()[:1200]}")
         elif voice in RHVOICE_VOICES:
             process = await asyncio.create_subprocess_exec(
                 RHVOICE_BIN, "-p", RHVOICE_VOICES[voice]["rhvoice_voice"],
@@ -310,7 +330,7 @@ async def synthesize(text: str, voice: str) -> bytes:
             )
             _, stderr = await process.communicate(speech_text(text).encode())
             if process.returncode:
-                raise RuntimeError(f"rhvoice failed: {stderr.decode()[:300]}")
+                raise RuntimeError(f"rhvoice failed: {stderr.decode()[:600]}")
         else:
             await edge_tts.Communicate(speech_text(text), voice).save(str(source))
         process = await asyncio.create_subprocess_exec(
@@ -2079,11 +2099,20 @@ async def trivia_spin(chat_id: int):
     except Exception:
         log.exception("Could not send the spin animation; continuing without it")
     if country and new_country:
-        announce = f"Te tocó... ¡{country}! Y la categoría es... ¡{category}!"
+        announce = (
+            "¡Giramos la ruleta! Gira, gira... ¡paró la ruleta! "
+            f"Te tocó... ¡{country}! Y la categoría es... ¡{category}!"
+        )
     elif country:
-        announce = f"Seguís en {country}. La categoría es... ¡{category}!"
+        announce = (
+            "¡Giramos la ruleta! Gira, gira... ¡paró! "
+            f"Seguís en {country}. La categoría es... ¡{category}!"
+        )
     else:
-        announce = f"Te salió... ¡{category}!"
+        announce = (
+            "¡Giramos la ruleta! Gira, gira... ¡paró la ruleta! "
+            f"Te salió... ¡{category}!"
+        )
     try:
         sfx = await trivia_sfx_ogg()
         voice_part = await synthesize(announce, announcer)
