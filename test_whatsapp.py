@@ -59,7 +59,7 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
     async def test_voices_lists_all_43_numbered(self):
         texts, _, _ = await send("/voces")
         listing = "\n".join(texts)
-        self.assertIn("1. Voz Lector - estilo NVDA", listing)
+        self.assertIn("1. Voz Lector 1 - estilo NVDA", listing)
         self.assertIn("6. Tomás - argentino", listing)
         self.assertIn("43. Lorena - El Salvador", listing)
         self.assertIn("/voz", listing)
@@ -73,7 +73,7 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
     async def test_espeak_voice_pick(self):
         texts, voice, _ = await send("/voz 1")
         self.assertEqual(cafe.selected_voice[KEY], "espeak-es-419")
-        self.assertIn("Elegiste Voz Lector - estilo NVDA", texts[0])
+        self.assertIn("Elegiste Voz Lector 1 - estilo NVDA", texts[0])
         voice.assert_awaited_once()
 
     async def test_invalid_voice_number(self):
