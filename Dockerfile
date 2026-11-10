@@ -42,7 +42,7 @@ RUN mkdir -p /app/piper-voices \
          && curl -fsSL "$base/$spec.onnx.json" -o "/app/piper-voices/$name.onnx.json"; \
        done
 
-COPY app.py whatsapp_app.py .
+COPY app.py whatsapp_app.py webapp.py .
 
 EXPOSE 10000
 CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-10000}"]
