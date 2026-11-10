@@ -1142,7 +1142,8 @@ async def crear_sala(request: Request):
     capacity = None
     try:
         data = await request.json()
-        mode = "solo" if data.get("mode") == "solo" else "sala"
+        if data.get("mode") in ("solo", "sala", "solo_paises", "paises"):
+            mode = data["mode"]
         capacity = int(data.get("capacity") or 0) or None
     except Exception:
         pass
@@ -1810,6 +1811,16 @@ $("btn-grabar").addEventListener("click", async () => {
 </body>
 </html>
 """
+
+
+@router.get("/amor-con-aroma-a-cafe/audio/{name}")
+async def serve_audio(name: str):
+    """Serves a cached narration mp3 (one hour TTL)."""
+    key = name[:-4] if name.endswith(".mp3") else name
+    item = audio_cache.get(key)
+    if item is None:
+        return Response(status_code=404)
+    return Response(content=item[0], media_type="audio/mpeg")
 
 
 @router.get("/amor-con-aroma-a-cafe", response_class=HTMLResponse)
