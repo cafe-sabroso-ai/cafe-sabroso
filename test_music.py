@@ -130,13 +130,17 @@ class MusicFlowTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(app.duo_enabled[321])
         self.assertEqual(app.duo_pairs[321], ("es-AR-TomasNeural", "es-AR-ElenaNeural"))
 
-    async def test_pending_query_is_used_once(self):
+    async def test_pending_query_stays_armed_for_followups(self):
+        """The Música section is sticky: after a search he can name another
+        song by voice; 'salir', /menu or a game leaves the section."""
         app.pending_music_query[123] = True
         with patch.object(app, "apple_music_results", AsyncMock(return_value=[])), \
              patch.object(app, "licensed_music_downloads", AsyncMock(return_value=[])), \
-             patch.object(app, "send_text", AsyncMock()):
+             patch.object(app, "send_text", AsyncMock()), \
+             patch.object(app, "send_voice", AsyncMock()):
             await app.search_music(123, "Artista")
-        self.assertNotIn(123, app.pending_music_query)
+        self.assertIn(123, app.pending_music_query)
+        app.pending_music_query.pop(123, None)
 
 
 class DirectDownloadTests(unittest.IsolatedAsyncioTestCase):
@@ -241,3 +245,67 @@ class MusicVoiceStatusTests(unittest.IsolatedAsyncioTestCase):
              patch.object(app, "send_voice", AsyncMock()) as voice:
             await app.search_music(123, "")
         self.assertIn("artista o la canción", voice.await_args[0][1])
+
+
+class MusicStickyAndRetryTests(unittest.IsolatedAsyncioTestCase):
+    async def test_search_rearms_pending_query(self):
+        app.pending_music_query.pop(125, None)
+        with patch.object(app, "apple_music_results", AsyncMock(return_value=[])), \
+             patch.object(app, "licensed_music_downloads", AsyncMock(return_value=[])), \
+             patch.object(app, "send_text", AsyncMock()), \
+             patch.object(app, "send_voice", AsyncMock()):
+            await app.search_music(125, "Los Piojos Como Alí")
+        self.assertIn(125, app.pending_music_query)
+        app.pending_music_query.pop(125, None)
+
+    async def test_salir_leaves_the_music_section(self):
+        app.pending_music_query[126] = True
+        with patch.object(app, "telegram", new=AsyncMock()), \
+             patch.object(app, "send_text", new=AsyncMock()) as text, \
+             patch.object(app, "send_voice", new=AsyncMock()):
+            await app.handle_message({"chat": {"id": 126}, "text": "salir"})
+        self.assertNotIn(126, app.pending_music_query)
+        self.assertIn("saliste de la búsqueda de música", text.await_args[0][1])
+
+    async def test_menu_exits_the_music_section(self):
+        app.pending_music_query[127] = True
+        with patch.object(app, "telegram", new=AsyncMock()), \
+             patch.object(app, "send_text", new=AsyncMock()), \
+             patch.object(app, "send_voice", new=AsyncMock()):
+            await app.handle_message({"chat": {"id": 127}, "text": "/menu"})
+        self.assertNotIn(127, app.pending_music_query)
+
+    async def test_apple_retries_without_country_when_empty(self):
+        calls = []
+
+        class FakeResponse:
+            def __init__(self, results):
+                self._results = results
+            def raise_for_status(self):
+                pass
+            def json(self):
+                return {"results": self._results}
+
+        async def fake_get(url, params=None, timeout=None):
+            calls.append(params)
+            if len(calls) == 1:
+                return FakeResponse([])
+            return FakeResponse([{
+                "kind": "song", "trackName": "Como Alí", "artistName": "Los Piojos",
+                "collectionName": "Civilización",
+                "trackViewUrl": "https://music.apple.com/ar/album/como-ali/1?i=2",
+                "previewUrl": "https://example.com/preview.m4a",
+            }])
+
+        with patch.object(app.http, "get", fake_get):
+            tracks = await app.apple_music_results("Los Piojos, Como Alí")
+        self.assertEqual(len(calls), 2)
+        self.assertNotIn("country", calls[1])
+        self.assertEqual(tracks[0]["title"], "Como Alí")
+
+    async def test_apple_raises_after_both_attempts_fail(self):
+        async def failing_get(url, params=None, timeout=None):
+            raise RuntimeError("down")
+        with patch.object(app.http, "get", failing_get):
+            with self.assertRaises(RuntimeError):
+                await app.apple_music_results("algo")
