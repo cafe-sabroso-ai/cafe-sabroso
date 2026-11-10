@@ -90,16 +90,16 @@ selected_voice = defaultdict(lambda: DEFAULT_VOICE)
 voice_enabled = defaultdict(lambda: True)
 histories = defaultdict(lambda: deque(maxlen=12))
 duo_enabled = defaultdict(lambda: False)
-duo_first = {}
 duo_pairs = {}
 trio_enabled = defaultdict(lambda: False)
-trio_selection = {}
 trio_pairs = {}
 quartet_enabled = defaultdict(lambda: False)
 quartet_pairs = {}
 story_enabled = defaultdict(lambda: False)
 story_pairs = {}
-four_selection = {}
+GROUP_MODE_SIZES = {"duo": 2, "trio": 3, "quartet": 4, "story": 4}
+GROUP_MODE_LABELS = {"duo": "dúo", "trio": "trío", "quartet": "cuarteto", "story": "historia"}
+group_selection = {}
 pending_weather_query = {}
 pending_sports_query = {}
 pending_music_query = {}
@@ -287,8 +287,21 @@ def voice_name(voice: str) -> str:
     return VOICES[voice].split(" - ", 1)[0]
 
 
+def name_pattern(name: str) -> str:
+    """Accent-insensitive regex for one voice-name label (Sofia matches Sofía)."""
+    variants = {"a": "aá", "e": "eé", "i": "ií", "o": "oó", "u": "uú", "n": "nñ"}
+    parts = []
+    for char in name:
+        base = unicodedata.normalize("NFD", char)[0].lower()
+        if base in variants:
+            parts.append("[" + variants[base] + "]")
+        else:
+            parts.append(re.escape(char))
+    return "".join(parts)
+
+
 def clean_turn(text: str, names) -> str:
-    label = "(?:" + "|".join(re.escape(name) for name in names) + ")"
+    label = "(?:" + "|".join(name_pattern(name) for name in names) + ")"
     text = re.sub(rf"^\s*{label}\s*:\s*", "", text, count=1, flags=re.IGNORECASE)
     text = re.split(rf"\n\s*{label}\s*:\s*", text, maxsplit=1, flags=re.IGNORECASE)[0]
     return text.strip()
@@ -352,7 +365,7 @@ async def answer(chat_id: int, user_text: str):
 def parse_group_turns(text: str, names):
     """Read the labeled turns returned by one shared group completion."""
     text = text.strip().replace("**", "")
-    labels = "|".join(re.escape(name) for name in names)
+    labels = "|".join(name_pattern(name) for name in names)
     matches = list(re.finditer(rf"(?mi)^\s*(?:[-•]\s+)?({labels})\s*(?::|\s+-\s+)\s*", text))
     if not matches:
         paragraphs = [part.strip() for part in re.split(r"\n\s*\n", text) if part.strip()]
@@ -361,7 +374,7 @@ def parse_group_turns(text: str, names):
         return None
     if len(matches) != len(names):
         return None
-    if [match.group(1).casefold() for match in matches] != [name.casefold() for name in names]:
+    if [normalized(match.group(1)) for match in matches] != [normalized(name) for name in names]:
         return None
     replies = []
     for index, match in enumerate(matches):
@@ -403,7 +416,12 @@ async def answer_group_sequential(chat_id: int, user_text: str, voices):
         if previous:
             content += f"\n\n{previous}\n\nAhora respondé vos como {speaker}."
         messages.append({"role": "user", "content": content})
-        replies.append(clean_turn(await complete(messages), names))
+        reply = clean_turn(await complete(messages), names)
+        if not reply:
+            reply = clean_turn(await complete(messages), names)
+        if not reply:
+            reply = "Perdón, se me cortó la voz. ¿Me repetís?"
+        replies.append(reply)
     history.append({"role": "user", "content": user_text})
     history.append({
         "role": "assistant",
@@ -480,7 +498,12 @@ async def answer_story(chat_id: int, theme: str):
         if previous:
             content += f"\nDiálogos anteriores:\n{previous}"
         messages.append({"role": "user", "content": content})
-        replies.append(clean_turn(await complete(messages), names))
+        reply = clean_turn(await complete(messages), names)
+        if not reply:
+            reply = clean_turn(await complete(messages), names)
+        if not reply:
+            reply = "Perdón, se me cortó la voz. ¿Me repetís?"
+        replies.append(reply)
     history.append({"role": "user", "content": f"Historia sobre: {theme}"})
     history.append({
         "role": "assistant",
@@ -1060,38 +1083,39 @@ async def ask_preferred_name(chat_id: int, action="mode"):
 
 
 async def start_duo(chat_id: int):
-    duo_first.pop(chat_id, None)
+    group_selection[chat_id] = {"kind": "duo", "voices": []}
     await send_text(
         chat_id,
         "Modo dúo: elige la primera voz. Después elegirás la segunda y responderán por turnos en un solo audio.",
-        reply_markup={"inline_keyboard": voice_keyboard(chat_id, "duo1")},
+        reply_markup={"inline_keyboard": voice_keyboard(chat_id, "gsel:duo")},
     )
 
 
 async def start_trio(chat_id: int):
-    trio_selection[chat_id] = []
+    group_selection[chat_id] = {"kind": "trio", "voices": []}
     await send_text(
         chat_id,
         "Modo trío: elige la primera de tres voces. Después elegirás la segunda y la tercera; responderán por turnos en un solo audio.",
-        reply_markup={"inline_keyboard": voice_keyboard(chat_id, "trio1")},
+        reply_markup={"inline_keyboard": voice_keyboard(chat_id, "gsel:trio")},
     )
 
 
 async def start_four_mode(chat_id: int, kind: str):
-    four_selection[chat_id] = {"kind": kind, "voices": []}
+    group_selection[chat_id] = {"kind": kind, "voices": []}
     if kind == "quartet":
         text = "Modo cuarteto: elige la primera de cuatro voces distintas. Responderán por turnos en un solo audio."
     else:
         text = "Modo historia: elige la primera de cuatro voces distintas. Serán cuatro personajes que continúan una misma escena."
     await send_text(
         chat_id, text,
-        reply_markup={"inline_keyboard": voice_keyboard(chat_id, "four")},
+        reply_markup={"inline_keyboard": voice_keyboard(chat_id, f"gsel:{kind}")},
     )
 
 
 async def welcome(chat_id: int, fallback_name=None):
     # A free Render filesystem is replaced on deploy. Never block the bot on a
     # saved preference that may no longer exist; /nombre remains available.
+    group_selection.pop(chat_id, None)
     name = get_preferred_name(chat_id) or fallback_name or "amigo"
     text = (
         f"📋 MENÚ PRINCIPAL\nHola, {name}. Pulsa uno de estos botones para empezar. "
@@ -1158,6 +1182,7 @@ async def handle_message(message: dict):
             await start_four_mode(chat_id, "story")
             return
         if text.startswith("/individual"):
+            group_selection.pop(chat_id, None)
             duo_enabled[chat_id] = False
             trio_enabled[chat_id] = False
             quartet_enabled[chat_id] = False
@@ -1181,6 +1206,7 @@ async def handle_message(message: dict):
         if text.startswith("/reset"):
             histories[chat_id].clear()
             pending_music_query.pop(chat_id, None)
+            group_selection.pop(chat_id, None)
             await send_text(chat_id, "Conversación reiniciada.")
             return
         if text.startswith("/musica") or text.startswith("/music"):
@@ -1208,6 +1234,16 @@ async def handle_message(message: dict):
             await send_text(chat_id, user_text)
             return
         source_text = f"\n\nFuente: {source}" if source else ""
+        pending = group_selection.get(chat_id)
+        if pending:
+            size = GROUP_MODE_SIZES[pending["kind"]]
+            await send_text(
+                chat_id,
+                f"Estás eligiendo las voces del modo {GROUP_MODE_LABELS[pending['kind']]}: llevas "
+                f"{len(pending['voices'])} de {size}. Pulsa la siguiente voz en los botones de arriba "
+                "para empezar, o escribe /menu para cancelar.",
+            )
+            return
         if story_enabled[chat_id]:
             voices = story_pairs[chat_id]
             replies = await answer_story(chat_id, user_text)
@@ -1252,6 +1288,113 @@ async def handle_message(message: dict):
         await send_text(chat_id, "Tuve un problema técnico. Probá de nuevo en un momento.")
 
 
+async def update_selection_message(chat_id: int, callback: dict, text: str, keyboard):
+    """Edit the tapped message in place so only one selection keyboard stays live."""
+    message = callback.get("message") or {}
+    message_id = message.get("message_id")
+    if message_id:
+        try:
+            await telegram(
+                "editMessageText", chat_id=chat_id, message_id=message_id,
+                text=text, reply_markup={"inline_keyboard": keyboard},
+            )
+            return
+        except Exception:
+            log.exception("Could not edit the selection message; sending a new one")
+    await send_text(chat_id, text, reply_markup={"inline_keyboard": keyboard})
+
+
+async def advance_group_selection(chat_id: int, callback: dict, kind: str, voice: str):
+    """One tolerant state machine for every group-mode voice pick.
+
+    Any pick button from any step of the same mode advances the pending
+    selection, so a tap on an older keyboard never silently restarts it.
+    """
+    callback_id = callback["id"]
+    if voice not in VOICES:
+        await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Esa voz no está disponible.")
+        return
+    session = group_selection.get(chat_id)
+    if not session or session["kind"] != kind:
+        session = {"kind": kind, "voices": []}
+        group_selection[chat_id] = session
+    voices = session["voices"]
+    if voice in voices:
+        await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Elige voces distintas.")
+        return
+    voices.append(voice)
+    size = GROUP_MODE_SIZES[kind]
+    if len(voices) < size:
+        await telegram("answerCallbackQuery", callback_query_id=callback_id, text=f"Voz {len(voices)}: {voice_name(voice)}")
+        await update_selection_message(
+            chat_id, callback,
+            f"Modo {GROUP_MODE_LABELS[kind]}: voz {len(voices)}: {voice_name(voice)}. "
+            f"Elige la siguiente ({len(voices) + 1} de {size}).",
+            voice_keyboard(chat_id, f"gsel:{kind}", exclude=voices),
+        )
+        return
+    group_selection.pop(chat_id, None)
+    await complete_group_selection(chat_id, callback, kind, list(voices))
+
+
+async def complete_group_selection(chat_id: int, callback: dict, kind: str, voices):
+    voices = tuple(voices)
+    duo_enabled[chat_id] = kind == "duo"
+    trio_enabled[chat_id] = kind == "trio"
+    quartet_enabled[chat_id] = kind == "quartet"
+    story_enabled[chat_id] = kind == "story"
+    selected_voice[chat_id] = voices[0]
+    voice_enabled[chat_id] = True
+    names = [voice_name(item) for item in voices]
+    name = get_preferred_name(chat_id) or callback.get("from", {}).get("first_name") or "amigo"
+    if kind == "duo":
+        duo_pairs[chat_id] = voices
+        samples = [
+            f"Hola, {name}. Soy {names[0]} y vamos a responder juntos, por turnos.",
+            f"{name}, yo soy {names[1]}. Mandanos un mensaje o un audio para probar el modo dúo.",
+        ]
+    elif kind == "trio":
+        trio_pairs[chat_id] = voices
+        samples = [
+            f"Hola, {name}. Soy {names[0]} y vamos a conversar entre los tres.",
+            f"{name}, yo soy {names[1]}. Voy a sumar otra mirada después de {names[0]}.",
+            f"Y yo soy {names[2]}, {name}. Cierro el turno con una idea práctica. Mandanos tu pregunta.",
+        ]
+    elif kind == "quartet":
+        quartet_pairs[chat_id] = voices
+        samples = [
+            f"Hola, {name}. Soy {names[0]} y empiezo el cuarteto.",
+            f"{name}, yo soy {names[1]} y sigo después de {names[0]}.",
+            f"Soy {names[2]}, {name}. Voy a aportar otra mirada.",
+            f"Y yo soy {names[3]}, {name}. Cierro con una recomendación. Mandanos tu pregunta.",
+        ]
+    else:
+        story_pairs[chat_id] = voices
+        samples = [
+            f"{name}, soy {names[0]}, el primer personaje de nuestra historia.",
+            f"Yo soy {names[1]}, {name}, y continuaré lo que empiece {names[0]}.",
+            f"Soy {names[2]}, {name}. Mi personaje traerá un giro a la escena.",
+            f"Y yo soy {names[3]}, {name}. Mi personaje cerrará la escena. Decinos el tema de la historia.",
+        ]
+    message = callback.get("message") or {}
+    if message.get("message_id"):
+        try:
+            await telegram(
+                "editMessageReplyMarkup", chat_id=chat_id,
+                message_id=message["message_id"],
+                reply_markup={"inline_keyboard": []},
+            )
+        except Exception:
+            log.exception("Could not clear the selection keyboard")
+    await telegram(
+        "answerCallbackQuery", callback_query_id=callback["id"],
+        text=f"{GROUP_MODE_LABELS[kind].capitalize()}: {', '.join(names)}",
+    )
+    combined = "\n\n".join(f"{speaker}: {sample}" for speaker, sample in zip(names, samples))
+    await send_text(chat_id, combined)
+    await send_group_voice(chat_id, list(zip(voices, samples)))
+
+
 async def handle_callback(callback: dict):
     chat_id = callback["message"]["chat"]["id"]
     data = callback.get("data", "")
@@ -1261,6 +1404,7 @@ async def handle_callback(callback: dict):
         await welcome(chat_id, callback.get("from", {}).get("first_name"))
         return
     if data == "mode:single":
+        group_selection.pop(chat_id, None)
         duo_enabled[chat_id] = False
         trio_enabled[chat_id] = False
         quartet_enabled[chat_id] = False
@@ -1285,145 +1429,25 @@ async def handle_callback(callback: dict):
         await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Búsqueda de música")
         await search_music(chat_id, "")
         return
-    if data.startswith("four:"):
-        voice = data.split(":", 1)[1]
-        session = four_selection.get(chat_id)
-        if voice not in VOICES or not session:
-            await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Empecemos de nuevo.")
-            return
-        selected = session["voices"]
-        if voice in selected:
-            await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Elige cuatro voces distintas.")
-            return
-        selected.append(voice)
-        await telegram("answerCallbackQuery", callback_query_id=callback_id, text=f"Voz {len(selected)}: {voice_name(voice)}")
-        if len(selected) < 4:
-            await send_text(
-                chat_id,
-                f"Voz {len(selected)}: {voice_name(voice)}. Elige la siguiente.",
-                reply_markup={"inline_keyboard": voice_keyboard(chat_id, "four", exclude=selected)},
-            )
-            return
-        voices = tuple(selected)
-        names = [voice_name(item) for item in voices]
-        kind = session["kind"]
-        four_selection.pop(chat_id, None)
-        duo_enabled[chat_id] = False
-        trio_enabled[chat_id] = False
-        quartet_enabled[chat_id] = kind == "quartet"
-        story_enabled[chat_id] = kind == "story"
-        selected_voice[chat_id] = voices[0]
-        voice_enabled[chat_id] = True
-        name = get_preferred_name(chat_id) or callback.get("from", {}).get("first_name") or "amigo"
-        if kind == "quartet":
-            quartet_pairs[chat_id] = voices
-            samples = [
-                f"Hola, {name}. Soy {names[0]} y empiezo el cuarteto.",
-                f"{name}, yo soy {names[1]} y sigo después de {names[0]}.",
-                f"Soy {names[2]}, {name}. Voy a aportar otra mirada.",
-                f"Y yo soy {names[3]}, {name}. Cierro con una recomendación. Mandanos tu pregunta.",
-            ]
+    legacy_step, _, legacy_voice = data.partition(":")
+    if legacy_step in ("duo1", "duo2", "trio1", "trio2", "trio3"):
+        kind = "duo" if legacy_step.startswith("duo") else "trio"
+        await advance_group_selection(chat_id, callback, kind, legacy_voice)
+        return
+    if legacy_step == "four":
+        session = group_selection.get(chat_id)
+        if session and session["kind"] in ("quartet", "story"):
+            await advance_group_selection(chat_id, callback, session["kind"], legacy_voice)
         else:
-            story_pairs[chat_id] = voices
-            samples = [
-                f"{name}, soy {names[0]}, el primer personaje de nuestra historia.",
-                f"Yo soy {names[1]}, {name}, y continuaré lo que empiece {names[0]}.",
-                f"Soy {names[2]}, {name}. Mi personaje traerá un giro a la escena.",
-                f"Y yo soy {names[3]}, {name}. Mi personaje cerrará la escena. Decinos el tema de la historia.",
-            ]
-        combined = "\n\n".join(f"{speaker}: {sample}" for speaker, sample in zip(names, samples))
-        await send_text(chat_id, combined)
-        await send_group_voice(chat_id, list(zip(voices, samples)))
-        return
-    if data.startswith("trio1:"):
-        voice = data.split(":", 1)[1]
-        if voice not in VOICES:
-            await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Esa voz no está disponible.")
-            return
-        trio_selection[chat_id] = [voice]
-        await telegram("answerCallbackQuery", callback_query_id=callback_id, text=f"Primera voz: {voice_name(voice)}")
-        await send_text(
-            chat_id, f"Primera voz: {voice_name(voice)}. Elige la segunda.",
-            reply_markup={"inline_keyboard": voice_keyboard(chat_id, "trio2", exclude=[voice])},
-        )
-        return
-    if data.startswith("trio2:"):
-        voice = data.split(":", 1)[1]
-        selection = trio_selection.get(chat_id, [])
-        if voice not in VOICES or len(selection) != 1:
             await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Empecemos de nuevo.")
-            await start_trio(chat_id)
-            return
-        selection.append(voice)
-        await telegram("answerCallbackQuery", callback_query_id=callback_id, text=f"Segunda voz: {voice_name(voice)}")
-        await send_text(
-            chat_id, f"Segunda voz: {voice_name(voice)}. Ahora elige la tercera.",
-            reply_markup={"inline_keyboard": voice_keyboard(chat_id, "trio3", exclude=selection)},
-        )
+            await send_text(chat_id, "Esa selección ya no está activa. Elige el modo otra vez desde el menú.")
         return
-    if data.startswith("trio3:"):
-        voice = data.split(":", 1)[1]
-        selection = trio_selection.get(chat_id, [])
-        if voice not in VOICES or len(selection) != 2:
+    if legacy_step == "gsel":
+        _, kind, voice = data.split(":", 2)
+        if kind not in GROUP_MODE_SIZES:
             await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Empecemos de nuevo.")
-            await start_trio(chat_id)
             return
-        voices = tuple(selection + [voice])
-        trio_pairs[chat_id] = voices
-        trio_enabled[chat_id] = True
-        duo_enabled[chat_id] = False
-        quartet_enabled[chat_id] = False
-        story_enabled[chat_id] = False
-        selected_voice[chat_id] = voices[0]
-        voice_enabled[chat_id] = True
-        names = [voice_name(item) for item in voices]
-        await telegram("answerCallbackQuery", callback_query_id=callback_id, text=f"Trío: {', '.join(names)}")
-        name = get_preferred_name(chat_id) or callback.get("from", {}).get("first_name") or "amigo"
-        samples = [
-            f"Hola, {name}. Soy {names[0]} y vamos a conversar entre los tres.",
-            f"{name}, yo soy {names[1]}. Voy a sumar otra mirada después de {names[0]}.",
-            f"Y yo soy {names[2]}, {name}. Cierro el turno con una idea práctica. Mandanos tu pregunta.",
-        ]
-        combined = "\n\n".join(f"{speaker}: {sample}" for speaker, sample in zip(names, samples))
-        await send_text(chat_id, combined)
-        await send_group_voice(chat_id, list(zip(voices, samples)))
-        return
-    if data.startswith("duo1:"):
-        voice = data.split(":", 1)[1]
-        if voice not in VOICES:
-            await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Esa voz no está disponible.")
-            return
-        duo_first[chat_id] = voice
-        await telegram("answerCallbackQuery", callback_query_id=callback_id, text=f"Primera voz: {voice_name(voice)}")
-        await send_text(
-            chat_id,
-            f"Primera voz: {voice_name(voice)}. Ahora elige una segunda voz distinta.",
-            reply_markup={"inline_keyboard": voice_keyboard(chat_id, "duo2", exclude=voice)},
-        )
-        return
-    if data.startswith("duo2:"):
-        voice = data.split(":", 1)[1]
-        first = duo_first.get(chat_id)
-        if voice not in VOICES or not first:
-            await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Empecemos de nuevo.")
-            await start_duo(chat_id)
-            return
-        if voice == first:
-            await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Elige dos voces distintas.")
-            return
-        duo_pairs[chat_id] = (first, voice)
-        duo_enabled[chat_id] = True
-        trio_enabled[chat_id] = False
-        quartet_enabled[chat_id] = False
-        story_enabled[chat_id] = False
-        selected_voice[chat_id] = first
-        voice_enabled[chat_id] = True
-        await telegram("answerCallbackQuery", callback_query_id=callback_id, text=f"Dúo: {voice_name(first)} y {voice_name(voice)}")
-        name = get_preferred_name(chat_id) or callback.get("from", {}).get("first_name") or "amigo"
-        first_sample = f"Hola, {name}. Soy {voice_name(first)} y vamos a responder juntos, por turnos."
-        second_sample = f"{name}, yo soy {voice_name(voice)}. Mandanos un mensaje o un audio para probar el modo dúo."
-        await send_text(chat_id, f"{voice_name(first)}: {first_sample}\n\n{voice_name(voice)}: {second_sample}")
-        await send_group_voice(chat_id, [(first, first_sample), (voice, second_sample)])
+        await advance_group_selection(chat_id, callback, kind, voice)
         return
     if not data.startswith("voice:"):
         await telegram("answerCallbackQuery", callback_query_id=callback_id)
@@ -1432,6 +1456,7 @@ async def handle_callback(callback: dict):
     if voice not in VOICES:
         await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Esa voz no está disponible.")
         return
+    group_selection.pop(chat_id, None)
     duo_enabled[chat_id] = False
     trio_enabled[chat_id] = False
     quartet_enabled[chat_id] = False
