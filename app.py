@@ -6,6 +6,7 @@ import random
 import re
 import sqlite3
 import tempfile
+import time
 import unicodedata
 import urllib.parse as urllib_parse
 from datetime import datetime, timedelta, timezone
@@ -1408,20 +1409,44 @@ TRIVIA_CATEGORIES = [
     "música", "geografía", "tecnología", "videojuegos", "refranes",
 ]
 TRIVIA_COUNTRIES = [
-    # Argentina first (his weighting), then the rest of the Americas.
+    # Argentina first, then EVERY American country individually: his rule is
+    # "ninguno se queda afuera".
     "Argentina", "Brasil", "Chile", "Uruguay", "Paraguay", "Bolivia",
-    "Perú", "Ecuador", "Colombia", "Venezuela", "México",
-    "Estados Unidos", "Canadá", "Cuba", "República Dominicana",
-    "Puerto Rico", "Jamaica", "Costa Rica", "Panamá", "Guatemala",
-    "Honduras", "El Salvador", "Nicaragua", "Haití", "Trinidad y Tobago",
-    # Main Europe.
-    "España", "Francia", "Italia", "Alemania", "Reino Unido",
-    "Portugal", "Países Bajos", "Bélgica", "Suiza", "Suecia",
-    "Noruega", "Polonia", "Grecia",
-    # Asia and Africa.
-    "China", "Japón", "India", "Corea del Sur", "Turquía",
-    "Arabia Saudita", "Egipto", "Sudáfrica", "Nigeria", "Marruecos",
-    "Kenia",
+    "Perú", "Ecuador", "Colombia", "Venezuela", "Guyana", "Surinam",
+    "México", "Estados Unidos", "Canadá", "Belice",
+    "Guatemala", "Honduras", "El Salvador", "Nicaragua", "Costa Rica",
+    "Panamá", "Cuba", "República Dominicana", "Puerto Rico", "Haití",
+    "Jamaica", "Bahamas", "Barbados", "Trinidad y Tobago", "Granada",
+    "Dominica", "Santa Lucía", "San Vicente y las Granadinas",
+    "San Cristóbal y Nieves", "Antigua y Barbuda",
+    # Europe: the great majority.
+    "España", "Francia", "Italia", "Alemania", "Reino Unido", "Irlanda",
+    "Portugal", "Países Bajos", "Bélgica", "Luxemburgo", "Suiza",
+    "Austria", "Mónaco", "Liechtenstein", "Andorra", "San Marino",
+    "Malta", "Suecia", "Noruega", "Dinamarca", "Finlandia", "Islandia",
+    "Estonia", "Letonia", "Lituania", "Polonia", "República Checa",
+    "Eslovaquia", "Hungría", "Rumania", "Bulgaria", "Grecia", "Chipre",
+    "Croacia", "Serbia", "Eslovenia", "Bosnia y Herzegovina",
+    "Montenegro", "Macedonia del Norte", "Albania", "Kosovo",
+    "Ucrania", "Rusia", "Bielorrusia", "Moldavia",
+    # Asia: the great majority.
+    "China", "Japón", "Corea del Sur", "Corea del Norte", "Mongolia",
+    "Taiwán", "India", "Pakistán", "Bangladés", "Sri Lanka", "Nepal",
+    "Bután", "Maldivas", "Afganistán", "Kazajistán", "Uzbekistán",
+    "Turkmenistán", "Kirguistán", "Tayikistán", "Irán", "Irak",
+    "Arabia Saudita", "Emiratos Árabes Unidos", "Catar", "Kuwait",
+    "Baréin", "Omán", "Yemen", "Jordania", "Líbano", "Siria",
+    "Israel", "Palestina", "Turquía", "Georgia", "Armenia",
+    "Azerbaiyán", "Tailandia", "Vietnam", "Laos", "Camboya",
+    "Myanmar", "Malasia", "Singapur", "Indonesia", "Filipinas",
+    "Brunéi", "Timor Oriental",
+    # Africa: the main ones.
+    "Egipto", "Marruecos", "Argelia", "Túnez", "Libia", "Sudán",
+    "Senegal", "Mali", "Níger", "Chad", "Nigeria", "Ghana",
+    "Costa de Marfil", "Camerún", "Etiopía", "Somalia", "Kenia",
+    "Uganda", "Tanzania", "Ruanda", "República Democrática del Congo",
+    "Angola", "Zambia", "Zimbabue", "Botsuana", "Namibia",
+    "Sudáfrica", "Mozambique", "Madagascar",
 ]
 TRIVIA_CATEGORY_HINTS = {
     "deportes": (
@@ -1453,10 +1478,123 @@ TRIVIA_CANNED_MOCKS = [
     "{name}, che, ¿jugás en serio o me hacés reír?",
 ]
 TRIVIA_LIVES = 3
+TRIVIA_MAX_LIVES = 6
+TRIVIA_STREAK_GIFT = 3  # every N-answer streak gifts a life
 TRIVIA_CATEGORY_GOAL = 5
+TRIVIA_TIMER_SECONDS = 600  # 10-minute cronometro per category sprint
+TRIVIA_TIMER_WARNINGS = (300, 120, 60, 30)  # seconds remaining
+TRIVIA_MAX_LEVEL = 150
+TRIVIA_GRAND_PRIZE = "el Gran Trofeo de la Ruleta Sabrosa 🏆"
+TRIVIA_COUNTRY_PRIZES = {
+    "Argentina": "un mate bien cebado 🧉",
+    "Brasil": "una caipirinha 🍹",
+    "Chile": "un vino tinto del valle 🍷",
+    "Uruguay": "un asado de domingo 🥩",
+    "Paraguay": "un tereré bien frío 🧊",
+    "Bolivia": "una salteña 🥟",
+    "Perú": "un ceviche fresco 🐟",
+    "Ecuador": "un encebollado 🍲",
+    "Colombia": "un café de la zona cafetera ☕",
+    "Venezuela": "una arepa 🫓",
+    "México": "unos tacos al pastor 🌮",
+    "Estados Unidos": "una hamburguesa gigante 🍔",
+    "Canadá": "un jarabe de arce 🍁",
+    "Cuba": "una noche de son cubano 🎺",
+    "República Dominicana": "una bachata bailada 💃",
+    "Puerto Rico": "una piña colada 🍍",
+    "Jamaica": "una tarde de reggae 🎶",
+    "Costa Rica": "un día de pura vida 🌴",
+    "Panamá": "un sombrero pintado 👒",
+    "Guatemala": "un tejido de colores 🧵",
+    "Honduras": "una baleada 🌯",
+    "El Salvador": "una pupusa 🥙",
+    "Nicaragua": "un gallo pinto 🍚",
+    "Haití": "un griot con arroz 🍗",
+    "Trinidad y Tobago": "un tambor de calipso 🥁",
+    "España": "una paella 🥘",
+    "Francia": "un croissant 🥐",
+    "Italia": "una pizza napolitana 🍕",
+    "Alemania": "un pretzel 🥨",
+    "Reino Unido": "un té de las cinco 🫖",
+    "Portugal": "un pastel de nata 🍮",
+    "Países Bajos": "unos tulipanes 🌷",
+    "Bélgica": "un chocolate belga 🍫",
+    "Suiza": "un reloj de cuco 🕰️",
+    "Suecia": "unas albóndigas suecas 🍽️",
+    "Noruega": "un fiordo en miniatura 🏔️",
+    "Polonia": "unos pierogi 🥟",
+    "Grecia": "una ensalada griega 🥗",
+    "China": "un té de jazmín 🍵",
+    "Japón": "un sushi variado 🍣",
+    "India": "un curry con naan 🍛",
+    "Corea del Sur": "un kimchi 🥬",
+    "Turquía": "un dulce de baklava 🍯",
+    "Arabia Saudita": "unos dátiles premium 🌴",
+    "Egipto": "una pirámide en miniatura 🔺",
+    "Sudáfrica": "una vuvuzela 🎺",
+    "Nigeria": "un jollof rice 🍚",
+    "Marruecos": "un té a la menta 🍵",
+    "Kenia": "un safari en miniatura 🦁",
+}
 trivia_games = {}
 trivia_lineups = {}
 trivia_media = {}
+
+
+TRIVIA_NUMBER_WORDS = {
+    0: "ninguna", 1: "una", 2: "dos", 3: "tres",
+    4: "cuatro", 5: "cinco", 6: "seis",
+}
+
+
+def trivia_lives_line(lives: int) -> str:
+    """The voices count his lives down in words: 'te quedan dos', 'te queda una'."""
+    if lives <= 0:
+        return "Te quedaste sin vidas."
+    if lives == 1:
+        return "Te queda una vida."
+    return f"Te quedan {TRIVIA_NUMBER_WORDS.get(lives, str(lives))} vidas."
+
+
+def trivia_difficulty(level: int) -> str:
+    """Questions get harder as he levels up."""
+    if level <= 10:
+        return "fácil"
+    if level <= 30:
+        return "media"
+    if level <= 60:
+        return "difícil"
+    return "de experto"
+
+
+def trivia_level_up(game) -> int:
+    """One correct answer = one level. Returns the new level, 0 when already capped."""
+    level = game.get("level", 1)
+    if level < TRIVIA_MAX_LEVEL:
+        level += 1
+        game["level"] = level
+        return level
+    return 0
+
+
+def trivia_apply_gift(game) -> bool:
+    """Every 3-answer streak gifts a life (up to the cap). True when granted."""
+    streak = game.get("streak", 0)
+    if streak and streak % TRIVIA_STREAK_GIFT == 0 and game["lives"] < TRIVIA_MAX_LIVES:
+        game["lives"] += 1
+        return True
+    return False
+
+
+def trivia_timeout_life(game) -> bool:
+    """A cronometro time-out costs a life. True when the game is over."""
+    game["lives"] -= 1
+    game["streak"] = 0
+    return game["lives"] <= 0
+
+
+def trivia_country_prize(country: str) -> str:
+    return TRIVIA_COUNTRY_PRIZES.get(country, f"un recuerdo de {country} 🎁")
 
 
 def trivia_round_voices(chat_id: int):
@@ -1653,13 +1791,15 @@ def parse_trivia_question(text: str):
     }
 
 
-async def trivia_generate_question(category: str, country, asked):
+async def trivia_generate_question(category: str, country, asked, level: int = 1):
     country_clause = f" ambientada o referida a {country}" if country else ""
     hint = TRIVIA_CATEGORY_HINTS.get(category, "")
+    difficulty = trivia_difficulty(level)
     recent = list(asked)[-8:] or ["(todavía ninguna)"]
     prompt = (
         "Sos el generador de un juego de trivia argentino estilo Preguntados. "
-        f"Generá UNA pregunta de dificultad media sobre la categoría \"{category}\"{country_clause}. "
+        f"Generá UNA pregunta de dificultad {difficulty} (nivel {level} de "
+        f"{TRIVIA_MAX_LEVEL}) sobre la categoría \"{category}\"{country_clause}. "
         "Tiene que tener una sola respuesta correcta inequívoca y cuatro opciones plausibles. "
         + hint +
         "No repitas ninguna de estas preguntas ya usadas: "
@@ -1716,8 +1856,13 @@ async def trivia_menu(chat_id: int):
     await send_text(
         chat_id,
         "🎡 LA RULETA SABROSA\n"
-        f"Tenés {TRIVIA_LIVES} vidas por partida: cada error te saca una. "
+        f"Tenés {TRIVIA_LIVES} vidas por partida: cada error te saca una, "
+        f"pero una racha de {TRIVIA_STREAK_GIFT} aciertos te regala una. "
         f"{TRIVIA_CATEGORY_GOAL} aciertos ganan una categoría y esa no vuelve a salir. "
+        "Cada categoría corre contra un cronómetro de 10 minutos: si se acaba, "
+        "perdés una vida. Cada acierto te sube de nivel (hasta el "
+        f"{TRIVIA_MAX_LEVEL}) y las preguntas se ponen más difíciles. "
+        "Completar todo un país, o toda la ruleta clásica, te desbloquea un premio. "
         "Respondés con los botones, o hablado: decí el número o el nombre de la opción. "
         "Las voces cambian en cada ronda: una presenta, otra lee la pregunta y otra reacciona.\n\n"
         "Elegí cómo jugar:",
@@ -1736,8 +1881,16 @@ async def trivia_begin(chat_id: int, countries_mode: bool):
         "phase": "ready",
         "countries": countries_mode,
         "lives": TRIVIA_LIVES,
+        "streak": 0,
+        "level": 1,
         "score": {},
         "won": [],
+        "country": None,
+        "country_won": [],
+        "countries_done": [],
+        "sprint": None,
+        "timer_gen": 0,
+        "deadline": None,
         "asked": deque(maxlen=80),
         "current": None,
     }
@@ -1745,7 +1898,8 @@ async def trivia_begin(chat_id: int, countries_mode: bool):
     name = get_preferred_name(chat_id) or "campeón"
     await send_text(
         chat_id,
-        f"🎡 Arranca la ruleta {mode_line}. Tenés {TRIVIA_LIVES} vidas. "
+        f"🎡 Arranca la ruleta {mode_line}. Tenés {TRIVIA_LIVES} vidas y un "
+        "cronómetro de 10 minutos por categoría. "
         "Girá con el botón de abajo o decime 'girá'.",
         reply_markup={"inline_keyboard": [
             [{"text": "🎡 Girar la ruleta", "callback_data": "trivia:spin"}],
@@ -1772,25 +1926,76 @@ async def trivia_spin(chat_id: int):
     if not game:
         await send_text(chat_id, "La ruleta no está en marcha. Escribí /ruleta para empezar.")
         return
-    available = [c for c in TRIVIA_CATEGORIES if c not in game["won"]]
-    if not available:
-        await send_text(
-            chat_id,
-            "🏆 ¡Ganaste todas las categorías! Sos el campeón absoluto de la ruleta. "
-            "Escribí /ruleta para jugar de nuevo.",
-        )
-        trivia_games.pop(chat_id, None)
-        return
+    name = get_preferred_name(chat_id) or "campeón"
+    country = None
+    new_country = False
+    if game["countries"]:
+        # Country mode: he must complete EVERY category of the landed country
+        # before the roulette offers another country.
+        country = game.get("country")
+        if country is None:
+            remaining = [c for c in TRIVIA_COUNTRIES if c not in game["countries_done"]]
+            if not remaining:
+                await send_text(
+                    chat_id,
+                    f"🌎 ¡CAMPEÓN MUNDIAL, {name}! Completaste TODOS los países de la "
+                    f"ruleta. Desbloqueaste {TRIVIA_GRAND_PRIZE}. "
+                    "Escribí /ruleta para jugar de nuevo.",
+                )
+                trivia_games.pop(chat_id, None)
+                return
+            country = random.choice(remaining)
+            game["country"] = country
+            game["country_won"] = []
+            game["score"] = {}
+            new_country = True
+        available = [c for c in TRIVIA_CATEGORIES if c not in game["country_won"]]
+        if not available:
+            prize = trivia_country_prize(country)
+            game["countries_done"].append(country)
+            game["country"] = None
+            game["sprint"] = None
+            trivia_cancel_timer(game)
+            done = len(game["countries_done"])
+            total = len(TRIVIA_COUNTRIES)
+            text = (
+                f"🏆 ¡{name}, completaste TODAS las categorías de {country}! "
+                f"{country} te regala {prize}. Llevás {done} de {total} países. "
+                "Girá de nuevo para conocer tu próximo destino."
+            )
+            await send_text(chat_id, text, reply_markup={"inline_keyboard": [
+                [{"text": "🌍 Girar por otro país", "callback_data": "trivia:spin"}],
+                [{"text": "🚪 Salir de la ruleta", "callback_data": "trivia:quit"}],
+            ]})
+            try:
+                _, _, announcer = trivia_round_voices(chat_id)
+                await send_voice_audio(chat_id, await synthesize(text, announcer), "premio.ogg")
+            except Exception:
+                log.exception("Could not send the prize voice note")
+            return
+    else:
+        available = [c for c in TRIVIA_CATEGORIES if c not in game["won"]]
+        if not available:
+            trivia_cancel_timer(game)
+            await send_text(
+                chat_id,
+                f"🏆 ¡Ganaste todas las categorías, {name}! Desbloqueaste "
+                f"{TRIVIA_GRAND_PRIZE}. Sos el campeón absoluto de la ruleta. "
+                "Escribí /ruleta para jugar de nuevo.",
+            )
+            trivia_games.pop(chat_id, None)
+            return
     game["phase"] = "spinning"
     category = random.choice(available)
-    country = random.choice(TRIVIA_COUNTRIES) if game["countries"] else None
     announcer, reader, reactor = trivia_round_voices(chat_id)
     try:
         await send_spin_animation(chat_id)
     except Exception:
         log.exception("Could not send the spin animation; continuing without it")
-    if country:
+    if country and new_country:
         announce = f"Te tocó... ¡{country}! Y la categoría es... ¡{category}!"
+    elif country:
+        announce = f"Seguís en {country}. La categoría es... ¡{category}!"
     else:
         announce = f"Te salió... ¡{category}!"
     try:
@@ -1799,7 +2004,9 @@ async def trivia_spin(chat_id: int):
         await send_voice_audio(chat_id, await join_ogg([sfx, voice_part]))
     except Exception:
         log.exception("Could not send the spin announcement")
-    question = await trivia_generate_question(category, country, game["asked"])
+    question = await trivia_generate_question(
+        category, country, game["asked"], game.get("level", 1)
+    )
     if not question:
         game["phase"] = "ready"
         await send_text(
@@ -1821,6 +2028,11 @@ async def trivia_spin(chat_id: int):
         "voices": (announcer, reader, reactor),
         "message_id": None,
     }
+    # The cronometro covers a whole category sprint: it (re)starts when the
+    # landed category changes and stops when the category is won.
+    if game.get("sprint") != category:
+        game["sprint"] = category
+        trivia_start_timer(chat_id, game)
     where = f" de {country}" if country else ""
     option_lines = "\n".join(
         f"{index + 1}. {option}" for index, option in enumerate(question["options"])
@@ -1905,27 +2117,50 @@ async def trivia_handle_answer(chat_id: int, index: int, callback=None):
             log.exception("Could not mark the trivia answer in place")
     _, _, reactor = current["voices"]
     if index == correct:
+        game["streak"] = game.get("streak", 0) + 1
+        level = trivia_level_up(game)
+        level_line = f" ¡Pasaste al nivel {level}!" if level else ""
         wins = game["score"].get(category, 0) + 1
         game["score"][category] = wins
-        if wins >= TRIVIA_CATEGORY_GOAL and category not in game["won"]:
-            game["won"].append(category)
-            feedback = (
-                f"¡Correcto, {name}! ¡Y con esta ganaste la categoría {category}! "
-                "No sale más en la ruleta. Sos un crack."
-            )
+        if wins >= TRIVIA_CATEGORY_GOAL:
+            # Category won: the cronometro for this sprint stops here.
+            trivia_cancel_timer(game)
+            game["sprint"] = None
+            if game["countries"]:
+                if category not in game["country_won"]:
+                    game["country_won"].append(category)
+                left = len(TRIVIA_CATEGORIES) - len(game["country_won"])
+                feedback = (
+                    f"¡Correcto, {name}! ¡Y con esta ganaste la categoría "
+                    f"{category} de {current.get('country')}! No sale más en este país."
+                    + (f" Te quedan {left} categorías de {current.get('country')}." if left else "")
+                )
+            else:
+                if category not in game["won"]:
+                    game["won"].append(category)
+                feedback = (
+                    f"¡Correcto, {name}! ¡Y con esta ganaste la categoría {category}! "
+                    "No sale más en la ruleta. Sos un crack."
+                )
         else:
             feedback = (
                 random.choice(TRIVIA_CONGRATS).format(name=name)
                 + f" Llevás {wins} de {TRIVIA_CATEGORY_GOAL} en {category}."
             )
+        feedback += level_line
+        if trivia_apply_gift(game):
+            feedback += (
+                " Y de yapa te regalamos una vida: ahora tenés "
+                f"{TRIVIA_NUMBER_WORDS.get(game['lives'], game['lives'])}."
+            )
         game_over = False
     else:
+        game["streak"] = 0
         game["lives"] -= 1
         mock = await trivia_mock(name, current)
-        lives_word = "vida" if game["lives"] == 1 else "vidas"
         feedback = (
             f"{mock} La correcta era {current['options'][correct]}. "
-            f"Te quedan {game['lives']} {lives_word}."
+            f"{trivia_lives_line(game['lives'])}"
         )
         game_over = game["lives"] <= 0
     await send_text(chat_id, feedback)
@@ -1934,19 +2169,7 @@ async def trivia_handle_answer(chat_id: int, index: int, callback=None):
     except Exception:
         log.exception("Could not send the feedback voice note")
     if game_over:
-        won_line = (
-            "Categorías ganadas: " + ", ".join(game["won"]) + "."
-            if game["won"] else "No ganaste ninguna categoría esta vez."
-        )
-        await send_text(
-            chat_id,
-            f"💀 Fin de la partida, {name}. {won_line} ¿Revancha?",
-            reply_markup={"inline_keyboard": [
-                [{"text": "🎡 Jugar de nuevo", "callback_data": "trivia:menu"}],
-                [{"text": "⬅️ Menú principal", "callback_data": "mode:menu"}],
-            ]},
-        )
-        trivia_games.pop(chat_id, None)
+        await trivia_game_over(chat_id, game, name)
         return
     await send_text(
         chat_id,
@@ -1956,6 +2179,124 @@ async def trivia_handle_answer(chat_id: int, index: int, callback=None):
             [{"text": "🚪 Salir de la ruleta", "callback_data": "trivia:quit"}],
         ]},
     )
+
+
+async def trivia_game_over(chat_id: int, game, name: str):
+    """Shared 'lost all lives' ending: summary, restart buttons, clean state.
+
+    Starting over means from zero: in countries mode the next run spins a new
+    random country, exactly as he asked.
+    """
+    trivia_cancel_timer(game)
+    if game.get("countries"):
+        done = game.get("countries_done") or []
+        summary = (
+            "Países completados: " + ", ".join(done) + "."
+            if done else "No completaste ningún país esta vez."
+        )
+        restart = " La próxima partida arranca de cero, con un país nuevo al azar."
+    else:
+        summary = (
+            "Categorías ganadas: " + ", ".join(game["won"]) + "."
+            if game["won"] else "No ganaste ninguna categoría esta vez."
+        )
+        restart = ""
+    await send_text(
+        chat_id,
+        f"💀 Fin de la partida, {name}. {summary}{restart} ¿Revancha?",
+        reply_markup={"inline_keyboard": [
+            [{"text": "🎡 Jugar de nuevo", "callback_data": "trivia:menu"}],
+            [{"text": "⬅️ Menú principal", "callback_data": "mode:menu"}],
+        ]},
+    )
+    trivia_games.pop(chat_id, None)
+
+
+def trivia_start_timer(chat_id: int, game):
+    """(Re)start the 10-minute cronometro for the current category sprint."""
+    game["timer_gen"] = game.get("timer_gen", 0) + 1
+    game["deadline"] = time.time() + TRIVIA_TIMER_SECONDS
+    gen = game["timer_gen"]
+    for remaining in TRIVIA_TIMER_WARNINGS:
+        asyncio.create_task(trivia_timer_warning(chat_id, gen, remaining))
+    asyncio.create_task(trivia_timer_timeout(chat_id, gen))
+
+
+def trivia_cancel_timer(game):
+    """Stop the cronometro: pending wake-ups check the generation counter."""
+    game["timer_gen"] = game.get("timer_gen", 0) + 1
+    game["deadline"] = None
+
+
+async def trivia_timer_warning(chat_id: int, gen: int, remaining: int):
+    """The voices hurry him along as the cronometro runs down."""
+    await asyncio.sleep(TRIVIA_TIMER_SECONDS - remaining)
+    game = trivia_games.get(chat_id)
+    if not game or game.get("timer_gen") != gen or not game.get("deadline"):
+        return
+    name = get_preferred_name(chat_id) or "campeón"
+    if remaining >= 120:
+        text = f"⏳ {name}, quedan {remaining // 60} minutos del cronómetro."
+    elif remaining == 60:
+        text = f"⏳ ¡Último minuto, {name}! ¡Dale que se acaba!"
+    else:
+        text = f"⏳ ¡{remaining} segundos, {name}, apurate!"
+    await send_text(chat_id, text)
+    try:
+        announcer = trivia_round_voices(chat_id)[0]
+        await send_voice_audio(chat_id, await synthesize(text, announcer), "cronometro.ogg")
+    except Exception:
+        log.exception("Could not send the cronometro warning voice")
+
+
+async def trivia_timer_timeout(chat_id: int, gen: int):
+    """A time-out costs a life; a pending question is forfeited."""
+    await asyncio.sleep(TRIVIA_TIMER_SECONDS)
+    game = trivia_games.get(chat_id)
+    if not game or game.get("timer_gen") != gen:
+        return
+    name = get_preferred_name(chat_id) or "campeón"
+    current = game.get("current") if game.get("phase") == "question" else None
+    if current:
+        if current.get("message_id"):
+            try:
+                await telegram(
+                    "editMessageText", chat_id=chat_id,
+                    message_id=current["message_id"],
+                    text=(
+                        f"🎯 {current['category'].upper()}\n\n{current['question']}\n\n"
+                        + "\n".join(
+                            f"{'🟢' if position == current['correct'] else '⚪'} {option}"
+                            for position, option in enumerate(current["options"])
+                        )
+                    ),
+                    reply_markup={"inline_keyboard": []},
+                )
+            except Exception:
+                log.exception("Could not mark the timed-out question")
+        game["current"] = None
+        game["phase"] = "ready"
+    over = trivia_timeout_life(game)
+    # The clock restarts with his next spin, not while he is away.
+    game["sprint"] = None
+    if over:
+        await send_text(chat_id, f"⏰ ¡Se acabó el cronómetro, {name}! Y era tu última vida...")
+        await trivia_game_over(chat_id, game, name)
+        return
+    text = (
+        f"⏰ ¡Se acabó el cronómetro, {name}! Perdés una vida. "
+        + trivia_lives_line(game["lives"])
+        + " El cronómetro arranca de nuevo con tu próximo giro."
+    )
+    await send_text(chat_id, text, reply_markup={"inline_keyboard": [
+        [{"text": "🎡 Girar de nuevo", "callback_data": "trivia:spin"}],
+        [{"text": "🚪 Salir de la ruleta", "callback_data": "trivia:quit"}],
+    ]})
+    try:
+        announcer = trivia_round_voices(chat_id)[0]
+        await send_voice_audio(chat_id, await synthesize(text, announcer), "cronometro.ogg")
+    except Exception:
+        log.exception("Could not send the timeout voice")
 
 
 async def start_trivia_lineup(chat_id: int):
