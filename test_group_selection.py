@@ -111,6 +111,53 @@ class GroupSelectionTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([voice for voice, _ in turns], ["es-BO-SofiaNeural", "es-MX-DaliaNeural"])
         self.assertIn("Dalia", sent[-1])
 
+    async def test_duo_prompt_asks_for_named_dialogue(self):
+        """The shared completion must instruct a dialogue where both voices name each other."""
+        app.duo_enabled[CHAT] = True
+        app.duo_pairs[CHAT] = ("es-AR-TomasNeural", "es-AR-ElenaNeural")
+        captured = []
+
+        async def fake_complete(messages):
+            captured.append(messages[0]["content"])
+            return "Tomás: Hola Elena, ¿cómo estás?\nElena: Muy bien, Tomás, gracias."
+
+        with patch.object(app, "telegram", new=AsyncMock()), \
+             patch.object(app, "send_text", new=AsyncMock()), \
+             patch.object(app, "send_group_voice", new=AsyncMock()), \
+             patch.object(app, "complete", fake_complete):
+            await app.handle_message({"chat": {"id": CHAT}, "text": "saluden entre ustedes"})
+        prompt = captured[0]
+        self.assertIn("diálogo", prompt)
+        self.assertIn("Tomás", prompt)
+        self.assertIn("Elena", prompt)
+        self.assertIn("por su nombre", prompt)
+
+    async def test_duo_sequential_fallback_keeps_dialogue(self):
+        """When the shared completion ignores the format, per-voice calls still ask for naming."""
+        app.duo_enabled[CHAT] = True
+        app.duo_pairs[CHAT] = ("es-AR-TomasNeural", "es-AR-ElenaNeural")
+        calls = []
+
+        async def fake_complete(messages):
+            calls.append(messages[0]["content"])
+            if len(calls) == 1:
+                return "una respuesta sin etiquetas ni formato de diálogo"
+            return "texto hablado"
+
+        sent = []
+
+        async def capture_text(chat_id, text, **kwargs):
+            sent.append(text)
+
+        with patch.object(app, "telegram", new=AsyncMock()), \
+             patch.object(app, "send_text", capture_text), \
+             patch.object(app, "send_group_voice", new=AsyncMock()), \
+             patch.object(app, "complete", fake_complete):
+            await app.handle_message({"chat": {"id": CHAT}, "text": "hola"})
+        self.assertEqual(len(calls), 3)
+        self.assertIn("dirigite a Elena", calls[1])
+        self.assertIn("Respondéle a Tomás", calls[2])
+
     async def test_trio_and_quartet_complete_with_all_voices(self):
         await tap("mode:trio")
         await tap("gsel:trio:es-AR-TomasNeural")
