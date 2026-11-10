@@ -90,5 +90,67 @@ class SpinTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(len(room["used_retos"]), 1)
 
 
+class PageAccessibilityTests(unittest.TestCase):
+    def test_page_has_no_text_inputs(self):
+        # A keyboard must never pop up: nothing editable on the page.
+        self.assertNotIn("<input", webapp.PAGE)
+        self.assertNotIn("contenteditable", webapp.PAGE)
+
+    def test_page_announces_status_to_screen_readers(self):
+        self.assertIn('role="status"', webapp.PAGE)
+        self.assertIn('aria-live="assertive"', webapp.PAGE)
+        self.assertIn('lang="es"', webapp.PAGE)
+
+    def test_creating_a_room_does_not_navigate(self):
+        # A full navigation can drop focus into the browser chrome (keyboard).
+        self.assertNotIn("location.href", webapp.PAGE)
+        self.assertIn("history.pushState", webapp.PAGE)
+
+    def test_every_button_has_discernible_text(self):
+        self.assertIn("Crear una mesa nueva", webapp.PAGE)
+        self.assertIn("Entrar a jugar", webapp.PAGE)
+        self.assertIn("Copiar el link", webapp.PAGE)
+        self.assertIn("Girar la ruleta", webapp.PAGE)
+
+
+class JoinGuidanceTests(unittest.IsolatedAsyncioTestCase):
+    async def join(self, room, name=""):
+        from fastapi import WebSocketDisconnect
+
+        ws = FakeWS()
+        ws.accept = AsyncMock()
+
+        async def receive():
+            raise WebSocketDisconnect()
+
+        ws.receive_text = receive
+        code = room["code"]
+        webapp.rooms[code] = room
+        with patch.object(webapp, "narrate", new=AsyncMock()) as narr:
+            await webapp.sala_ws(ws, code, name=name)
+        return ws, narr
+
+    async def test_first_player_hears_spoken_guidance(self):
+        room = fresh_room()
+        try:
+            ws, narr = await self.join(room)
+            welcome = [m for m in ws.messages if m["event"] == "welcome"]
+            self.assertEqual(welcome[0]["name"], "Jugador 1")  # auto-assigned
+            self.assertIn("Ya estás en la mesa", narr.await_args_list[0][0][1])
+            self.assertIn("Girar la ruleta", narr.await_args_list[0][0][1])
+        finally:
+            webapp.rooms.pop("TEST", None)
+
+    async def test_second_player_gets_the_plain_join_narration(self):
+        room = fresh_room("Ana")
+        try:
+            _, narr = await self.join(room)
+            first = narr.await_args_list[0][0][1]
+            self.assertIn("se sumó a la mesa", first)
+            self.assertNotIn("Copiar el link", first)
+        finally:
+            webapp.rooms.pop("TEST", None)
+
+
 if __name__ == "__main__":
     unittest.main()
