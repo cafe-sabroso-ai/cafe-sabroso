@@ -387,14 +387,18 @@ async def welcome(user: dict, user_key: str, fallback_name=None):
     name = get_preferred_name(user_key) or fallback_name or "amigo"
     text = (
         f"📋 MENÚ PRINCIPAL\nHola, {name}. Escribe uno de estos comandos para empezar. "
-        "En los modos dúo, trío, cuarteto, quinteto y sexteto, las voces conversan entre ellas "
-        "y se llaman por su nombre en un mismo audio.\n\n"
+        "En los modos de dúo a deceto (de 2 a 10 voces), las voces conversan entre ellas "
+        "y contigo, y se llaman por su nombre en un mismo audio.\n\n"
         "/voces - elegir una voz\n"
         "/duo - conversar con dos voces\n"
         "/trio - conversar con tres voces\n"
         "/cuarteto - conversar con cuatro voces\n"
         "/quinteto - conversar con cinco voces\n"
         "/sexteto - conversar con seis voces\n"
+        "/septeto - conversar con siete voces\n"
+        "/octeto - conversar con ocho voces\n"
+        "/noneto - conversar con nueve voces\n"
+        "/deceto - conversar con diez voces\n"
         "/historia - crear una historia con cuatro personajes\n"
         "(en los modos de grupo podés escribir SUMAR para que tu voz participe)\n"
         "/musica - buscar un artista o una canción\n"
@@ -463,6 +467,18 @@ async def handle_message(message: dict, contact: dict):
             return
         if text.startswith("/sexteto"):
             await start_group_mode(user, user_key, "sextet")
+            return
+        if text.startswith("/septeto"):
+            await start_group_mode(user, user_key, "septet")
+            return
+        if text.startswith("/octeto"):
+            await start_group_mode(user, user_key, "octet")
+            return
+        if text.startswith("/noneto"):
+            await start_group_mode(user, user_key, "nonet")
+            return
+        if text.startswith("/deceto"):
+            await start_group_mode(user, user_key, "decet")
             return
         if text.startswith("/historia"):
             await start_group_mode(user, user_key, "story")
