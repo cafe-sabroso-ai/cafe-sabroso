@@ -1032,32 +1032,50 @@ def archive_music_url(query: str):
 
 
 async def apple_music_results(query: str):
-    response = await http.get(
-        "https://itunes.apple.com/search",
-        params={"term": query[:120], "entity": "song", "limit": 10, "country": "AR"},
-        timeout=20,
-    )
-    response.raise_for_status()
-    tracks = []
-    for item in response.json().get("results", []):
-        url = item.get("trackViewUrl", "")
-        if item.get("kind") != "song" or not url.startswith("https://music.apple.com/"):
+    term = re.sub(r"[,;:!?¿¡]", " ", query[:120])
+    term = re.sub(r"\s+", " ", term).strip()
+    last_error = None
+    # Second attempt drops the country filter and declares the media type:
+    # the narrow query occasionally comes back empty for known songs.
+    for params in (
+        {"term": term, "entity": "song", "limit": 10, "country": "AR"},
+        {"term": term, "media": "music", "entity": "song", "limit": 10},
+    ):
+        try:
+            response = await http.get(
+                "https://itunes.apple.com/search", params=params, timeout=20,
+            )
+            response.raise_for_status()
+            results = response.json().get("results", [])
+            log.info("Apple Music search for %r returned %s results", term, len(results))
+        except Exception as error:
+            last_error = error
+            log.warning("Apple Music search attempt failed: %s", error)
             continue
-        tracks.append({
-            "title": str(item.get("trackName", "Canción"))[:180],
-            "artist": str(item.get("artistName", "Artista"))[:180],
-            "album": str(item.get("collectionName", ""))[:180],
-            "url": url,
-            "preview": item.get("previewUrl", "")
-            if str(item.get("previewUrl", "")).startswith("https://") else None,
-        })
-    query_normalized = normalized(query)
-    tracks.sort(key=lambda track: (
-        normalized(track["artist"]) != query_normalized,
-        query_normalized not in normalized(track["artist"]),
-        query_normalized not in normalized(track["title"]),
-    ))
-    return tracks[:5]
+        tracks = []
+        for item in results:
+            url = item.get("trackViewUrl", "")
+            if item.get("kind") != "song" or not url.startswith("https://music.apple.com/"):
+                continue
+            tracks.append({
+                "title": str(item.get("trackName", "Canción"))[:180],
+                "artist": str(item.get("artistName", "Artista"))[:180],
+                "album": str(item.get("collectionName", ""))[:180],
+                "url": url,
+                "preview": item.get("previewUrl", "")
+                if str(item.get("previewUrl", "")).startswith("https://") else None,
+            })
+        if tracks:
+            query_normalized = normalized(term)
+            tracks.sort(key=lambda track: (
+                normalized(track["artist"]) != query_normalized,
+                query_normalized not in normalized(track["artist"]),
+                query_normalized not in normalized(track["title"]),
+            ))
+            return tracks[:5]
+    if last_error is not None:
+        raise last_error
+    return []
 
 
 def archive_license(license_url: str):
@@ -1223,7 +1241,6 @@ async def search_music(chat_id: int, query: str):
         await send_text(chat_id, "Decime el artista, la canción o ambos. Por ejemplo: Mercedes Sosa Alfonsina y el mar.")
         await send_voice(chat_id, "Decime el artista o la canción que querés buscar.")
         return
-    pending_music_query.pop(chat_id, None)
     apple_result, archive_result = await asyncio.gather(
         apple_music_results(query), licensed_music_downloads(query), return_exceptions=True,
     )
@@ -1240,7 +1257,8 @@ async def search_music(chat_id: int, query: str):
             if not isinstance(apple_result, Exception)
             else "No pude consultar el catálogo ahora. Podés abrir la búsqueda oficial en Spotify o Internet Archive."
         )
-        await send_text(chat_id, text, reply_markup={"inline_keyboard": [
+        pending_music_query[chat_id] = True
+        await send_text(chat_id, text + "\n\nPodés decirme otra canción o artista, o 'salir' para dejar la música.", reply_markup={"inline_keyboard": [
             [{"text": "Buscar en Spotify", "url": spotify_music_url(query)}],
             [{"text": "Buscar en Internet Archive", "url": archive_music_url(query)}],
         ]})
@@ -1254,7 +1272,8 @@ async def search_music(chat_id: int, query: str):
             await send_voice(
                 chat_id,
                 f"No encontré nada para {query}. Te dejo botones para abrir la "
-                "búsqueda oficial en Spotify o en Internet Archive.",
+                "búsqueda oficial en Spotify o en Internet Archive. "
+                "Si querés, decime otra canción.",
             )
         return
     summary = f"Resultados de música para «{query}»."
@@ -1262,13 +1281,19 @@ async def search_music(chat_id: int, query: str):
         summary += " Las fichas y muestras son de Apple Music; Spotify abre su búsqueda oficial."
     if downloads:
         summary += " Las descargas de Internet Archive tienen una licencia explícita y llegan como archivo MP3 directo."
-    await send_text(chat_id, summary)
+    pending_music_query[chat_id] = True
+    log.info(
+        "Music search for %r: %s Apple tracks, %s licensed downloads",
+        query, len(tracks), len(downloads),
+    )
+    await send_text(chat_id, summary + "\n\nPodés decirme otra canción o artista, o 'salir' para dejar la música.")
     total = len(tracks) + len(downloads)
     canciones = "una canción" if total == 1 else f"{total} canciones"
     await send_voice(
         chat_id,
         f"Encontré {canciones} para {query}. Te paso la lista abajo: cada ficha "
-        "tiene botones para escuchar la muestra, abrir Spotify o descargar el MP3.",
+        "tiene botones para escuchar la muestra, abrir Spotify o descargar el MP3. "
+        "Podés pedirme otra canción cuando quieras.",
     )
     for track in tracks:
         spotify_url = spotify_music_url(f"{track['artist']} {track['title']}")
@@ -1992,6 +2017,7 @@ async def trivia_menu(chat_id: int):
 
 async def trivia_begin(chat_id: int, countries_mode: bool):
     clear_group_modes(chat_id)
+    pending_music_query.pop(chat_id, None)
     if chat_id in ahorcado_games:
         await ahorcado_end(chat_id)
     trivia_games[chat_id] = {
@@ -2680,6 +2706,7 @@ async def ahorcado_update_board(chat_id: int, game):
 
 async def ahorcado_start(chat_id: int):
     clear_group_modes(chat_id)
+    pending_music_query.pop(chat_id, None)
     if chat_id in trivia_games:
         await trivia_end(chat_id)
     old = ahorcado_games.pop(chat_id, None)
@@ -2818,6 +2845,7 @@ async def welcome(chat_id: int, fallback_name=None):
     # A free Render filesystem is replaced on deploy. Never block the bot on a
     # saved preference that may no longer exist; /nombre remains available.
     group_selection.pop(chat_id, None)
+    pending_music_query.pop(chat_id, None)
     name = get_preferred_name(chat_id) or fallback_name or "amigo"
     text = (
         f"📋 MENÚ PRINCIPAL\nHola, {name}. Pulsa uno de estos botones para empezar. "
@@ -2953,6 +2981,11 @@ async def handle_message(message: dict):
         else:
             user_text = text
         if chat_id in pending_music_query:
+            if re.search(r"\b(salir|basta|cancelar|terminar)\b", normalized(user_text)):
+                pending_music_query.pop(chat_id, None)
+                await send_text(chat_id, "Listo, saliste de la búsqueda de música. Escribí /musica para volver.")
+                await send_voice(chat_id, "Listo, dejamos la música acá.")
+                return
             await search_music(chat_id, user_text)
             return
         ahorcado = ahorcado_games.get(chat_id)
