@@ -360,17 +360,16 @@ PAGE = """<!DOCTYPE html>
     <p id="estado" role="status" tabindex="-1">Bienvenido a la mesa.</p>
 
     <div id="entrada">
-      <button id="btn-crear"><span aria-hidden="true">☕ </span>Crear una mesa nueva</button>
-      <button id="btn-entrar" class="secondary" hidden><span aria-hidden="true">💗 </span>Entrar a jugar</button>
+      <button id="btn-crear" aria-label="Crear una mesa nueva"><span aria-hidden="true">☕ </span>Crear una mesa nueva</button>
+      <button id="btn-entrar" class="secondary" hidden aria-label="Entrar a jugar"><span aria-hidden="true">💗 </span>Entrar a jugar</button>
     </div>
 
     <div id="sala" hidden>
       <div id="compartir" hidden>
         Pasá este link a tus amigos:<br><strong id="link"></strong><br>
-        <button id="btn-copiar" class="secondary"><span aria-hidden="true">📤 </span>Copiar el link</button>
+        <button id="btn-copiar" class="secondary" aria-label="Copiar el link para invitar a tus amigos"><span aria-hidden="true">📤 </span>Copiar el link</button>
       </div>
-      <canvas id="wheel" width="640" height="640" role="img"
-              aria-label="La ruleta de la mesa"></canvas>
+      <canvas id="wheel" width="640" height="640" aria-hidden="true"></canvas>
       <p id="jugadores" role="status"></p>
       <button id="btn-girar" disabled><span aria-hidden="true">🎡 </span><span id="btn-girar-text">Girar la ruleta</span></button>
       <p id="resultado" role="status" aria-live="polite"></p>
@@ -386,7 +385,9 @@ const $ = (id) => document.getElementById(id);
 const estado = $("estado"), voz = $("voz"), player = $("player");
 const salaDiv = $("sala"), entrada = $("entrada");
 const btnGirar = $("btn-girar");
-let ws = null, audioUnlocked = false, myName = null;
+let ws = null, audioUnlocked = false;
+// Mismo nombre en cada visita: el servidor lo asigna una vez y lo guardamos.
+let myName = localStorage.getItem("cafe_nombre") || null;
 
 function announce(text) {
   estado.textContent = text;
@@ -509,12 +510,15 @@ $("btn-copiar").addEventListener("click", async () => {
 
 function connect(code) {
   ws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://")
-    + location.host + "/amor-con-aroma-a-cafe/ws/" + code);
+    + location.host + "/amor-con-aroma-a-cafe/ws/" + code
+    + (myName ? "?name=" + encodeURIComponent(myName) : ""));
   ws.onmessage = (ev) => {
     const msg = JSON.parse(ev.data);
     if (msg.event === "welcome") {
       myName = msg.name;
-      announce("Estás en la mesa como " + myName + ". Cuando te toque, se activa el botón Girar la ruleta.");
+      localStorage.setItem("cafe_nombre", myName);
+      const codeSpelled = code.split("").join(" ");
+      announce("Estás en la mesa " + codeSpelled + " como " + myName + ". Cuando te toque, se activa el botón Girar la ruleta.");
     } else if (msg.event === "state") {
       $("jugadores").textContent =
         "En la mesa: " + msg.players.join(", ")
