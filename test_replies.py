@@ -124,10 +124,10 @@ class EspeakVoiceTests(unittest.IsolatedAsyncioTestCase):
 
         with patch.object(app.asyncio, "create_subprocess_exec", fake_exec), \
              patch.object(app.edge_tts, "Communicate", side_effect=AssertionError("must not use Edge TTS")):
-            audio = await app.synthesize("Hola, soy Daniela.", "piper-es-ar-daniela")
+            audio = await app.synthesize("Hola, soy Davefx.", "piper-es-es-davefx")
         self.assertEqual(calls[0][1], "-m")
         self.assertIn("piper", calls[0])
-        self.assertIn("es_AR-daniela-high.onnx", calls[0][calls[0].index("--model") + 1])
+        self.assertIn("es_ES-davefx-medium.onnx", calls[0][calls[0].index("--model") + 1])
         self.assertEqual(calls[1][0], "ffmpeg")
         self.assertEqual(audio, b"RIFF")
 
@@ -159,15 +159,59 @@ class EspeakVoiceTests(unittest.IsolatedAsyncioTestCase):
             app.whisper_model = None
 
     def test_piper_voices_are_listed_after_the_screen_reader_voices(self):
-        piper_keys = ["piper-es-ar-daniela", "piper-es-mx-claude", "piper-es-mx-ald",
-                      "piper-es-es-davefx", "piper-es-es-sharvard"]
-        self.assertEqual(list(app.VOICES)[5:10], piper_keys)
+        # Only medium piper models ship: the high ones OOMed on Render's 512 MB.
+        piper_keys = ["piper-es-mx-ald", "piper-es-es-davefx", "piper-es-es-sharvard"]
+        self.assertEqual(list(app.VOICES)[5:8], piper_keys)
         for key in piper_keys:
             self.assertIn(key, app.PIPER_VOICES)
-        self.assertEqual(app.voice_name("piper-es-ar-daniela"), "Daniela")
-        self.assertEqual(list(app.VOICES)[10], "rhvoice-mateo")
+        self.assertEqual(app.voice_name("piper-es-es-davefx"), "Davefx")
+        self.assertNotIn("piper-es-ar-daniela", app.VOICES)
+        self.assertNotIn("piper-es-mx-claude", app.VOICES)
+        self.assertEqual(list(app.VOICES)[8], "rhvoice-mateo")
         self.assertEqual(app.voice_name("rhvoice-mateo"), "Mateo RH")
-        self.assertEqual(len(app.VOICES), 52)
+        self.assertEqual(len(app.VOICES), 50)
+
+    async def test_failed_voice_falls_back_to_another_engine(self):
+        """A crashing voice (piper OOM on Render) must never silence a beat."""
+        from pathlib import Path
+
+        class FakeProcess:
+            def __init__(self, args):
+                self.args = list(args)
+                self.returncode = 1 if ("-m" in args and "piper" in args) else 0
+
+            async def communicate(self, input=None):
+                if self.returncode == 0:
+                    Path(self.args[-1]).write_bytes(b"RIFF")
+                    return (b"", b"")
+                return (b"", b"piper exploded: out of memory")
+
+        async def fake_edge(text, voice):
+            class FakeComm:
+                async def save(self, path):
+                    Path(path).write_bytes(b"RIFF")
+            return FakeComm()
+
+        with patch.object(app.asyncio, "create_subprocess_exec", side_effect=lambda *a, **k: FakeProcess(a)), \
+             patch.object(app.edge_tts, "Communicate", side_effect=lambda text, voice: fake_edge(text, voice)):
+            audio = await app.synthesize("Te salió geografía.", "piper-es-es-davefx")
+        self.assertEqual(audio, b"RIFF")
+
+    async def test_all_engines_failing_raises_loudly(self):
+        from pathlib import Path
+
+        class FakeProcess:
+            def __init__(self, args):
+                self.args = list(args)
+                self.returncode = 1
+
+            async def communicate(self, input=None):
+                return (b"", b"boom")
+
+        with patch.object(app.asyncio, "create_subprocess_exec", side_effect=lambda *a, **k: FakeProcess(a)), \
+             patch.object(app.edge_tts, "Communicate", side_effect=RuntimeError("no network")):
+            with self.assertRaises(RuntimeError):
+                await app.synthesize("Hola.", "piper-es-es-davefx")
 
     async def test_rhvoice_voice_routes_to_local_rhvoice(self):
         """The Mateo RHVoice voice synthesizes locally with RHVoice-test."""
