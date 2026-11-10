@@ -204,7 +204,9 @@ BOT_COMMANDS = [
     {"command": "noneto", "description": "Conversar con nueve voces"},
     {"command": "deceto", "description": "Conversar con diez voces"},
     {"command": "historia", "description": "Crear una historia con cuatro personajes"},
+    {"command": "juegos", "description": "Abrir el apartado de juegos"},
     {"command": "ruleta", "description": "Jugar a la ruleta de preguntas"},
+    {"command": "ahorcado", "description": "Jugar al ahorcado"},
     {"command": "musica", "description": "Buscar un artista o una canción"},
     {"command": "nombre", "description": "Cambiar cómo te llama el bot"},
     {"command": "solo_texto", "description": "Desactivar las respuestas de audio"},
@@ -1970,6 +1972,8 @@ async def trivia_menu(chat_id: int):
 
 async def trivia_begin(chat_id: int, countries_mode: bool):
     clear_group_modes(chat_id)
+    if chat_id in ahorcado_games:
+        await ahorcado_end(chat_id)
     trivia_games[chat_id] = {
         "phase": "ready",
         "countries": countries_mode,
@@ -2487,6 +2491,309 @@ async def complete_trivia_lineup(chat_id: int, callback: dict, voices):
     )
 
 
+# --- El Ahorcado: voice-first word guessing game ---
+
+AHORCADO_ATTEMPTS = 6
+
+AHORCADO_FALLBACK_WORDS = [
+    ("MATE", "Infusión caliente que se comparte con bombilla."),
+    ("FACTURA", "Pastelito dulce que acompaña el mate."),
+    ("GUITARRA", "Instrumento de seis cuerdas."),
+    ("HELADO", "Postre frío y dulce."),
+    ("VENTANA", "Abertura en la pared para ver afuera."),
+    ("ZAPATO", "Prenda que va en el pie."),
+    ("CUCHARA", "Utensilio para comer la sopa."),
+    ("PERRO", "El mejor amigo del hombre."),
+    ("TORTA", "Se come en los cumpleaños."),
+    ("LLAVE", "Sirve para abrir puertas."),
+    ("ESPEJO", "Te devuelve tu imagen."),
+    ("SILLA", "Tiene cuatro patas y se usa para sentarse."),
+    ("RADIO", "Aparato para escuchar música y noticias."),
+    ("BILLETERA", "Guarda la plata y las tarjetas."),
+    ("PARAGUAS", "Te protege de la lluvia."),
+    ("ESCALERA", "Sirve para subir a lo alto."),
+    ("BOTELLA", "Envase para guardar líquidos."),
+    ("CAMISETA", "Prenda de manga corta; también la de tu club."),
+    ("ALMOHADA", "Apoya la cabeza para dormir."),
+    ("TECLADO", "Tiene teclas con letras."),
+    ("PELUCHE", "Juguete blando para abrazar."),
+    ("AZUCAR", "Endulza el café."),
+    ("LAMPARA", "Da luz sobre la mesa."),
+    ("CUADERNO", "Tiene hojas para escribir."),
+]
+
+# Spanish letter names as Whisper usually transcribes them ("la e" -> E).
+AHORCADO_LETTER_NAMES = {
+    "a": "A", "be": "B", "ce": "C", "de": "D", "e": "E", "efe": "F",
+    "ge": "G", "hache": "H", "i": "I", "jota": "J", "ka": "K",
+    "ele": "L", "eme": "M", "ene": "N", "eñe": "Ñ", "enie": "Ñ",
+    "o": "O", "pe": "P", "cu": "Q", "ere": "R", "ese": "S",
+    "te": "T", "u": "U", "uve": "V", "ve": "V", "equis": "X",
+    "ye": "Y", "i griega": "Y", "zeta": "Z",
+}
+
+# How each letter is spoken back so single letters never sound cryptic.
+AHORCADO_SPEAK = {
+    "A": "a", "B": "be", "C": "ce", "D": "de", "E": "e", "F": "efe",
+    "G": "ge", "H": "hache", "I": "i", "J": "jota", "K": "ka",
+    "L": "ele", "M": "eme", "N": "ene", "Ñ": "eñe", "O": "o",
+    "P": "pe", "Q": "cu", "R": "ere", "S": "ese", "T": "te",
+    "U": "u", "V": "ve", "W": "uve doble", "X": "equis", "Y": "ye",
+    "Z": "zeta",
+}
+
+AHORCADO_WORD_PROMPT = (
+    "Elegí UNA palabra para el juego del ahorcado en español. "
+    "Reglas: un sustantivo común y concreto, conocido por cualquier persona, "
+    "de 4 a 9 letras, una sola palabra, sin tildes, sin nombres propios, "
+    "sin groserías y sin las palabras salir, basta, cancelar o terminar. "
+    "Respondé EXACTAMENTE en este formato:\n"
+    "PALABRA: <la palabra en mayúsculas>\n"
+    "PISTA: <una pista breve y clara de máximo 12 palabras>"
+)
+
+AHORCADO_EXIT_WORDS = {"salir", "basta", "cancelar", "terminar"}
+
+ahorcado_games = {}
+
+
+def ahorcado_clean(text: str) -> str:
+    """Uppercase letters only; tildes dropped, Ñ preserved."""
+    table = str.maketrans("ÁÉÍÓÚÜáéíóúü", "AEIOUUaeiouu")
+    cleaned = text.strip().translate(table).upper()
+    return "".join(
+        char for char in cleaned if char in "ABCDEFGHIJKLMNOPQRSTUVWXYZÑ"
+    )
+
+
+def ahorcado_parse_guess(text: str):
+    """('letter', 'E') | ('word', 'PALABRA') | None from voice or typed input."""
+    cleaned = normalized(text).strip(" .,!¿?¡")
+    cleaned = re.sub(r"^(?:(?:la|el|una|un|letra|es)\s+)+", "", cleaned)
+    if cleaned in ("ene", "enie") and re.search(r"eñe|enie", text.lower()):
+        return ("letter", "Ñ")  # normalized() flattens eñe to ene; check the raw text
+    if len(cleaned) == 1 and cleaned.isalpha():
+        return ("letter", ahorcado_clean(cleaned))
+    if cleaned in AHORCADO_LETTER_NAMES:
+        return ("letter", AHORCADO_LETTER_NAMES[cleaned])
+    word = ahorcado_clean(cleaned)
+    if len(word) >= 2:
+        return ("word", word)
+    return None
+
+
+def parse_ahorcado_word(text: str):
+    """Parse the LLM's PALABRA/PISTA answer; None when unusable."""
+    word_match = re.search(r"PALABRA:\s*(\S+)", text or "", re.IGNORECASE)
+    hint_match = re.search(r"PISTA:\s*(.+)", text or "", re.IGNORECASE)
+    if not word_match or not hint_match:
+        return None
+    word = ahorcado_clean(word_match.group(1))
+    if not 3 <= len(word) <= 10:
+        return None
+    if word.lower() in AHORCADO_EXIT_WORDS:
+        return None
+    hint = hint_match.group(1).strip().strip('"')[:120]
+    if not hint:
+        return None
+    return word, hint
+
+
+async def ahorcado_pick_word():
+    try:
+        raw = await complete([{"role": "user", "content": AHORCADO_WORD_PROMPT}])
+        parsed = parse_ahorcado_word(raw)
+        if parsed:
+            return parsed
+    except Exception:
+        log.exception("Could not pick an ahorcado word with the model")
+    return random.choice(AHORCADO_FALLBACK_WORDS)
+
+
+def ahorcado_spelled(word: str) -> str:
+    """'MATE' -> 'eme, a, te, e' so the word can be heard letter by letter."""
+    return ", ".join(AHORCADO_SPEAK[char] for char in word)
+
+
+def ahorcado_board_text(game) -> str:
+    shown = " ".join(
+        char if char in game["guessed"] else "▁" for char in game["word"]
+    )
+    wrong = ", ".join(sorted(game["wrong"])) or "ninguna"
+    left = game["attempts_left"]
+    intentos = "intento" if left == 1 else "intentos"
+    return (
+        f"🎯 AHORCADO\nPista: {game['hint']}\n\n{shown}\n\n"
+        f"Letras que no están: {wrong}\nTe quedan {left} {intentos}."
+    )
+
+
+def ahorcado_spoken_board(game) -> str:
+    return "... ".join(
+        AHORCADO_SPEAK[char] if char in game["guessed"] else "vacío"
+        for char in game["word"]
+    )
+
+
+def ahorcado_keyboard():
+    return [[{"text": "🚪 Salir del ahorcado", "callback_data": "ahorcado:quit"}]]
+
+
+async def ahorcado_update_board(chat_id: int, game):
+    """One live board message, edited in place; the keyboard never piles up."""
+    text = ahorcado_board_text(game)
+    keyboard = ahorcado_keyboard()
+    mid = game.get("board_mid")
+    if isinstance(mid, int):
+        try:
+            await telegram(
+                "editMessageText", chat_id=chat_id, message_id=mid,
+                text=text, reply_markup={"inline_keyboard": keyboard},
+            )
+            return
+        except Exception:
+            log.debug("Could not edit the ahorcado board; sending a fresh one")
+    new_mid = await trivia_send_keyboard(chat_id, text, keyboard)
+    game["board_mid"] = new_mid
+    trivia_track(game, new_mid)
+
+
+async def ahorcado_start(chat_id: int):
+    clear_group_modes(chat_id)
+    if chat_id in trivia_games:
+        await trivia_end(chat_id)
+    old = ahorcado_games.pop(chat_id, None)
+    if old:
+        await trivia_delete_flow(chat_id, old)
+    name = get_preferred_name(chat_id) or "amigo"
+    word, hint = await ahorcado_pick_word()
+    game = {
+        "word": word, "hint": hint, "guessed": set(), "wrong": set(),
+        "attempts_left": AHORCADO_ATTEMPTS, "board_mid": None,
+    }
+    ahorcado_games[chat_id] = game
+    intro = (
+        f"🎯 EMPIEZA EL AHORCADO\nAdiviná la palabra letra por letra. "
+        f"Tenés {AHORCADO_ATTEMPTS} intentos: cada letra que no está te saca uno. "
+        "Decime una letra, hablado o escrito, o la palabra entera si ya la sabés.\n\n"
+        + ahorcado_board_text(game).split("\n", 1)[1]
+    )
+    mid = await trivia_send_keyboard(chat_id, intro, ahorcado_keyboard())
+    game["board_mid"] = mid
+    trivia_track(game, mid)
+    voice_mid = await send_voice(
+        chat_id,
+        f"{name}, ¡empieza el ahorcado! La palabra tiene {len(word)} letras. "
+        f"Pista: {hint} Decime una letra.",
+    )
+    trivia_track(game, voice_mid)
+
+
+async def ahorcado_end(chat_id: int, summary: str = ""):
+    game = ahorcado_games.pop(chat_id, None)
+    await trivia_clear_keyboard(chat_id)
+    if game:
+        await trivia_delete_flow(chat_id, game)
+    text = "🏁 TERMINÓ EL AHORCADO"
+    if summary:
+        text += f"\n{summary}"
+    text += "\nEscribí /ahorcado o pulsá Juegos en el menú para jugar de nuevo."
+    await send_text(chat_id, text)
+
+
+async def ahorcado_guess(chat_id: int, raw: str):
+    game = ahorcado_games.get(chat_id)
+    if not game:
+        return
+    name = get_preferred_name(chat_id) or "campeón"
+    word = game["word"]
+    parsed = ahorcado_parse_guess(raw)
+    if parsed is None:
+        await send_text(
+            chat_id,
+            "No entendí. Decime una sola letra, hablado o escrito, "
+            "la palabra entera, o 'salir' para terminar el ahorcado.",
+        )
+        return
+    kind, value = parsed
+    beat = None
+    if kind == "word":
+        if value == word:
+            beat = (
+                f"¡Sí, {name}, es {word}! {ahorcado_spelled(word)}. "
+                "¡Ganaste el ahorcado!"
+            )
+            await ahorcado_end(
+                chat_id,
+                f"🎉 ¡GANASTE, {name}! La palabra era {word}. Pista: {game['hint']}",
+            )
+            voice_mid = await send_voice(chat_id, beat)
+            return voice_mid
+        game["attempts_left"] -= 1
+        left = game["attempts_left"]
+        beat = (
+            f"No, la palabra no es {value}. "
+            + (f"Te queda un intento." if left == 1 else f"Te quedan {left} intentos.")
+        )
+    else:
+        letter = value
+        if letter in game["guessed"] or letter in game["wrong"]:
+            beat = f"Ya probaste la {AHORCADO_SPEAK[letter]}. Decime otra letra."
+            await ahorcado_update_board(chat_id, game)
+            trivia_track(game, await send_voice(chat_id, beat))
+            return
+        if letter in word:
+            game["guessed"].add(letter)
+            count = word.count(letter)
+            veces = "una vez" if count == 1 else f"{TRIVIA_NUMBER_WORDS.get(count, str(count))} veces"
+            beat = f"¡La {AHORCADO_SPEAK[letter]} aparece {veces}! "
+        else:
+            game["wrong"].add(letter)
+            game["attempts_left"] -= 1
+            left = game["attempts_left"]
+            beat = f"La {AHORCADO_SPEAK[letter]} no está. "
+            beat += "Te queda un intento." if left == 1 else f"Te quedan {left} intentos."
+    if all(char in game["guessed"] for char in word):
+        await ahorcado_end(
+            chat_id,
+            f"🎉 ¡GANASTE, {name}! La palabra era {word}. Pista: {game['hint']}",
+        )
+        await send_voice(
+            chat_id,
+            f"{beat} ¡Completaste la palabra, {name}! Era {word}: "
+            f"{ahorcado_spelled(word)}. ¡Ganaste el ahorcado!",
+        )
+        return
+    if game["attempts_left"] <= 0:
+        await ahorcado_end(
+            chat_id,
+            f"💀 Te quedaste sin intentos, {name}. La palabra era {word}.",
+        )
+        await send_voice(
+            chat_id,
+            f"{beat} Te quedaste sin intentos, {name}. "
+            f"La palabra era {word}: {ahorcado_spelled(word)}.",
+        )
+        return
+    await ahorcado_update_board(chat_id, game)
+    beat += " " + ahorcado_spoken_board(game) + "."
+    trivia_track(game, await send_voice(chat_id, beat))
+
+
+async def games_menu(chat_id: int):
+    await trivia_send_keyboard(
+        chat_id,
+        "🎮 JUEGOS\nElegí un juego. En la ruleta respondés preguntas con tres "
+        "voces distintas; en el ahorcado adivinás una palabra letra por letra, "
+        "hablando o escribiendo.",
+        [
+            [{"text": "🎡 La Ruleta: preguntas y respuestas", "callback_data": "mode:trivia"}],
+            [{"text": "🎯 El Ahorcado: adiviná la palabra", "callback_data": "ahorcado:start"}],
+            [{"text": "⬅️ Volver al menú principal", "callback_data": "mode:menu"}],
+        ],
+    )
+
+
 async def welcome(chat_id: int, fallback_name=None):
     # A free Render filesystem is replaced on deploy. Never block the bot on a
     # saved preference that may no longer exist; /nombre remains available.
@@ -2508,7 +2815,7 @@ async def welcome(chat_id: int, fallback_name=None):
         [{"text": "👥 Octeto: 8 voces", "callback_data": "mode:octet"}, {"text": "👥 Noneto: 9 voces", "callback_data": "mode:nonet"}],
         [{"text": "👥 Deceto: 10 voces", "callback_data": "mode:decet"}, {"text": "📖 Historia: 4 personajes", "callback_data": "mode:story"}],
         [{"text": "🎵 Buscar música", "callback_data": "mode:music"}],
-        [{"text": "🎡 La Ruleta: preguntas y respuestas", "callback_data": "mode:trivia"}],
+        [{"text": "🎮 Juegos: la ruleta y el ahorcado", "callback_data": "mode:games"}],
     ]
     await send_text(chat_id, text, reply_markup={"inline_keyboard": keyboard})
     await send_voice(chat_id, f"Hola, {name}. Ya estoy listo. Elige hasta diez voces o una historia para empezar.")
@@ -2575,6 +2882,12 @@ async def handle_message(message: dict):
         if text.startswith("/historia"):
             await start_group_mode(chat_id, "story")
             return
+        if text.startswith("/juegos"):
+            await games_menu(chat_id)
+            return
+        if text.startswith("/ahorcado"):
+            await ahorcado_start(chat_id)
+            return
         if text.startswith("/ruleta"):
             group_selection.pop(chat_id, None)
             await trivia_menu(chat_id)
@@ -2603,6 +2916,7 @@ async def handle_message(message: dict):
             pending_music_query.pop(chat_id, None)
             group_selection.pop(chat_id, None)
             trivia_games.pop(chat_id, None)
+            ahorcado_games.pop(chat_id, None)
             await send_text(chat_id, "Conversación reiniciada.")
             return
         if text.startswith("/musica") or text.startswith("/music"):
@@ -2620,6 +2934,13 @@ async def handle_message(message: dict):
             user_text = text
         if chat_id in pending_music_query:
             await search_music(chat_id, user_text)
+            return
+        ahorcado = ahorcado_games.get(chat_id)
+        if ahorcado:
+            if re.search(r"\b(salir|basta|cancelar|terminar)\b", normalized(user_text)):
+                await ahorcado_end(chat_id)
+                return
+            await ahorcado_guess(chat_id, user_text)
             return
         game = trivia_games.get(chat_id)
         if game and game.get("phase") == "question":
@@ -2647,6 +2968,16 @@ async def handle_message(message: dict):
             normalized(user_text),
         ):
             await trivia_menu(chat_id)
+            return
+        if chat_id not in group_selection and re.search(
+            r"\bahorcado\b", normalized(user_text)
+        ):
+            await ahorcado_start(chat_id)
+            return
+        if chat_id not in group_selection and re.search(
+            r"\bjuegos\b|\bjuego\b", normalized(user_text)
+        ):
+            await games_menu(chat_id)
             return
         music_query = music_query_from_text(user_text)
         if music_query is not None:
@@ -2843,6 +3174,18 @@ async def handle_callback(callback: dict):
         await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Búsqueda de música")
         await search_music(chat_id, "")
         return
+    if data == "mode:games":
+        await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Juegos")
+        await games_menu(chat_id)
+        return
+    if data == "ahorcado:start":
+        await telegram("answerCallbackQuery", callback_query_id=callback_id, text="El Ahorcado")
+        await ahorcado_start(chat_id)
+        return
+    if data == "ahorcado:quit":
+        await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Fin del ahorcado")
+        await ahorcado_end(chat_id)
+        return
     if data == "mode:trivia":
         await telegram("answerCallbackQuery", callback_query_id=callback_id, text="La Ruleta")
         group_selection.pop(chat_id, None)
@@ -2986,6 +3329,17 @@ async def webhook(request: Request):
     update = await request.json()
     asyncio.create_task(process_update(update))
     return {"ok": True}
+
+
+# The shared web ruleta ("Amor con aroma a café") lives on the same service:
+# page, rooms, websockets and narration audio. Additive only - it never
+# touches the Telegram or WhatsApp paths.
+try:
+    from webapp import router as web_router
+    app.include_router(web_router)
+    log.info("Web ruleta mounted at /amor-con-aroma-a-cafe")
+except Exception:
+    log.exception("Could not mount the web ruleta")
 
 
 # One Render service hosts both bots: when the WhatsApp Cloud API is
