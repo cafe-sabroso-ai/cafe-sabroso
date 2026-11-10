@@ -12,10 +12,12 @@ A Spanish-speaking Telegram bot that answers text and voice messages with both t
 - `/start` - introduction and preferred-name capture, followed by the main mode menu.
 - `/menu` - reopen the main mode menu. Telegram's persistent Menu button also lists the available commands.
 - `/nombre` - change the name the bot uses for you.
-- `/voces` - choose from 38 Latin-American Spanish voices: 19 male and 19 female, covering Argentina, Mexico, Colombia, Chile, Uruguay, Peru, Venezuela, Bolivia, Costa Rica, Ecuador, Paraguay, Puerto Rico, the Dominican Republic, Cuba, Guatemala, Honduras, Nicaragua, Panama and El Salvador. This is the maximum balanced Latin-American set in the live Edge TTS Spanish catalog; Spain, United States and other non-Latin-American voices are excluded.
-- `/duo` - choose two different voices. Both personas answer each message in alternating turns, joined into one voice note.
-- `/trio` - choose three different voices. All three personas answer in alternating turns, joined into one voice note.
-- `/cuarteto` - choose four different voices. Four personas answer in alternating turns, joined into one voice note.
+- `/voces` - choose from 39 Spanish voices: Voz Lector, a local eSpeak-NG synthesizer in the style of classic screen readers (the free stand-in for the proprietary Eloquence voice), plus 38 Latin-American Spanish neural voices - 19 male and 19 female, covering Argentina, Mexico, Colombia, Chile, Uruguay, Peru, Venezuela, Bolivia, Costa Rica, Ecuador, Paraguay, Puerto Rico, the Dominican Republic, Cuba, Guatemala, Honduras, Nicaragua, Panama and El Salvador. This is the maximum balanced Latin-American set in the live Edge TTS Spanish catalog; Spain, United States and other non-Latin-American voices are excluded.
+- `/duo` - choose two different voices. The two personas chat with each other, addressing one another by name, joined into one voice note.
+- `/trio` - choose three different voices. The three personas chat with each other, addressing one another by name, joined into one voice note.
+- `/cuarteto` - choose four different voices for a group conversation, joined into one voice note.
+- `/quinteto` - choose five different voices for a group conversation, joined into one voice note.
+- `/sexteto` - choose six different voices for a group conversation, joined into one voice note.
 - `/historia` - choose four different voices as four named characters, then supply a story theme. Each character speaks its own dialogue and continues the same scene in one joined voice note.
 - `/musica <artist or song>` - search for music without leaving the selected voice mode. Natural Spanish requests such as `buscá música de Mercedes Sosa`, `quiero escuchar Alfonsina y el mar` and `buscá canciones de Soda Stereo` also work.
 - `/individual` - leave duo, trio, quartet or story mode and return to the selected single voice.
