@@ -171,7 +171,7 @@ class GroupSelectionTests(unittest.IsolatedAsyncioTestCase):
         turns = group_voice.call_args[0][1]
         self.assertEqual(len(turns), 6)
         self.assertEqual(turns[0][0], "espeak-es-419")
-        self.assertIn("Voz Lector: ", texts[0])
+        self.assertIn("Voz Lector 1: ", texts[0])
         self.assertIn("charlamos entre todos", texts[0])
 
     async def test_trio_dialogue_prompt_includes_every_name(self):
