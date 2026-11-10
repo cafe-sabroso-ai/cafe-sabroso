@@ -1750,17 +1750,21 @@ async def mst_guess(room, player, text):
 # The sala socket.
 # ---------------------------------------------------------------------------
 @router.websocket("/amor-con-aroma-a-cafe/ws/{code}")
-async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bool = False):
+async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bool = False, seat_key: str = ""):
     code = code.upper()
     room = rooms.get(code)
     if room is None:
         await websocket.close(code=4004)
         return
     name = (name or "").strip()[:24]
+    seat_key = str(seat_key or "")[:80]
     await websocket.accept()
 
     # A comeback with the same name re-takes its seat; nobody loses points.
-    seat = next(
+    seat = next((p for p in room["players"] if not p.get("gone")
+                 and seat_key and p.get("seat_key") == seat_key), None)
+    if seat is None:
+        seat = next(
         (p for p in room["players"] if not p.get("gone") and p["ws"] is None and p["name"] == name and (not spectator or p.get("spectator"))),
         None,
     ) if name else None
@@ -1771,12 +1775,21 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bo
         pending_disconnect = room.get("disconnect_tasks", {}).pop(seat["id"], None)
         if pending_disconnect:
             pending_disconnect.cancel()
+        previous_ws = seat.get("ws")
         seat["ws"] = websocket
         player = seat
+        if previous_ws is not None and previous_ws is not websocket:
+            try:
+                await previous_ws.close(code=4001)
+            except Exception:
+                pass
+        if current_player(room) is player and room["phase"] == "question" and room.get("question"):
+            cancel_timer(room)
+            room["question"]["clock_started"] = False
     else:
         if not name:
             name = f"Jugador {len(active) + 1}"
-        player = {"id": room["next_id"], "name": name, "ws": websocket, "spectator": spectator}
+        player = {"id": room["next_id"], "name": name, "ws": websocket, "spectator": spectator, "seat_key": seat_key}
         room["next_id"] += 1
         room["players"].append(player)
         if room.get("team_count") and not spectator:
@@ -1823,7 +1836,8 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bo
             except ValueError:
                 continue
             action = message.get("action")
-            player["ws"] = websocket
+            if player["ws"] is not websocket:
+                break
             current = current_player(room)
             if player.get("spectator") and action not in ("descripcion", "chat", "rename"):
                 continue
@@ -2870,9 +2884,15 @@ function enterSala(code, name) {
 }
 
 function connect(code, name) {
+  const seatStorage = "cafe_asiento_" + code;
+  let seatKey = sessionStorage.getItem(seatStorage);
+  if (!seatKey) {
+    seatKey = crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint8Array(24))).map(x=>x.toString(16).padStart(2,"0")).join("");
+    sessionStorage.setItem(seatStorage, seatKey);
+  }
   ws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://")
     + location.host + "/amor-con-aroma-a-cafe/ws/" + code
-    + "?name=" + encodeURIComponent(name || "") + "&spectator=" + (watching ? "true" : "false"));
+    + "?name=" + encodeURIComponent(name || "") + "&seat_key=" + encodeURIComponent(seatKey) + "&spectator=" + (watching ? "true" : "false"));
   ws.onmessage = (ev) => {
     const msg = JSON.parse(ev.data);
     if (msg.event === "welcome") {
@@ -2931,6 +2951,7 @@ function connect(code, name) {
     }
   };
   ws.onclose = (ev) => {
+    if (ev.code === 4001) { announce("Esta mesa quedó abierta en otra conexión de este navegador."); return; }
     if (ev.code === 4004) announce("Esa mesa ya no existe. Creá una nueva.");
     else if (ev.code === 4009) announce("La sala está llena. Pediles que armen otra.");
     else {
