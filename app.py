@@ -209,8 +209,9 @@ BOT_COMMANDS = [
 ]
 whisper_model = None
 whisper_lock = asyncio.Lock()
-# Local piper models use a few hundred MB of RAM; run them one at a time so a
-# group conversation cannot OOM the 512 MB free plan.
+# Local piper models use a few hundred MB of RAM and cannot coexist with the
+# cached whisper model on the 512 MB free plan: one lock serializes local TTS
+# and voice-note transcription so the two never load at the same time.
 piper_lock = asyncio.Semaphore(1)
 
 Path(DATABASE_PATH).parent.mkdir(parents=True, exist_ok=True)
@@ -273,15 +274,15 @@ async def synthesize(text: str, voice: str) -> bytes:
             if process.returncode:
                 raise RuntimeError(f"espeak-ng failed: {stderr.decode()[:300]}")
         elif voice in PIPER_VOICES:
-            # Free the cached whisper model first: Render's free 512 MB plan
-            # cannot hold whisper and a local piper model at the same time.
             global whisper_model
-            if whisper_model is not None:
-                whisper_model = None
-                gc.collect()
-                log.info("Unloaded whisper model to free memory for piper")
             model = PIPER_VOICES[voice]["model"]
             async with piper_lock:
+                # Free the cached whisper model first: Render's free 512 MB plan
+                # cannot hold whisper and a local piper model at the same time.
+                if whisper_model is not None:
+                    whisper_model = None
+                    gc.collect()
+                    log.info("Unloaded whisper model to free memory for piper")
                 process = await asyncio.create_subprocess_exec(
                     "python3", "-m", "piper",
                     "--model", str(PIPER_DIR / f"{model}.onnx"),
@@ -762,19 +763,22 @@ async def transcribe(file_id: str) -> str:
     audio_response = await http.get(f"{TELEGRAM_FILE}/{info['file_path']}")
     audio_response.raise_for_status()
     suffix = Path(info["file_path"]).suffix or ".ogg"
-    async with whisper_lock:
-        if whisper_model is None:
-            from faster_whisper import WhisperModel
-            whisper_model = await asyncio.to_thread(
-                WhisperModel, WHISPER_MODEL, device="cpu", compute_type="int8", cpu_threads=1
+    # Hold the shared lock for the whole transcription so whisper and local
+    # piper never use memory at the same time.
+    async with piper_lock:
+        async with whisper_lock:
+            if whisper_model is None:
+                from faster_whisper import WhisperModel
+                whisper_model = await asyncio.to_thread(
+                    WhisperModel, WHISPER_MODEL, device="cpu", compute_type="int8", cpu_threads=1
+                )
+        with tempfile.TemporaryDirectory() as directory:
+            audio_path = Path(directory) / f"telegram{suffix}"
+            audio_path.write_bytes(audio_response.content)
+            segments, _ = await asyncio.to_thread(
+                whisper_model.transcribe, str(audio_path), language="es", beam_size=1, vad_filter=True
             )
-    with tempfile.TemporaryDirectory() as directory:
-        audio_path = Path(directory) / f"telegram{suffix}"
-        audio_path.write_bytes(audio_response.content)
-        segments, _ = await asyncio.to_thread(
-            whisper_model.transcribe, str(audio_path), language="es", beam_size=1, vad_filter=True
-        )
-        text = " ".join(segment.text.strip() for segment in segments).strip()
+            text = " ".join(segment.text.strip() for segment in segments).strip()
     log.info("Transcribed %s audio bytes with local Whisper %s", len(audio_response.content), WHISPER_MODEL)
     return text
 
