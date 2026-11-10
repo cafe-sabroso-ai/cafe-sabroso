@@ -62,6 +62,32 @@ class GroupSelectionTests(unittest.IsolatedAsyncioTestCase):
         turns = group_voice.call_args[0][1]
         self.assertEqual([voice for voice, _ in turns], ["es-BO-SofiaNeural", "es-MX-DaliaNeural"])
 
+    async def test_sumar_mi_voz_seeds_the_selection(self):
+        """gself:<kind>:yes makes the user's current voice the first talker."""
+        await tap("mode:trio")
+        tg, texts, group_voice = await tap("gself:trio:yes")
+        self.assertIn("tu voz (Tomás) ya participa", texts[0])
+        self.assertEqual(app.group_selection[CHAT]["voices"], ["es-AR-TomasNeural"])
+        await tap("gsel:trio:es-BO-SofiaNeural")
+        tg, texts, group_voice = await tap("gsel:trio:es-MX-DaliaNeural")
+        self.assertEqual(
+            app.trio_pairs[CHAT],
+            ("es-AR-TomasNeural", "es-BO-SofiaNeural", "es-MX-DaliaNeural"),
+        )
+        turns = group_voice.call_args[0][1]
+        self.assertEqual(
+            [voice for voice, _ in turns],
+            ["es-AR-TomasNeural", "es-BO-SofiaNeural", "es-MX-DaliaNeural"],
+        )
+
+    async def test_gself_no_keeps_normal_selection(self):
+        await tap("mode:duo")
+        tg, texts, group_voice = await tap("gself:duo:no")
+        self.assertEqual(app.group_selection[CHAT]["voices"], [])
+        await tap("gsel:duo:es-BO-SofiaNeural")
+        await tap("gsel:duo:es-MX-DaliaNeural")
+        self.assertEqual(app.duo_pairs[CHAT], ("es-BO-SofiaNeural", "es-MX-DaliaNeural"))
+
     async def test_legacy_prefixes_advance_the_same_selection(self):
         """Stale duo1/trio1 keyboards from before the fix keep working as picks."""
         await tap("mode:duo")
