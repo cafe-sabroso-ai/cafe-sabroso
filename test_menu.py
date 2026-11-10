@@ -33,7 +33,7 @@ class MenuTests(unittest.IsolatedAsyncioTestCase):
             await app.handle_message({"chat": {"id": 123}, "text": "/individual"})
         self.assertEqual(len(sent), 2)
         self.assertIn("ELEGIR UNA VOZ", sent[1][0])
-        self.assertEqual(len(sent[1][1]["reply_markup"]["inline_keyboard"]), 44)
+        self.assertEqual(len(sent[1][1]["reply_markup"]["inline_keyboard"]), 49)
 
     async def test_menu_callback_returns_to_main_buttons(self):
         with patch.object(app, "welcome", AsyncMock()) as welcome, \
