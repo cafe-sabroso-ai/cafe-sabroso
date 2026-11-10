@@ -191,16 +191,286 @@ PAISES_MC = [
     ("¿Qué país tiene la estatua del Cristo Redentor?", ["Brasil", "Portugal", "Perú"], 0),
 ]
 
+DEPORTES_MC = [
+    ("¿En qué deporte se usa un bate y una pelota pequeña?", ["Béisbol", "Golf", "Hockey"], 0),
+    ("¿Cuántos puntos vale un try en el rugby?", ["Cinco", "Tres", "Siete"], 0),
+    ("¿En qué deporte compitió Manu Ginóbili?", ["Básquet", "Vóley", "Handball"], 0),
+    ("¿Qué deporte se juega en un ring con guantes?", ["Boxeo", "Judo", "Esgrima"], 0),
+    ("¿En qué deporte se nada estilo mariposa?", ["Natación", "Remo", "Waterpolo"], 0),
+    ("¿Qué se usa para jugar al golf?", ["Un palo y una pelotita", "Una raqueta", "Un arco"], 0),
+    ("¿Cuántos jugadores de vóley hay por equipo en cancha?", ["Seis", "Cinco", "Siete"], 0),
+    ("¿Qué deporte tiene caballos y se juega con mazo?", ["Polo", "Turf", "Doma"], 0),
+    ("¿En qué deporte se gana por puntos con un shuttlecock?", ["Bádminton", "Squash", "Frontón"], 0),
+    ("¿Qué carrera de atletismo es la más corta en los Juegos Olímpicos?", ["Los 100 metros", "La maratón", "Los 400 metros"], 0),
+    ("¿En qué deporte argentino se usa una cancha de cemento y una pelota de cuero, de a parejas?", ["Pelota paleta", "Pato", "Bocho"], 0),
+    ("¿Qué deporte se practica sobre hielo con piedras y escobas?", ["Curling", "Hockey sobre hielo", "Patinaje artístico"], 0),
+]
+FUTBOL_MC = [
+    ("¿Qué país tiene más Mundiales ganados?", ["Brasil", "Alemania", "Italia"], 0),
+    ("¿Cuántos Mundiales ganó Argentina?", ["Tres", "Dos", "Cuatro"], 0),
+    ("¿Qué jugador es conocido como 'La Pulga'?", ["Messi", "Maradona", "Batistuta"], 0),
+    ("¿En qué país se jugó el Mundial 2014?", ["Brasil", "Sudáfrica", "Rusia"], 0),
+    ("¿Qué selección ganó la primera Copa del Mundo en 1930?", ["Uruguay", "Argentina", "Brasil"], 0),
+    ("¿Cuánto dura un partido de fútbol reglamentario?", ["Noventa minutos", "Ochenta minutos", "Cien minutos"], 0),
+    ("¿Qué arquero argentino atajó en la final del Mundial 2022?", ["Dibu Martínez", "Armani", "Rulli"], 0),
+    ("¿Qué club inglés tiene el apodo 'Red Devils'?", ["Manchester United", "Liverpool", "Arsenal"], 0),
+    ("¿Qué competencia enfrenta a los mejores clubes de Europa?", ["La Champions League", "La Europa League", "La Supercopa"], 0),
+    ("¿Qué delantero portugués es histórico goleador de Champions?", ["Cristiano Ronaldo", "Eusébio", "Figo"], 0),
+    ("¿Cada cuántos años se juega el Mundial?", ["Cuatro", "Dos", "Cinco"], 0),
+    ("¿Qué tarjeta expulsa a un jugador?", ["La roja", "La amarilla", "La azul"], 0),
+]
+PELICULAS_MC = [
+    ("¿Qué película argentina ganó el Oscar en 2010?", ["El secreto de sus ojos", "Relatos salvajes", "Nueve reinas"], 0),
+    ("¿Quién dirigió la trilogía de 'El señor de los anillos'?", ["Peter Jackson", "Steven Spielberg", "James Cameron"], 0),
+    ("¿Qué película tiene un barco llamado Titanic?", ["Titanic", "Avatar", "Poseidón"], 0),
+    ("¿Qué saga tiene a Darth Vader?", ["Star Wars", "Star Trek", "Dune"], 0),
+    ("¿Qué actor interpretó a Jack Sparrow?", ["Johnny Depp", "Orlando Bloom", "Brad Pitt"], 0),
+    ("¿Qué película de Pixar trata de emociones dentro de la cabeza?", ["Intensamente", "Coco", "Up"], 0),
+    ("¿Qué película mexicana de 2018 ganó el Oscar a mejor película extranjera?", ["Roma", "Amores perros", "El laberinto del fauno"], 0),
+    ("¿En qué película un niño queda solo en casa en Navidad?", ["Mi pobre angelito", "El regalo prometido", "Frozen"], 0),
+    ("¿Qué dinosaurio es el malo famoso de Jurassic Park?", ["El T-Rex", "El triceratops", "El brontosaurio"], 0),
+    ("¿Qué película argentina de 1985 ganó el primer Oscar del país?", ["La historia oficial", "Camila", "Tango"], 0),
+    ("¿Qué superhéroe tiene un martillo llamado Mjolnir?", ["Thor", "Iron Man", "Superman"], 0),
+    ("¿Qué película tiene la frase 'Hasta la vista, baby'?", ["Terminator 2", "RoboCop", "Rambo"], 0),
+]
+
+SERIES_MC = [
+    ("¿Qué serie tiene a un profesor de química que cocina metanfetamina?", ["Breaking Bad", "Better Call Saul", "Narcos"], 0),
+    ("¿Qué serie argentina tiene a los hermanos Díaz y una remisería?", ["Los simuladores", "Okupas", "El marginal"], 0),
+    ("¿En qué serie los personajes viven en el pueblo de Hawkins?", ["Stranger Things", "Dark", "The OA"], 0),
+    ("¿Qué serie coreana de juegos mortales fue furor mundial?", ["El juego del calamar", "Kingdom", "Alice in Borderland"], 0),
+    ("¿Qué serie tiene tronos, dragones y la familia Stark?", ["Game of Thrones", "Vikings", "The Witcher"], 0),
+    ("¿Qué serie colombiana cuenta la vida de Pablo Escobar?", ["Narcos", "El patrón del mal", "Sin tetas no hay paraíso"], 0),
+    ("¿Qué serie española trata de un robo a la Casa de la Moneda?", ["La casa de papel", "Élite", "Vis a vis"], 0),
+    ("¿Qué serie sigue a un grupo de amigos en un café de Nueva York?", ["Friends", "How I Met Your Mother", "Seinfeld"], 0),
+    ("¿Qué serie argentina de los 90 tenía a 'el Pollo' y a 'el Cabezón'?", ["Verano del 98", "Chiquititas", "Muñeca brava"], 0),
+    ("¿Qué serie de zombis empieza con Rick despertando en un hospital?", ["The Walking Dead", "Z Nation", "Fear the Walking Dead"], 0),
+    ("¿Qué serie animada amarilla vive en Springfield?", ["Los Simpson", "Futurama", "Padre de familia"], 0),
+    ("¿Qué serie tiene al detective Sherlock Holmes moderno en Londres?", ["Sherlock", "Elementary", "Luther"], 0),
+]
+HISTORIA_MC = [
+    ("¿En qué año llegó Colón a América?", ["1492", "1500", "1485"], 0),
+    ("¿Qué prócer argentino cruzó los Andes?", ["San Martín", "Belgrano", "Sarmiento"], 0),
+    ("¿Qué imperio construyó el Coliseo?", ["El romano", "El griego", "El egipcio"], 0),
+    ("¿En qué año se declaró la independencia argentina?", ["1816", "1810", "1820"], 0),
+    ("¿Quién fue el primer presidente de Estados Unidos?", ["George Washington", "Abraham Lincoln", "Thomas Jefferson"], 0),
+    ("¿Qué guerra mundial empezó en 1939?", ["La Segunda", "La Primera", "La de Corea"], 0),
+    ("¿Qué civilización construyó Machu Picchu?", ["La inca", "La azteca", "La maya"], 0),
+    ("¿Qué faraona egipcia es la más famosa de la historia?", ["Cleopatra", "Nefertiti", "Hatshepsut"], 0),
+    ("¿Quién pintó la Capilla Sixtina?", ["Miguel Ángel", "Leonardo da Vinci", "Rafael"], 0),
+    ("¿Qué revolución empezó en Francia en 1789?", ["La Revolución Francesa", "La Revolución Industrial", "La Comuna"], 0),
+    ("¿Qué muro cayó en 1989?", ["El Muro de Berlín", "La Muralla China", "El Muro de Adriano"], 0),
+    ("¿Quién fue el Libertador de Venezuela, Colombia y Bolivia?", ["Simón Bolívar", "San Martín", "Sucre"], 0),
+]
+CIENCIA_MC = [
+    ("¿Cuál es la fórmula química del agua?", ["H2O", "CO2", "O2"], 0),
+    ("¿Qué científico propuso la teoría de la relatividad?", ["Einstein", "Newton", "Galileo"], 0),
+    ("¿Qué partícula tiene carga negativa?", ["El electrón", "El protón", "El neutrón"], 0),
+    ("¿Qué planeta está más cerca del Sol?", ["Mercurio", "Venus", "Marte"], 0),
+    ("¿Qué órgano humano filtra la sangre y produce orina?", ["El riñón", "El hígado", "El bazo"], 0),
+    ("¿Qué fuerza nos mantiene con los pies en el suelo?", ["La gravedad", "El magnetismo", "La fricción"], 0),
+    ("¿Qué gas expulsan las plantas al hacer la fotosíntesis?", ["Oxígeno", "Dióxido de carbono", "Nitrógeno"], 0),
+    ("¿Cuántos huesos tiene el cuerpo humano adulto, más o menos?", ["206", "150", "300"], 0),
+    ("¿Qué mide la escala de Richter?", ["Los terremotos", "Los huracanes", "La temperatura"], 0),
+    ("¿Qué científica ganó dos premios Nobel en química y física?", ["Marie Curie", "Rosalind Franklin", "Ada Lovelace"], 0),
+    ("¿A qué velocidad viaja la luz, aproximadamente?", ["300 mil km por segundo", "300 mil km por hora", "30 mil km por segundo"], 0),
+    ("¿Qué metal es líquido a temperatura ambiente?", ["El mercurio", "El sodio", "El aluminio"], 0),
+]
+
+ARTE_MC = [
+    ("¿Quién pintó la Mona Lisa?", ["Leonardo da Vinci", "Miguel Ángel", "Picasso"], 0),
+    ("¿Qué pintor argentino es famoso por sus figuras gorditas?", ["Quinquela Martín", "Xul Solar", "Spilimbergo"], 0),
+    ("¿Qué pintor se cortó parte de la oreja?", ["Van Gogh", "Monet", "Dalí"], 0),
+    ("¿Qué estilo artístico usaba puntitos de color?", ["El puntillismo", "El cubismo", "El surrealismo"], 0),
+    ("¿Quién pintó 'La persistencia de la memoria', con relojes blandos?", ["Salvador Dalí", "Pablo Picasso", "Frida Kahlo"], 0),
+    ("¿Qué artista mexicana es famosa por sus autorretratos?", ["Frida Kahlo", "Diego Rivera", "Remedios Varo"], 0),
+    ("¿Qué museo de París guarda la Mona Lisa?", ["El Louvre", "El Prado", "El MoMA"], 0),
+    ("¿Qué movimiento artístico fundó Picasso con Braque?", ["El cubismo", "El impresionismo", "El expresionismo"], 0),
+    ("¿Qué bailarina clásica usa zapatillas de punta y tutú?", ["La bailarina de ballet", "La de flamenco", "La de tango"], 0),
+    ("¿Qué pintor holandés pintó 'La noche estrellada'?", ["Van Gogh", "Rembrandt", "Vermeer"], 0),
+    ("¿Qué escultor hizo 'El pensador'?", ["Rodin", "Miguel Ángel", "Bernini"], 0),
+    ("¿Qué tanguero argentino es el más famoso de la historia?", ["Carlos Gardel", "Aníbal Troilo", "Astor Piazzolla"], 0),
+]
+COMIDA_MC = [
+    ("¿Qué comida argentina es de masa rellena al horno o frita?", ["La empanada", "El locro", "La milanesa"], 0),
+    ("¿De qué país es el sushi?", ["Japón", "China", "Tailandia"], 0),
+    ("¿Qué comida italiana lleva masa, salsa y queso al horno?", ["La pizza", "El risotto", "La lasaña"], 0),
+    ("¿Qué grano es la base del pan?", ["El trigo", "El arroz", "El maíz"], 0),
+    ("¿Qué comida mexicana es una tortilla rellena y doblada?", ["El taco", "La quesadilla", "El burrito"], 0),
+    ("¿Qué fruta amarilla se pela y es rica en potasio?", ["La banana", "El ananá", "El mango"], 0),
+    ("¿Qué asado argentino se cocina a la parrilla con brasas?", ["El asado", "El puchero", "El matambre"], 0),
+    ("¿De qué país es la paella?", ["España", "Portugal", "Italia"], 0),
+    ("¿Qué verdura es la base de la ensalada César?", ["La lechuga", "La espinaca", "La rúcula"], 0),
+    ("¿Qué postre italiano significa 'levantame'?", ["El tiramisú", "El gelato", "El panetone"], 0),
+    ("¿Qué legumbre es la base del hummus?", ["El garbanzo", "La lenteja", "El poroto"], 0),
+    ("¿Qué pescado crudo se usa en el ceviche peruano?", ["Pescado blanco", "Salmón ahumado", "Atún en lata"], 0),
+]
+NOMBRES_MC = [
+    ("¿De dónde viene el nombre Diego?", ["Del latín Jacobus, como Santiago", "Del griego 'guerrero'", "Del árabe 'regalo'"], 0),
+    ("¿Qué nombre significa 'la que trae la victoria'?", ["Verónica", "Victoria", "Valeria"], 0),
+    ("¿Qué nombre de varón significa 'pequeño' en latín?", ["Pablo", "Pedro", "Pascual"], 0),
+    ("¿Qué apellido es el más común en Argentina?", ["González", "Rodríguez", "García"], 0),
+    ("¿Qué nombre significa 'regalo de Dios'?", ["Mateo", "Martín", "Marcos"], 0),
+    ("¿De qué idioma vienen la mayoría de los apellidos terminados en 'ez'?", ["Del español: hijo de", "Del italiano: familia", "Del francés: lugar"], 0),
+    ("¿Qué nombre femenino significa 'bella' en italiano?", ["Bella", "Luna", "Alma"], 0),
+    ("¿Qué famoso futbolista se llama Lionel?", ["Messi", "Scaloni", "Di María"], 0),
+    ("¿Qué nombre significa 'león' en latín?", ["León", "Bruno", "Dante"], 0),
+    ("¿Qué nombre de mujer viene de la palabra 'gracia'?", ["Graciela", "Estela", "Noelia"], 0),
+    ("¿Qué apellido indica oficio de herrero en español?", ["Herrero", "Molinero", "Pastor"], 0),
+    ("¿Qué nombre griego significa 'amante de los caballos'?", ["Felipe", "Carlos", "Andrés"], 0),
+]
+
+MARCAS_MC = [
+    ("¿Qué marca de gaseosa tiene el logo rojo con letra blanca?", ["Coca-Cola", "Pepsi", "Fanta"], 0),
+    ("¿Qué marca de autos tiene cuatro aros en el logo?", ["Audi", "BMW", "Mercedes"], 0),
+    ("¿Qué marca de tecnología tiene una manzana mordida?", ["Apple", "Samsung", "Xiaomi"], 0),
+    ("¿Qué marca deportiva usa el lema 'Just Do It'?", ["Nike", "Adidas", "Puma"], 0),
+    ("¿Qué marca de yerba mate argentina viene en paquete verde?", ["Taragüi", "Rosamonte", "Playadito"], 0),
+    ("¿Qué marca de hamburguesas tiene un arco dorado?", ["McDonald's", "Burger King", "Wendy's"], 0),
+    ("¿Qué marca de chocolate suizo es famosa por sus barritas con leche y miel?", ["Toblerone", "Lindt", "Nestlé"], 0),
+    ("¿Qué marca de aviones es la más grande del mundo junto con Airbus?", ["Boeing", "Embraer", "Bombardier"], 0),
+    ("¿Qué marca argentina de alfajores es de Mar del Plata?", ["Havanna", "Cachafaz", "Jorgito"], 0),
+    ("¿Qué marca de relojes suizos es sinónimo de lujo?", ["Rolex", "Casio", "Swatch"], 0),
+    ("¿Qué marca de zapatillas tiene tres tiras?", ["Adidas", "Nike", "Reebok"], 0),
+    ("¿Qué marca de helados tiene corazón en el logo y es famosa mundial?", ["Häagen-Dazs", "Grido", "Freddo"], 0),
+]
+ANIMALES_MC = [
+    ("¿Cuál es el animal más grande del mundo?", ["La ballena azul", "El elefante", "La jirafa"], 0),
+    ("¿Qué animal pone huevos y tiene pico de pato?", ["El ornitorrinco", "El equidna", "El cisne"], 0),
+    ("¿Qué animal argentino tiene peluche y vive en la Patagonia?", ["La mara", "El guanaco", "El zorrino"], 0),
+    ("¿Qué animal puede dormir de pie?", ["El caballo", "El perro", "El gato"], 0),
+    ("¿Cuál es el ave más grande que vuela?", ["El cóndor", "El águila", "El albatros"], 0),
+    ("¿Qué animal tiene la lengua más larga en relación a su cuerpo?", ["El camaleón", "La jirafa", "El oso hormiguero"], 0),
+    ("¿Qué animal marino tiene ocho brazos?", ["El pulpo", "El calamar", "La medusa"], 0),
+    ("¿Cuál es el único mamífero que vuela?", ["El murciélago", "La ardilla voladora", "El petrel"], 0),
+    ("¿Qué animal simboliza la sabiduría en los cuentos?", ["El búho", "El cuervo", "El zorro"], 0),
+    ("¿Qué animal puede vivir más de 100 años en el mar?", ["La tortuga", "El delfín", "El tiburón"], 0),
+    ("¿Qué animal produce el capullo de seda?", ["El gusano de seda", "La oruga común", "La araña"], 0),
+    ("¿Qué animal es el mejor amigo del hombre?", ["El perro", "El gato", "El caballo"], 0),
+]
+POLITICA_MC = [
+    ("¿Qué órgano argentino hace las leyes?", ["El Congreso", "La Corte Suprema", "La Presidencia"], 0),
+    ("¿Cada cuántos años se elige presidente en Argentina?", ["Cuatro", "Seis", "Dos"], 0),
+    ("¿Qué casa de gobierno argentina es rosada?", ["La Casa Rosada", "El Cabildo", "El Congreso"], 0),
+    ("¿Qué signo político argentino fue famoso por los pañuelos?", ["Las Madres de Plaza de Mayo", "Los piqueteros", "Los sindicatos"], 0),
+    ("¿Qué organismo internacional tiene sede en Nueva York?", ["La ONU", "La OMS", "La FIFA"], 0),
+    ("¿Qué presidente argentino fue famoso por el 'vamos carajo'?", ["Alfonsín", "Menem", "Illia"], 0),
+    ("¿Cómo se llama el sistema donde el pueblo elige a sus gobernantes?", ["La democracia", "La monarquía", "La dictadura"], 0),
+    ("¿Qué documento argentino empieza con 'Nos los representantes'?", ["La Constitución", "El Acta de Independencia", "El Código Civil"], 0),
+    ("¿Qué cargo gobierna una provincia argentina?", ["El gobernador", "El intendente", "El senador"], 0),
+    ("¿Qué cargo gobierna un municipio?", ["El intendente", "El gobernador", "El diputado"], 0),
+    ("¿Qué país tuvo a Nelson Mandela como presidente?", ["Sudáfrica", "Nigeria", "Ghana"], 0),
+    ("¿Qué reina de Inglaterra reinó más de 70 años?", ["Isabel II", "Victoria", "Ana"], 0),
+]
+
+RELIGION_MC = [
+    ("¿Qué religión tiene la Biblia como libro sagrado?", ["El cristianismo", "El islam", "El budismo"], 0),
+    ("¿Qué profeta fundó el islam?", ["Mahoma", "Moisés", "Abraham"], 0),
+    ("¿Qué papa argentino gobierna la Iglesia desde 2013?", ["Francisco", "Benedicto XVI", "Juan Pablo II"], 0),
+    ("¿En qué ciudad está el Vaticano?", ["Roma", "Milán", "Florencia"], 0),
+    ("¿Qué religión sigue las enseñanzas de Buda?", ["El budismo", "El hinduismo", "El sintoísmo"], 0),
+    ("¿Qué libro sagrado leen los musulmanes?", ["El Corán", "La Torá", "Los Vedas"], 0),
+    ("¿Qué fiesta cristiana celebra el nacimiento de Jesús?", ["La Navidad", "La Pascua", "La Epifanía"], 0),
+    ("¿Qué religión tiene el Diwali como fiesta de las luces?", ["El hinduismo", "El budismo", "El judaísmo"], 0),
+    ("¿Qué día sagrado guardan los judíos desde el atardecer del viernes?", ["El Shabat", "El Ramadán", "La Pascua"], 0),
+    ("¿En qué río fue bautizado Jesús según la Biblia?", ["El Jordán", "El Nilo", "El Éufrates"], 0),
+    ("¿Qué arca salvó a los animales del diluvio?", ["La de Noé", "La de Moisés", "La de Abraham"], 0),
+    ("¿Qué virgen es patrona de Argentina?", ["La Virgen de Luján", "La Virgen del Carmen", "La Virgen de Guadalupe"], 0),
+]
+MUSICA_MC = [
+    ("¿Qué instrumento tiene 6 cuerdas y se toca con los dedos o púa?", ["La guitarra", "El ukelele", "El bajo"], 0),
+    ("¿Qué banda británica cantó 'Hey Jude'?", ["The Beatles", "Queen", "Rolling Stones"], 0),
+    ("¿Qué cantante argentina es la voz de 'La Llorona' en el folklore?", ["Mercedes Sosa", "Soledad", "Marilina Ross"], 0),
+    ("¿Qué género musical nació en Jamaica?", ["El reggae", "El ska", "El calypso"], 0),
+    ("¿Qué bandoneonista revolucionó el tango?", ["Astor Piazzolla", "Aníbal Troilo", "Osvaldo Pugliese"], 0),
+    ("¿Qué rey del pop hizo 'Thriller'?", ["Michael Jackson", "Prince", "Stevie Wonder"], 0),
+    ("¿Qué grupo argentino cantó 'De música ligera'?", ["Soda Stereo", "Los Fabulosos Cadillacs", "Divididos"], 0),
+    ("¿Qué instrumento de viento tiene lengüeta simple?", ["El clarinete", "La flauta", "La trompeta"], 0),
+    ("¿Qué cantante es conocida como 'La Sole'?", ["Soledad Pastorutti", "Karina", "Lucía Galán"], 0),
+    ("¿Qué rockero argentino es 'El Flaco'?", ["Luis Alberto Spinetta", "Charly García", "Fito Páez"], 0),
+    ("¿Qué género popular argentino se baila en pareja abrazada?", ["El tango", "El cuarteto", "La cumbia"], 0),
+    ("¿Qué compositor sordo escribió la Novena Sinfonía?", ["Beethoven", "Mozart", "Bach"], 0),
+]
+GEOGRAFIA_MC = [
+    ("¿Cuál es el desierto más grande del mundo?", ["El Sahara", "El Gobi", "El Atacama"], 0),
+    ("¿Qué cordillera recorre Sudamérica de norte a sur?", ["Los Andes", "Las Rocallosas", "Los Alpes"], 0),
+    ("¿Cuál es la cascada más famosa entre Argentina y Brasil?", ["Las Cataratas del Iguazú", "El Salto Ángel", "El Niágara"], 0),
+    ("¿Qué río pasa por Buenos Aires?", ["El Río de la Plata", "El Paraná", "El Uruguay"], 0),
+    ("¿Cuál es el país más grande del mundo?", ["Rusia", "China", "Canadá"], 0),
+    ("¿Qué lago navegable es el más alto del mundo, entre Perú y Bolivia?", ["El Titicaca", "El Nahuel Huapi", "El Maracaibo"], 0),
+    ("¿Cuál es la isla más grande del mundo?", ["Groenlandia", "Australia", "Borneo"], 0),
+    ("¿Qué canal une el Atlántico con el Pacífico?", ["El Canal de Panamá", "El Canal de Suez", "El Beagle"], 0),
+    ("¿Cuál es la capital de Australia?", ["Canberra", "Sídney", "Melbourne"], 0),
+    ("¿Qué volcán japonés es símbolo del país?", ["El Monte Fuji", "El Monte Aso", "El Sakurajima"], 0),
+    ("¿Qué desierto chileno es el más árido del mundo?", ["Atacama", "Sonora", "Mojave"], 0),
+    ("¿Qué glaciar argentino es famoso por sus rupturas?", ["El Perito Moreno", "El Upsala", "El Viedma"], 0),
+]
+
+TECNOLOGIA_MC = [
+    ("¿Qué significa WWW en internet?", ["World Wide Web", "World Web Wide", "Web World Wide"], 0),
+    ("¿Qué empresa creó el sistema Android?", ["Google", "Apple", "Microsoft"], 0),
+    ("¿Qué red social tiene un pajarito o una X?", ["Twitter", "Facebook", "Instagram"], 0),
+    ("¿Qué aparato guarda fotos, contactos y apps en el bolsillo?", ["El celular", "La tablet", "La notebook"], 0),
+    ("¿Qué inventor es famoso por la lámpara eléctrica?", ["Edison", "Tesla", "Bell"], 0),
+    ("¿Qué lenguaje de programación tiene nombre de serpiente?", ["Python", "Cobra", "Java"], 0),
+    ("¿Qué empresa hace las consolas PlayStation?", ["Sony", "Nintendo", "Microsoft"], 0),
+    ("¿Qué satélite natural orbita la Tierra?", ["La Luna", "El Hubble", "La ISS"], 0),
+    ("¿Qué significa Wi-Fi, en criollo?", ["Conexión inalámbrica a internet", "Cable de red", "Señal de celular"], 0),
+    ("¿Qué robot aspiradora es famoso por limpiar casas solo?", ["El Roomba", "El Terminator", "El R2D2"], 0),
+    ("¿Qué app de mensajería usa el teléfono y es verde?", ["WhatsApp", "Telegram", "Signal"], 0),
+    ("¿Qué letra identifica una unidad de almacenamiento gigante, mil veces el giga?", ["La T (tera)", "La M (mega)", "La K (kilo)"], 0),
+]
+VIDEOJUEGOS_MC = [
+    ("¿Qué fontanero bigotudo salta sobre tortugas?", ["Mario", "Luigi", "Sonic"], 0),
+    ("¿Qué juego tiene bloques cuadrados y creepers?", ["Minecraft", "Roblox", "Terraria"], 0),
+    ("¿Qué erizo azul corre a toda velocidad?", ["Sonic", "Crash", "Spyro"], 0),
+    ("¿Qué juego de fútbol hace EA todos los años?", ["El EA Sports FC", "El PES", "El Rocket League"], 0),
+    ("¿Qué juego tiene batallas de 100 jugadores en una isla?", ["Fortnite", "Minecraft", "Among Us"], 0),
+    ("¿Qué consola portátil tiene dos pantallas?", ["La Nintendo DS", "La PlayStation Vita", "La Switch"], 0),
+    ("¿Qué personaje amarillo come bolitas en un laberinto?", ["Pac-Man", "Kirby", "Pikachu"], 0),
+    ("¿Qué juego de carreras tiene caparazones y bananas?", ["Mario Kart", "Need for Speed", "Gran Turismo"], 0),
+    ("¿Qué juego argentino de cartas se juega con truco y envido?", ["El Truco", "La Escoba", "El Chinchón"], 0),
+    ("¿Qué juego tiene impostores en una nave espacial?", ["Among Us", "Fall Guys", "Fortnite"], 0),
+    ("¿Qué saga tiene a Link y la princesa Zelda?", ["Zelda", "Final Fantasy", "Metroid"], 0),
+    ("¿Qué juego de pelea tiene a Scorpion y Sub-Zero?", ["Mortal Kombat", "Street Fighter", "Tekken"], 0),
+]
+
 CATEGORIES = {
     "verdad_reto": "Verdad o Reto",
-    "trivia": "Trivia",
+    "deportes": "Deportes",
+    "fútbol mundial": "Fútbol mundial",
+    "películas": "Películas",
+    "series": "Series",
+    "cultura": "Cultura",
+    "historia": "Historia",
+    "ciencia": "Ciencia",
+    "arte": "Arte",
+    "comida": "Comida",
+    "nombres y apellidos": "Nombres y apellidos",
+    "marcas": "Marcas",
+    "animales": "Animales",
+    "política": "Política",
+    "religión": "Religión",
+    "música": "Música",
+    "geografía": "Geografía",
+    "tecnología": "Tecnología",
+    "videojuegos": "Videojuegos",
     "refranes": "Refranes",
     "países": "Países",
 }
-MC_BANKS = {"trivia": TRIVIA_MC, "refranes": REFRANES_MC, "países": PAISES_MC}
-MC_USED_KEYS = {"trivia": "used_trivia", "refranes": "used_refranes", "países": "used_paises"}
+MC_BANKS = {
+    "deportes": DEPORTES_MC, "fútbol mundial": FUTBOL_MC,
+    "películas": PELICULAS_MC, "series": SERIES_MC, "cultura": TRIVIA_MC,
+    "historia": HISTORIA_MC, "ciencia": CIENCIA_MC, "arte": ARTE_MC,
+    "comida": COMIDA_MC, "nombres y apellidos": NOMBRES_MC, "marcas": MARCAS_MC,
+    "animales": ANIMALES_MC, "política": POLITICA_MC, "religión": RELIGION_MC,
+    "música": MUSICA_MC, "geografía": GEOGRAFIA_MC, "tecnología": TECNOLOGIA_MC,
+    "videojuegos": VIDEOJUEGOS_MC, "refranes": REFRANES_MC, "países": PAISES_MC,
+}
+MC_USED_KEYS = {cat: "used_" + str(i) for i, cat in enumerate(MC_BANKS)}
 
 WIN_SCORE = 5
+COUNTRIES_TO_WIN = 2
 TURN_SECONDS = 60
 REMATCH_SECONDS = 10
 NARRATOR_VOICES = ["es-AR-ElenaNeural", "es-AR-TomasNeural", "es-UY-ValentinaNeural"]
@@ -247,6 +517,9 @@ def room_state(room) -> dict:
         "capacity": room["capacity"],
         "match": room["match"],
         "goal": WIN_SCORE,
+        "game": room["game"],
+        "country": room["country"],
+        "country_done": len(room["country_done"]),
     }
 
 
@@ -368,9 +641,14 @@ async def begin_turn(room):
     player = current_player(room)
     if player is None:
         return
-    room["phase"] = "category"
-    await broadcast(room, room_state(room))
-    await tell(player, {"event": "choose_category", "categories": CATEGORIES})
+    if room["game"] == "paises" and room["country"] is None:
+        room["phase"] = "country_spin_ready"
+        await broadcast(room, room_state(room))
+        await tell(player, {"event": "your_turn", "kind": "country"})
+    else:
+        room["phase"] = "spin_ready"
+        await broadcast(room, room_state(room))
+        await tell(player, {"event": "your_turn", "kind": "category"})
     room["timer_task"] = asyncio.create_task(turn_clock(room, player["id"]))
 
 
@@ -403,7 +681,13 @@ async def end_turn(room):
 
 async def game_over(room, winner):
     room["phase"] = "gameover"
-    await narrate(room, f"¡Ganó {winner['name']} con {room['scores'][winner['id']]} puntos! "
+    others = [p["name"] for p in room["players"] if not p.get("gone") and p["id"] != winner["id"]]
+    beat = ""
+    if len(others) == 1:
+        beat = f" Le ganó a {others[0]}."
+    elif others:
+        beat = " Le ganó a " + ", a ".join(others[:-1]) + " y a " + others[-1] + "."
+    await narrate(room, f"¡Ganó {winner['name']} con {room['scores'][winner['id']]} puntos!{beat} "
                         f"En {REMATCH_SECONDS} segundos arranca una partida nueva.")
     await broadcast(room, room_state(room))
     await asyncio.sleep(REMATCH_SECONDS)
@@ -414,6 +698,52 @@ async def game_over(room, winner):
     room["starter"] = (room["starter"] + 1) % len(active)
     room["match"] += 1
     await start_match(room)
+
+
+async def do_category_spin(room, player, chosen=None):
+    """The wheel lands on a category (random unless the player picked one)."""
+    room["spinning"] = True
+    pool = list(MC_BANKS) if room["game"] == "paises" else list(CATEGORIES)
+    cat = chosen or random.choice(pool)
+    labels = [CATEGORIES[c] for c in pool]
+    await broadcast(room, {
+        "event": "spin_start", "player": player["name"],
+        "angle": random.randint(0, 359),
+        "labels": labels, "colors": None,
+    })
+    await asyncio.sleep(3.5)
+    room["spinning"] = False
+    if cat == "verdad_reto":
+        await narrate(room, "¡Giramos la ruleta! Gira, gira... ¡paró! ¡Verdad o Reto!")
+        room["phase"] = "verdad_reto_ready"
+        await broadcast(room, room_state(room))
+        await do_spin(room, player)
+        return
+    room["phase"] = "question"
+    where = f", por {room['country']}" if room.get("country") else ""
+    await ask_question(room, player, cat, where)
+
+
+async def do_country_spin(room, player):
+    """La ruleta de países: lands the country the room plays for."""
+    from app import TRIVIA_COUNTRIES
+
+    room["spinning"] = True
+    await broadcast(room, {
+        "event": "spin_start", "player": player["name"],
+        "angle": random.randint(0, 359), "labels": None, "colors": None,
+    })
+    await asyncio.sleep(3.5)
+    country = random.choice(TRIVIA_COUNTRIES)
+    room["country"] = country
+    room["country_done"] = set()
+    room["spinning"] = False
+    await narrate(room, f"¡Gira la ruleta de países! Gira, gira... ¡paró! ¡{country}! "
+                        f"Para ganar {country} hay que completar todas las categorías. "
+                        f"Arranca {player['name']}.")
+    room["phase"] = "spin_ready"
+    await broadcast(room, room_state(room))
+    await tell(player, {"event": "your_turn", "kind": "category"})
 
 
 async def do_spin(room, player):
@@ -446,14 +776,14 @@ async def do_spin(room, player):
     await broadcast(room, room_state(room))
 
 
-async def ask_question(room, player, category):
+async def ask_question(room, player, category, where=""):
     pick = pick_mc(room, category)
     question, options, correct = pick
     room["question"] = {"category": category, "q": question, "options": options, "correct": correct}
     room["phase"] = "question"
     letters = ["A", "B", "C"]
     spoken = question + " " + " ".join(f"Opción {letters[i]}: {opt}." for i, opt in enumerate(options))
-    await narrate(room, f"{CATEGORIES[category]} para {player['name']}. {spoken}",
+    await narrate(room, f"Categoría {CATEGORIES[category]}{where}, para {player['name']}. {spoken}",
                   voice=room["question_voice"])
     await broadcast(room, {
         "event": "question", "category": category, "q": question,
@@ -467,14 +797,60 @@ async def resolve_answer(room, player, idx):
     if not question:
         return
     correct = idx == question["correct"]
+    if room["game"] == "paises":
+        await resolve_answer_paises(room, player, question, correct, idx)
+        return
     if correct:
         room["scores"][player["id"]] = room["scores"].get(player["id"], 0) + 1
-        await narrate(room, f"¡Correcto! Un punto para {player['name']}. "
-                            f"Lleva {room['scores'][player['id']]}.")
+        await narrate(room, f"¡Correcto! {player['name']} ganó la categoría "
+                            f"{CATEGORIES[question['category']]}. Lleva {room['scores'][player['id']]} puntos.")
     else:
+        letters = ["A", "B", "C"]
         right = question["options"][question["correct"]]
-        await narrate(room, f"No, {player['name']}. La correcta era: {right}.")
+        picked = letters[idx] if 0 <= idx < 3 else "?"
+        await narrate(room, f"Te equivocaste, {player['name']}: la {picked} no es la correcta. "
+                            f"Es la {letters[question['correct']]}: {right}.")
     await end_turn(room)
+
+
+async def resolve_answer_paises(room, player, question, correct, idx):
+    """Países: seguís jugando hasta fallar; completar el país suma un país ganado."""
+    if correct:
+        room["country_done"].add(question["category"])
+        done = len(room["country_done"])
+        total = len(MC_BANKS)
+        if done >= total:
+            room["countries_won"][player["id"]] = room["countries_won"].get(player["id"], 0) + 1
+            won = room["countries_won"][player["id"]]
+            room["scores"][player["id"]] = won
+            country = room["country"]
+            room["country"] = None
+            room["country_done"] = set()
+            if won >= COUNTRIES_TO_WIN:
+                room["phase"] = "question"  # keeps state coherent until game_over
+                await game_over(room, player)
+                return
+            await narrate(room, f"¡{player['name']} completó {country}! "
+                                f"{'País ganado' if won == 1 else f'Ya lleva {won} países'}. "
+                                "¡Va por el próximo país!")
+            await begin_turn(room)  # same player spins for a new country
+            return
+        await narrate(room, f"¡Correcto! {player['name']} ganó la categoría "
+                            f"{CATEGORIES[question['category']]} por {room['country']}. "
+                            f"Pasó al nivel {done + 1}. Seguís, {player['name']}.")
+        await begin_turn(room)  # same player keeps going
+        return
+    letters = ["A", "B", "C"]
+    right = question["options"][question["correct"]]
+    picked = letters[idx] if 0 <= idx < 3 else "?"
+    room["turn"] += 1
+    nxt = current_player(room)
+    await narrate(room, f"Perdió {player['name']}: la {picked} no es la correcta. "
+                        f"Es la {letters[question['correct']]}: {right}. "
+                        + (f"Ahora gira {nxt['name']}." if nxt else ""))
+    cancel_timer(room)
+    room["question"] = None
+    await begin_turn(room)
 
 
 async def complete_verdad_reto(room, player, done):
@@ -554,22 +930,37 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = ""):
             if action == "start" and room["phase"] == "lobby" and player == room["players"][0]:
                 await start_match(room)
             elif action == "spin":
-                if room["spinning"] or room["phase"] != "verdad_reto_ready":
+                if room["spinning"] or current is not player:
+                    if current is not player:
+                        await tell(player, {"event": "say", "text": "Todavía no es tu turno.", "audio": None})
                     continue
-                if current is not player:
-                    await tell(player, {"event": "say", "text": "Todavía no es tu turno.", "audio": None})
-                    continue
-                asyncio.create_task(do_spin(room, player))
+                if room["phase"] == "country_spin_ready":
+                    asyncio.create_task(do_country_spin(room, player))
+                elif room["phase"] == "spin_ready":
+                    asyncio.create_task(do_category_spin(room, player))
+                elif room["phase"] == "verdad_reto_ready":
+                    asyncio.create_task(do_spin(room, player))
             elif action == "category":
-                if room["phase"] != "category" or current is not player:
+                # The optional picker: play THIS category instead of spinning.
+                if room["phase"] != "spin_ready" or current is not player:
                     continue
                 cat = message.get("category")
+                if cat not in CATEGORIES:
+                    continue
+                if room["game"] == "paises" and cat == "verdad_reto":
+                    await tell(player, {"event": "say", "audio": None,
+                                        "text": "En la ruleta de países no hay Verdad o Reto. "
+                                                "Elegí otra categoría o girá la ruleta."})
+                    continue
+                room["question"] = None
                 if cat == "verdad_reto":
-                    room["phase"] = "verdad_reto_ready"
                     await narrate(room, f"{player['name']} eligió Verdad o Reto. ¡Que gire la ruleta!")
+                    room["phase"] = "verdad_reto_ready"
                     await broadcast(room, room_state(room))
-                elif cat in MC_BANKS:
-                    await ask_question(room, player, cat)
+                    await do_spin(room, player)
+                else:
+                    where = f", por {room['country']}" if room.get("country") else ""
+                    await ask_question(room, player, cat, where)
             elif action == "answer":
                 if room["phase"] == "question" and current is player and room.get("question"):
                     await resolve_answer(room, player, int(message.get("idx", -1)))
@@ -672,6 +1063,79 @@ async def voice_clip(code: str, request: Request, to: str = "all", sender: int =
     return {"ok": True}
 
 
+@router.post("/amor-con-aroma-a-cafe/api/voz-respuesta/{code}")
+async def voice_answer(code: str, request: Request, sender: int = -1):
+    """A spoken answer to the live question, transcribed with Groq."""
+    room = rooms.get(code.upper())
+    if room is None:
+        return Response(status_code=404)
+    player = next((p for p in room["players"] if p["id"] == sender and not p.get("gone")), None)
+    if player is None or current_player(room) is not player or room["phase"] != "question":
+        return Response(status_code=409)
+    body = await request.body()
+    if not body or len(body) > 3_000_000:
+        return Response(status_code=400)
+    text = await transcribe_clip(body)
+    if not text:
+        return {"heard": False}
+    question = room.get("question")
+    idx = match_option(text, question["options"]) if question else None
+    if idx is None:
+        await narrate(room, f"{player['name']}, no entendí tu respuesta. Decí A, B o C.")
+        return {"heard": False, "text": text}
+    await resolve_answer(room, player, idx)
+    return {"heard": True, "text": text, "idx": idx}
+
+
+async def transcribe_clip(webm: bytes) -> str:
+    import os
+
+    import httpx
+
+    key = os.environ.get("GROQ_API_KEY", "")
+    if not key:
+        return ""
+    try:
+        async with httpx.AsyncClient() as client:
+            r = await client.post(
+                "https://api.groq.com/openai/v1/audio/transcriptions",
+                headers={"Authorization": f"Bearer {key}"},
+                data={"model": os.environ.get("GROQ_WHISPER_MODEL", "whisper-large-v3-turbo"),
+                      "language": "es", "response_format": "json"},
+                files={"file": ("respuesta.webm", webm)},
+                timeout=30,
+            )
+            if r.status_code < 400:
+                return (r.json().get("text") or "").strip()
+            log.warning("Web sala: Groq transcription failed: %s", r.status_code)
+    except Exception:
+        log.exception("Web sala: Groq transcription error")
+    return ""
+
+
+def match_option(text, options):
+    import re
+
+    t = text.lower().strip()
+    if not t:
+        return None
+    m = re.search(r"(?:opci[oó]n|la|letra)\s+([abc])\b", t)
+    if m:
+        return "abc".index(m.group(1))
+    for i, word in enumerate(("primera", "segunda", "tercera")):
+        if word in t:
+            return i
+    best, best_score = None, 0
+    for i, opt in enumerate(options):
+        o = opt.lower()
+        if o in t or t in o:
+            return i
+        score = sum(1 for tok in o.split() if len(tok) > 3 and tok in t)
+        if score > best_score:
+            best, best_score = i, score
+    return best if best_score >= 1 else None
+
+
 @router.post("/amor-con-aroma-a-cafe/api/salas")
 async def crear_sala(request: Request):
     mode = "sala"
@@ -682,7 +1146,10 @@ async def crear_sala(request: Request):
         capacity = int(data.get("capacity") or 0) or None
     except Exception:
         pass
-    if mode == "solo":
+    game = "categorias"
+    if mode in ("solo_paises", "paises"):
+        game = "paises"
+    if mode in ("solo", "solo_paises"):
         capacity = 1
     elif capacity is not None:
         capacity = max(2, min(MAX_PLAYERS, capacity))
@@ -704,11 +1171,13 @@ async def crear_sala(request: Request):
         "audio_lock": asyncio.Lock(),
         "used_retos": set(),
         "used_verdades": set(),
-        "used_trivia": set(),
-        "used_refranes": set(),
-        "used_paises": set(),
+        **{key: set() for key in MC_USED_KEYS.values()},
         "voice": voice,
         "question_voice": random.choice([v for v in NARRATOR_VOICES if v != voice]),
+        "game": game,
+        "country": None,
+        "country_done": set(),
+        "countries_won": {},
     }
     return {"code": code}
 
@@ -785,7 +1254,13 @@ PAGE = """<!DOCTYPE html>
 
     <section id="pantalla-inicio" aria-label="Pantalla de inicio">
       <button id="btn-solo" aria-label="Jugar solo, sin amigos">Jugar solo</button>
-      <button id="btn-sala" class="secondary" aria-label="Sala de juego, para jugar con amigos">Sala de juego (con amigos)</button>
+      <button id="btn-sala" class="secondary" aria-label="Sala de juegos, para jugar con amigos">Sala de juegos (con amigos)</button>
+      <button id="btn-paises" class="secondary" aria-label="Ruleta de Países, para jugar con amigos">Ruleta de Países</button>
+    </section>
+
+    <section id="pantalla-modo" hidden aria-label="Qué ruleta querés">
+      <button id="btn-modo-cat" aria-label="Ruleta de todas las categorías">Ruleta de categorías</button>
+      <button id="btn-modo-paises" class="secondary" aria-label="Ruleta de países">Ruleta de países</button>
     </section>
 
     <section id="pantalla-cupos" hidden aria-label="Cuántos jugadores">
@@ -811,11 +1286,10 @@ PAGE = """<!DOCTYPE html>
       <canvas id="wheel" width="640" height="640" aria-hidden="true"></canvas>
       <ul id="jugadores" role="status" aria-label="Jugadores en la mesa"></ul>
 
-      <div id="categorias" hidden role="group" aria-label="Elegir categoría">
-        <button data-cat="verdad_reto" aria-label="Categoría Verdad o Reto">Verdad o Reto</button>
-        <button data-cat="trivia" class="secondary" aria-label="Categoría Trivia">Trivia</button>
-        <button data-cat="refranes" class="secondary" aria-label="Categoría Refranes">Refranes</button>
-        <button data-cat="países" class="secondary" aria-label="Categoría Países">Países</button>
+      <div id="categorias" hidden>
+        <label for="elegir-cat" id="elegir-label">O elegí la categoría vos:</label><br>
+        <select id="elegir-cat" aria-labelledby="elegir-label"></select>
+        <button id="btn-elegir" class="secondary chatbtn" aria-label="Jugar la categoría elegida">Jugar esta categoría</button>
       </div>
 
       <button id="btn-girar" hidden disabled><span aria-hidden="true">🎡 </span><span id="btn-girar-text">Girar la ruleta</span></button>
@@ -825,6 +1299,7 @@ PAGE = """<!DOCTYPE html>
         <button class="opcion secondary" data-idx="0"></button>
         <button class="opcion secondary" data-idx="1"></button>
         <button class="opcion secondary" data-idx="2"></button>
+        <button id="btn-voz-resp" aria-label="Responder por voz: decí A, B o C">Responder por voz</button>
       </div>
 
       <div id="reto-verdad" hidden>
@@ -833,6 +1308,7 @@ PAGE = """<!DOCTYPE html>
         <button id="btn-pasar" class="secondary" aria-label="Pasar, sin punto">Paso</button>
       </div>
 
+      <h2 id="sala-titulo">Sala de juegos</h2>
       <div id="chat">
         <h2 id="chat-titulo">Chat de la sala</h2>
         <ul id="chat-log" aria-live="polite" aria-label="Mensajes del chat"></ul>
@@ -868,10 +1344,15 @@ function queueAudio(url) {
 function pumpAudio() {
   if (playing || !audioQueue.length || !audioUnlocked) return;
   playing = true;
-  player.src = audioQueue.shift();
+  const url = audioQueue.shift();
+  player.src = url;
   player.onended = () => { playing = false; pumpAudio(); };
   player.onerror = () => { playing = false; pumpAudio(); };
-  player.play().catch(() => { playing = false; pumpAudio(); });
+  player.play().catch(() => {
+    // Autoplay blocked anyway: put it back; the next tap retries it.
+    playing = false;
+    audioQueue.unshift(url);
+  });
 }
 
 function announce(text) {
@@ -880,38 +1361,89 @@ function announce(text) {
   setTimeout(() => { voz.textContent = text; }, 60);
 }
 
+const SILENT_MP3 = "data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//NwwAAAAAAAAAAAAEluZm8AAAAPAAAADgAABm0ALCwsLCwsLDw8PDw8PDxNTU1NTU1NXV1dXV1dXW1tbW1tbW19fX19fX19jo6Ojo6Ojp6enp6enp6erq6urq6urr6+vr6+vr7Pz8/Pz8/P39/f39/f3+/v7+/v7+//////////AAAAAExhdmM1OC4xMwAAAAAAAAAAAAAAACQDaQAAAAAAAAZtL+joNQAAAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NCxKMAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NAxKQAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80LEowAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80DEpAAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsSjAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NCxKMAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NAxKQAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80LEowAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80DEpAAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsSjAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==";
 function unlockAudio() {
-  if (audioUnlocked) return;
-  audioUnlocked = true;
-  player.play().then(() => { player.pause(); pumpAudio(); }).catch(() => {});
+  // Runs on every tap: create/resume the WebAudio context (ticking, spin
+  // sound) and prime the audio element with a real soundless mp3 so
+  // autoplay policies count the gesture and later queued clips can play.
+  try {
+    const ctx = ac();
+    if (ctx.state === "suspended") ctx.resume();
+  } catch (err) {}
+  if (!audioUnlocked) {
+    audioUnlocked = true;
+    player.src = SILENT_MP3;
+    player.play().then(() => pumpAudio()).catch(() => {});
+  } else {
+    pumpAudio();
+  }
 }
 
 function show(id) {
-  for (const s of ["pantalla-inicio", "pantalla-cupos", "pantalla-unirse", "sala"]) {
+  for (const s of ["pantalla-inicio", "pantalla-modo", "pantalla-cupos", "pantalla-unirse", "sala"]) {
     $(s).hidden = (s !== id);
   }
   estado.focus();
 }
 
+// --- Sonidos generados (sin archivos): ticking del reloj y zumbido de giro ---
+let audioCtx = null, clockTimer = null;
+function ac() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+function click(freq, dur, gain) {
+  if (!audioUnlocked) return;
+  try {
+    const ctx = ac(), osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = "square"; osc.frequency.value = freq;
+    g.gain.setValueAtTime(gain, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(); osc.stop(ctx.currentTime + dur);
+  } catch (err) {}
+}
+function spinSound() {
+  if (!audioUnlocked) return;
+  for (let i = 0; i < 14; i++) {
+    setTimeout(() => click(600 + (i % 2) * 200, 0.06, 0.08), i * (120 + i * 12));
+  }
+}
+function startTicking() {
+  stopTicking();
+  clockTimer = setInterval(() => {
+    const left = 60 - Math.floor((Date.now() - turnStartedAt) / 1000);
+    if (left <= 0) { stopTicking(); return; }
+    click(left <= 10 ? 1200 : 800, 0.05, left <= 10 ? 0.12 : 0.07);
+    if (left <= 10) setTimeout(() => click(1200, 0.05, 0.12), 250);
+    if (left <= 10) setTimeout(() => click(1200, 0.05, 0.12), 500);
+    if (left <= 10) setTimeout(() => click(1200, 0.05, 0.12), 750);
+  }, 1000);
+}
+function stopTicking() { if (clockTimer) { clearInterval(clockTimer); clockTimer = null; } }
+
 // --- La ruleta (canvas decorativo; el control real es el botón) ---
 const canvas = $("wheel"), ctx = canvas.getContext("2d");
-const LABELS = ["RETO", "VERDAD"];
-const COLORS = ["#e53935", "#1e88e5"];
+let LABELS = ["RETO", "VERDAD"];
+let COLORS = ["#e53935", "#1e88e5"];
+const PALETTE = ["#e53935", "#1e88e5", "#43a047", "#fdd835", "#8e24aa", "#fb8c00", "#00acc1"];
 let rotation = 0;
 function drawWheel(rot) {
   const c = canvas.width / 2, r = c - 10;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const n = 8;
+  const n = LABELS.length * 4;
   for (let i = 0; i < n; i++) {
     const start = rot + (i * 2 * Math.PI) / n, end = rot + ((i + 1) * 2 * Math.PI) / n;
     ctx.beginPath(); ctx.moveTo(c, c); ctx.arc(c, c, r, start, end); ctx.closePath();
-    ctx.fillStyle = COLORS[i % 2]; ctx.fill();
+    ctx.fillStyle = COLORS[i % COLORS.length]; ctx.fill();
     ctx.strokeStyle = "#000"; ctx.lineWidth = 4; ctx.stroke();
     ctx.save();
     ctx.translate(c, c); ctx.rotate(start + Math.PI / n);
-    ctx.fillStyle = "#fff"; ctx.font = "bold 34px system-ui";
+    ctx.fillStyle = "#fff"; ctx.font = "bold " + (LABELS.length > 4 ? 18 : 34) + "px system-ui";
     ctx.textAlign = "right"; ctx.textBaseline = "middle";
-    ctx.fillText(LABELS[i % 2], r - 24, 0);
+    const label = LABELS[i % LABELS.length];
+    ctx.fillText(label.length > 12 ? label.slice(0, 11) : label, r - 24, 0);
     ctx.restore();
   }
   ctx.beginPath(); ctx.arc(c, c, 26, 0, 2 * Math.PI);
@@ -975,6 +1507,22 @@ function refreshChatTargets() {
 const parts = location.pathname.split("/");
 const inviteCode = parts[2] === "sala" ? (parts[3] || "").toUpperCase() : null;
 
+(function fillCats() {
+  const sel = $("elegir-cat");
+  const cats = ["Verdad o Reto|verdad_reto", "Deportes|deportes", "Fútbol mundial|fútbol mundial",
+    "Películas|películas", "Series|series", "Cultura|cultura", "Historia|historia", "Ciencia|ciencia",
+    "Arte|arte", "Comida|comida", "Nombres y apellidos|nombres y apellidos", "Marcas|marcas",
+    "Animales|animales", "Política|política", "Religión|religión", "Música|música",
+    "Geografía|geografía", "Tecnología|tecnología", "Videojuegos|videojuegos",
+    "Refranes|refranes", "Países|países"];
+  for (const item of cats) {
+    const label = item.split("|")[0], val = item.split("|")[1];
+    const opt = document.createElement("option");
+    opt.value = val; opt.textContent = label;
+    sel.appendChild(opt);
+  }
+})();
+
 (function fillCupos() {
   const sel = $("cupos-select");
   for (let n = 2; n <= 20; n++) {
@@ -990,25 +1538,46 @@ if (inviteCode) {
   announce("Te invitaron a una mesa. Si querés, escribí tu nombre; si no, sos Jugador N. Tocá Entrar a jugar.");
 } else {
   show("pantalla-inicio");
-  announce("Bienvenido. Tocá Jugar solo o Sala de juego para jugar con amigos.");
+  announce("Bienvenido. Tenés tres opciones: Jugar solo, Sala de juegos de 2 a 20 jugadores, o Ruleta de Países.");
 }
+let pendingMode = "sala";
 
-$("btn-solo").addEventListener("click", async () => {
-  unlockAudio();
+async function crearYEntrar(mode) {
   announce("Creando tu mesa...");
   const res = await fetch("/amor-con-aroma-a-cafe/api/salas", {
     method: "POST", headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({mode: "solo"}),
+    body: JSON.stringify({mode: mode}),
   });
   const data = await res.json();
   history.pushState(null, "", "/amor-con-aroma-a-cafe/sala/" + data.code);
   enterSala(data.code, myName);
+}
+
+$("btn-solo").addEventListener("click", () => {
+  unlockAudio();
+  pendingMode = "solo";
+  show("pantalla-modo");
+  announce("¿Qué ruleta querés? Ruleta de categorías o ruleta de países.");
+});
+
+$("btn-modo-cat").addEventListener("click", () => { unlockAudio(); crearYEntrar(pendingMode); });
+$("btn-modo-paises").addEventListener("click", () => {
+  unlockAudio();
+  crearYEntrar(pendingMode === "solo" ? "solo_paises" : "paises");
 });
 
 $("btn-sala").addEventListener("click", () => {
   unlockAudio();
+  pendingMode = "sala";
   show("pantalla-cupos");
-  announce("¿Cuántos jugadores son? Elegí un número y tocá Crear la sala.");
+  announce("¿Cuántos jugadores son? Elegí un número de 2 a 20 y tocá Crear la sala.");
+});
+
+$("btn-paises").addEventListener("click", () => {
+  unlockAudio();
+  pendingMode = "paises";
+  show("pantalla-cupos");
+  announce("Ruleta de Países. ¿Cuántos jugadores son? Elegí un número de 2 a 20 y tocá Crear la sala.");
 });
 
 $("btn-volver").addEventListener("click", () => {
@@ -1021,7 +1590,7 @@ $("btn-crear").addEventListener("click", async () => {
   announce("Creando la sala...");
   const res = await fetch("/amor-con-aroma-a-cafe/api/salas", {
     method: "POST", headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({mode: "sala", capacity: parseInt($("cupos-select").value, 10)}),
+    body: JSON.stringify({mode: pendingMode === "paises" ? "paises" : "sala", capacity: parseInt($("cupos-select").value, 10)}),
   });
   const data = await res.json();
   history.pushState(null, "", "/amor-con-aroma-a-cafe/sala/" + data.code);
@@ -1069,10 +1638,13 @@ function connect(code, name) {
       announce("Estás en la mesa " + codeSpelled + " como " + myName + ".");
     } else if (msg.event === "state") {
       onState(msg);
-    } else if (msg.event === "choose_category") {
-      announce("Es tu turno. Elegí una categoría: Verdad o Reto, Trivia, Refranes o Países.");
+    } else if (msg.event === "your_turn") {
+      if (msg.kind === "country") announce("Es tu turno. Tocá el botón Girar la ruleta de países.");
+      else announce("Es tu turno. Tocá el botón Girar la ruleta, o elegí la categoría y tocá Jugar esta categoría.");
     } else if (msg.event === "spin_start") {
+      if (msg.labels) { LABELS = msg.labels; COLORS = PALETTE; }
       announce("Gira la ruleta de " + msg.player + "...");
+      spinSound();
       spinAnimation(msg.angle);
     } else if (msg.event === "await_done") {
       $("carta-texto").textContent = msg.label + ": " + msg.card;
@@ -1101,7 +1673,8 @@ function connect(code, name) {
 }
 
 function onState(msg) {
-  const turnChanged = !lastState || lastState.turn !== msg.turn || lastState.phase !== msg.phase;
+  const prev = lastState;
+  const newTurn = !prev || prev.turn !== msg.turn || prev.phase === "lobby" || prev.phase === "gameover";
   lastState = msg;
   refreshChatTargets();
   const ul = $("jugadores");
@@ -1112,19 +1685,19 @@ function onState(msg) {
     ul.appendChild(li);
   }
   const mine = msg.turn === myId;
-  $("categorias").hidden = !(mine && msg.phase === "category");
-  const vr = msg.phase === "verdad_reto_ready";
-  $("btn-girar").hidden = !vr;
+  const spinPhases = ["spin_ready", "country_spin_ready", "verdad_reto_ready"];
+  $("categorias").hidden = !(mine && msg.phase === "spin_ready");
+  $("btn-girar").hidden = !spinPhases.includes(msg.phase);
   $("btn-girar").disabled = !mine || msg.spinning;
-  $("btn-girar-text").textContent = msg.spinning ? "Girando..." : (mine ? "Girar la ruleta" : "Esperando a " + (msg.turn_name || "alguien"));
+  let girarText = "Girar la ruleta";
+  if (msg.phase === "country_spin_ready") girarText = "Girar la ruleta de países";
+  $("btn-girar-text").textContent = msg.spinning ? "Girando..." : (mine ? girarText : "Esperando a " + (msg.turn_name || "alguien"));
   $("reto-verdad").hidden = !(mine && msg.phase === "verdad_reto");
-  if (!(msg.phase === "question")) { $("pregunta").hidden = true; }
+  if (msg.phase !== "question") { $("pregunta").hidden = true; }
   $("btn-empezar").hidden = !(msg.phase === "lobby" && msg.players.length && msg.players[0].id === myId && msg.capacity !== 1);
-  if (turnChanged && msg.phase !== "lobby" && msg.phase !== "gameover") startClock();
+  if (newTurn && msg.phase !== "lobby" && msg.phase !== "gameover") { startClock(); startTicking(); }
+  if (msg.phase === "lobby" || msg.phase === "gameover") stopTicking();
   if (msg.phase === "gameover") { clearInterval(timerInterval); $("temporizador").textContent = ""; }
-  if (mine && turnChanged && msg.phase === "verdad_reto_ready") {
-    announce("Te toca. Tocá el botón Girar la ruleta.");
-  }
 }
 
 function onQuestion(msg) {
@@ -1138,14 +1711,14 @@ function onQuestion(msg) {
     btn.setAttribute("aria-label", "Opción " + letters[i] + ": " + msg.options[i]);
     btn.disabled = !mine;
   });
-  if (!mine) announce(msg.player === myId ? msg.q : "Pregunta para " + (lastState ? lastState.turn_name : "otro jugador") + ": " + msg.q);
+  $("btn-voz-resp").disabled = !mine;
+  if (!mine) announce("Pregunta para " + (lastState ? lastState.turn_name : "otro jugador") + ": " + msg.q);
 }
 
-document.querySelectorAll("#categorias button").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    if (ws && ws.readyState === 1) ws.send(JSON.stringify({action: "category", category: btn.dataset.cat}));
-    $("categorias").hidden = true;
-  });
+$("btn-elegir").addEventListener("click", () => {
+  const cat = $("elegir-cat").value;
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify({action: "category", category: cat}));
+  $("categorias").hidden = true;
 });
 
 $("btn-girar").addEventListener("click", () => {
@@ -1157,6 +1730,30 @@ document.querySelectorAll("#pregunta .opcion").forEach((btn) => {
     if (ws && ws.readyState === 1) ws.send(JSON.stringify({action: "answer", idx: parseInt(btn.dataset.idx, 10)}));
     $("pregunta").hidden = true;
   });
+});
+
+let respRecorder = null, respChunks = [];
+$("btn-voz-resp").addEventListener("click", async () => {
+  if (respRecorder && respRecorder.state === "recording") { respRecorder.stop(); return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+    respChunks = [];
+    respRecorder = new MediaRecorder(stream);
+    respRecorder.ondataavailable = (e) => { if (e.data.size) respChunks.push(e.data); };
+    respRecorder.onstop = async () => {
+      stream.getTracks().forEach((t) => t.stop());
+      $("btn-voz-resp").textContent = "Responder por voz";
+      const blob = new Blob(respChunks, {type: respRecorder.mimeType || "audio/webm"});
+      announce("Escuchando tu respuesta...");
+      try {
+        const res = await fetch("/amor-con-aroma-a-cafe/api/voz-respuesta/" + salaCode + "?sender=" + myId, {method: "POST", body: blob});
+        if (!res.ok) announce("No te entendí. Tocá una opción o probá de nuevo.");
+      } catch (err) { announce("No pude mandar tu voz. Tocá una opción."); }
+    };
+    respRecorder.start();
+    $("btn-voz-resp").textContent = "Parar y mandar";
+    announce("Grabando. Decí A, B o C y tocá el botón de nuevo para mandar.");
+  } catch (err) { announce("No pude usar el micrófono. Tocá una opción."); }
 });
 
 $("btn-listo").addEventListener("click", () => {
