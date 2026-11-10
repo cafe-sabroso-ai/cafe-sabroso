@@ -471,6 +471,8 @@ MC_USED_KEYS = {cat: "used_" + str(i) for i, cat in enumerate(MC_BANKS)}
 
 WIN_SCORE = 5
 COUNTRIES_TO_WIN = 2
+QUESTIONS_PER_LEVEL = 3
+CATEGORIES_TO_PASS = 3
 TURN_SECONDS = 60
 REMATCH_SECONDS = 10
 NARRATOR_VOICES = ["es-AR-ElenaNeural", "es-AR-TomasNeural", "es-UY-ValentinaNeural"]
@@ -520,6 +522,13 @@ def room_state(room) -> dict:
         "game": room["game"],
         "country": room["country"],
         "country_done": len(room["country_done"]),
+        "ahorcado": ({
+            "board": ah_board(room["ahorcado"]["word"] or "", room["ahorcado"]["guessed"]),
+            "hint": room["ahorcado"]["hint"],
+            "attempts": room["ahorcado"]["attempts"],
+            "wrong": sorted(room["ahorcado"]["wrong"]),
+            "levels": room["ahorcado"]["levels"],
+        } if room["game"] == "ahorcado" and room["ahorcado"]["word"] else None),
     }
 
 
@@ -641,6 +650,9 @@ async def begin_turn(room):
     player = current_player(room)
     if player is None:
         return
+    if room["game"] == "ahorcado":
+        await ah_start_turn(room)
+        return
     if room["game"] == "paises" and room["country"] is None:
         room["phase"] = "country_spin_ready"
         await broadcast(room, room_state(room))
@@ -653,13 +665,30 @@ async def begin_turn(room):
 
 
 async def start_match(room):
+    if room["game"] is None:
+        return  # a sala waits for the host to pick the game
     room["scores"] = {p["id"]: 0 for p in room["players"] if not p.get("gone")}
     room["turn"] = room["starter"]
+    if room["game"] == "ahorcado":
+        room["ahorcado"] = {"levels": {}, "used": set(), "word": None, "hint": "",
+                            "guessed": set(), "wrong": set(), "attempts": 0}
+        await narrate(room, f"¡Arranca el ahorcado! Adiviná la palabra letra por letra. "
+                            f"Si errás, pasa al siguiente. "
+                            f"El primero en llegar al nivel {AHORCADO_WIN_LEVEL + 1} gana.")
+        await begin_turn(room)
+        return
+    if room["game"] == "categorias":
+        room["cat_progress"] = {}
     player = current_player(room)
     if player is None:
         return
-    await narrate(room, f"¡Arranca la partida {room['match']}! El primero en llegar a "
-                        f"{WIN_SCORE} puntos gana. Empieza {player['name']}.")
+    if room["game"] == "categorias":
+        await narrate(room, f"¡Arranca la partida {room['match']}! El primero en pasar "
+                            f"{CATEGORIES_TO_PASS} categorías gana: con {QUESTIONS_PER_LEVEL} "
+                            f"correctas pasás cada categoría. Empieza {player['name']}.")
+    else:
+        await narrate(room, f"¡Arranca la partida {room['match']}! El primero en llegar a "
+                            f"{WIN_SCORE} puntos gana. Empieza {player['name']}.")
     await begin_turn(room)
 
 
@@ -703,7 +732,12 @@ async def game_over(room, winner):
 async def do_category_spin(room, player, chosen=None):
     """The wheel lands on a category (random unless the player picked one)."""
     room["spinning"] = True
-    pool = list(MC_BANKS) if room["game"] == "paises" else list(CATEGORIES)
+    if room["game"] == "paises":
+        pool = list(MC_BANKS)
+    else:
+        progress = room.get("cat_progress", {}).get(player["id"], {})
+        pool = [c for c in CATEGORIES
+                if c == "verdad_reto" or progress.get(c, 0) < QUESTIONS_PER_LEVEL]
     cat = chosen or random.choice(pool)
     labels = [CATEGORIES[c] for c in pool]
     await broadcast(room, {
@@ -801,9 +835,24 @@ async def resolve_answer(room, player, idx):
         await resolve_answer_paises(room, player, question, correct, idx)
         return
     if correct:
-        room["scores"][player["id"]] = room["scores"].get(player["id"], 0) + 1
-        await narrate(room, f"¡Correcto! {player['name']} ganó la categoría "
-                            f"{CATEGORIES[question['category']]}. Lleva {room['scores'][player['id']]} puntos.")
+        cat = question["category"]
+        progress = room.setdefault("cat_progress", {}).setdefault(player["id"], {})
+        progress[cat] = progress.get(cat, 0) + 1
+        label = CATEGORIES[cat]
+        if progress[cat] >= QUESTIONS_PER_LEVEL:
+            passed = sum(1 for c, n in progress.items() if n >= QUESTIONS_PER_LEVEL)
+            room["scores"][player["id"]] = passed
+            if passed >= CATEGORIES_TO_PASS:
+                room["phase"] = "question"  # coherent until game_over
+                await game_over(room, player)
+                return
+            await narrate(room, f"¡Correcto! ¡{player['name']} pasó el nivel de {label}! "
+                                f"Con {QUESTIONS_PER_LEVEL} correctas, esa categoría ya es de "
+                                f"{player['name']}. Lleva {passed} "
+                                f"{'categoría pasada' if passed == 1 else 'categorías pasadas'}.")
+        else:
+            await narrate(room, f"¡Correcto, {player['name']}! Lleva {progress[cat]} de "
+                                f"{QUESTIONS_PER_LEVEL} en {label}.")
     else:
         letters = ["A", "B", "C"]
         right = question["options"][question["correct"]]
@@ -861,6 +910,162 @@ async def complete_verdad_reto(room, player, done):
         await narrate(room, f"{player['name']} pasa. Sin punto esta vez.")
     await end_turn(room)
 
+
+# ---------------------------------------------------------------------------
+# El Ahorcado web: letter-by-letter word guessing, turns pass on a miss.
+# ---------------------------------------------------------------------------
+AHORCADO_WIN_LEVEL = 5
+AH_ORDINALES = ["primer", "segundo", "tercer", "cuarto", "quinto",
+                "sexto", "séptimo", "octavo", "noveno", "décimo"]
+
+
+def ah_helpers():
+    from app import (AHORCADO_BANK, AHORCADO_SPEAK, ahorcado_attempts_for,
+                     ahorcado_band, ahorcado_clean, ahorcado_parse_guess)
+    return AHORCADO_BANK, AHORCADO_SPEAK, ahorcado_attempts_for, ahorcado_band, ahorcado_clean, ahorcado_parse_guess
+
+
+def ah_board(word, guessed):
+    return " ".join(char if char in guessed else "_" for char in word)
+
+
+def ah_spelled(word, speak):
+    return ", ".join(speak[char] for char in word)
+
+
+def ah_positions_text(word, letter, speak):
+    """'La palabra lleva dos letras A: una en el primer casillero y otra en el segundo.'"""
+    positions = [i for i, char in enumerate(word) if char == letter]
+    name = speak[letter]
+    if len(positions) == 1:
+        return f"La palabra lleva una letra {name}, en el {AH_ORDINALES[positions[0]]} casillero."
+    places = ", ".join(f"una en el {AH_ORDINALES[p]} casillero" for p in positions[:-1])
+    places += f" y otra en el {AH_ORDINALES[positions[-1]]} casillero"
+    return f"La palabra lleva {len(positions)} letras {name}: {places}."
+
+
+def ah_adjacency_text(word, letter, guessed, speak):
+    """'La A y la T están juntas.' for newly revealed neighbours."""
+    pairs = []
+    for i, char in enumerate(word):
+        if char != letter:
+            continue
+        if i + 1 < len(word) and word[i + 1] in guessed:
+            pair = (word[i], word[i + 1])
+            if pair not in pairs:
+                pairs.append(pair)
+        if i - 1 >= 0 and word[i - 1] in guessed and word[i - 1] != letter:
+            pair = (word[i - 1], word[i])
+            if pair not in pairs:
+                pairs.append(pair)
+    return " ".join(f"La {speak[a]} y la {speak[b]} están juntas." for a, b in pairs)
+
+
+async def ah_start_turn(room):
+    """Deal a word at the current player's level and arm the clock."""
+    _, _, attempts_for, band, _, _ = ah_helpers()
+    cancel_timer(room)
+    room["question"] = None
+    player = current_player(room)
+    if player is None:
+        return
+    ah = room["ahorcado"]
+    level = ah["levels"].get(player["id"], 1)
+    bank, _, _, _, _, _ = ah_helpers()
+    lo, hi = band(level)
+    choices = [(w, h) for w, h in bank if lo <= len(w) <= hi and w not in ah["used"]]
+    if not choices:
+        ah["used"] = {w for w in ah["used"] if not (lo <= len(w) <= hi)}
+        choices = [(w, h) for w, h in bank if lo <= len(w) <= hi]
+    word, hint = random.choice(choices)
+    ah["used"].add(word)
+    ah.update(word=word, hint=hint, guessed=set(), wrong=set(),
+              attempts=attempts_for(word))
+    room["phase"] = "ahorcado"
+    await narrate(room, f"Turno de {player['name']}, nivel {level}. "
+                        f"La palabra tiene {len(word)} letras. Pista: {hint} "
+                        f"Tenés {ah['attempts']} intentos. Decí una letra o arriesgá la palabra.")
+    await broadcast(room, room_state(room))
+    await tell(player, {"event": "your_turn", "kind": "ahorcado"})
+    room["timer_task"] = asyncio.create_task(turn_clock(room, player["id"]))
+
+
+async def ah_pass(room, reason):
+    """A miss: tell everyone, then the word/turn passes to the next player."""
+    room["turn"] += 1
+    nxt = current_player(room)
+    await narrate(room, reason + (f" Ahora sigue {nxt['name']}." if nxt else ""))
+    await ah_start_turn(room)
+
+
+async def ah_guess(room, player, guess):
+    """guess = ('letter', 'E') | ('word', 'PALABRA')."""
+    bank, speak, _, _, clean, _ = ah_helpers()
+    ah = room["ahorcado"]
+    word = ah["word"]
+    kind, value = guess
+    if kind == "letter":
+        if value in ah["guessed"] or value in ah["wrong"]:
+            await narrate(room, f"La {speak[value]} ya salió, {player['name']}. Probá otra.")
+            return
+        if value in word:
+            ah["guessed"].add(value)
+            if all(char in ah["guessed"] for char in word):
+                await ah_solved(room, player)
+                return
+            positions = ah_positions_text(word, value, speak)
+            adjacency = ah_adjacency_text(word, value, ah["guessed"], speak)
+            spoken_board = ", ".join(speak[c] if c in ah["guessed"] else "vacío" for c in word)
+            await narrate(room, f"¡Sí! {positions} {adjacency} "
+                                f"Así va: {spoken_board}. "
+                                f"Seguís, {player['name']}.")
+            await broadcast(room, room_state(room))
+            return
+        ah["wrong"].add(value)
+        ah["attempts"] -= 1
+        if ah["attempts"] <= 0:
+            await ah_pass(room, f"No hay {speak[value]} y se te acabaron los intentos, "
+                                f"{player['name']}. La palabra era {ah_spelled(word, speak)}.")
+            return
+        left = ah["attempts"]
+        await ah_pass(room, f"No hay {speak[value]}. Te {'queda' if left == 1 else 'quedan'} "
+                            f"{left} {'intento' if left == 1 else 'intentos'}, {player['name']}.")
+        return
+    # whole-word guess
+    if value == word:
+        await ah_solved(room, player)
+        return
+    ah["attempts"] -= 1
+    if ah["attempts"] <= 0:
+        await ah_pass(room, f"¡{ah_spelled(value, speak)} no es y se te acabaron los intentos, "
+                            f"{player['name']}! La palabra era {ah_spelled(word, speak)}.")
+        return
+    left = ah["attempts"]
+    await ah_pass(room, f"{ah_spelled(value, speak)} no es. Te {'queda' if left == 1 else 'quedan'} "
+                        f"{left} {'intento' if left == 1 else 'intentos'}, {player['name']}.")
+
+
+async def ah_solved(room, player):
+    """Solved the word: level up, tell the room where everyone stands."""
+    ah = room["ahorcado"]
+    level = ah["levels"].get(player["id"], 1) + 1
+    ah["levels"][player["id"]] = level
+    room["scores"][player["id"]] = level - 1
+    others = [p for p in room["players"] if not p.get("gone") and p["id"] != player["id"]]
+    standing = ""
+    if others:
+        otros_niveles = {ah["levels"].get(p["id"], 1) for p in others}
+        if len(otros_niveles) == 1:
+            standing = f"; ustedes están en el nivel {otros_niveles.pop()}"
+    if level > AHORCADO_WIN_LEVEL:
+        room["phase"] = "ahorcado"  # coherent until game_over
+        await game_over(room, player)
+        return
+    await narrate(room, f"¡{player['name']} adivinó la palabra! "
+                        f"{player['name']} pasó al nivel {level}{standing}.")
+    room["turn"] += 1
+    await ah_start_turn(room)
+
 # ---------------------------------------------------------------------------
 # The sala socket.
 # ---------------------------------------------------------------------------
@@ -895,6 +1100,7 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = ""):
         room["next_id"] += 1
         room["players"].append(player)
         room["scores"][player["id"]] = 0
+        room.setdefault("chat_voices", {})[player["id"]] = NARRATOR_VOICES[(player["id"] - 1) % len(NARRATOR_VOICES)]
     log.info("Web sala %s: %s joined (%s players)", code, player["name"], len(active) + (seat is None))
     await tell(player, {"event": "welcome", "name": player["name"], "id": player["id"],
                         "code": code, "capacity": room["capacity"], "phase": room["phase"]})
@@ -911,7 +1117,7 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = ""):
         await narrate(room, f"Se unió {player['name']}. Ahora son {count} en la sala.")
     await broadcast(room, room_state(room))
     # Solo starts at once; a sala starts when full or when the host taps Empezar.
-    if room["phase"] == "lobby" and room["mode"] == "solo":
+    if room["phase"] == "lobby" and room["capacity"] == 1:
         await start_match(room)
     elif room["phase"] == "lobby" and room["capacity"] and count >= room["capacity"]:
         await start_match(room)
@@ -929,6 +1135,21 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = ""):
 
             if action == "start" and room["phase"] == "lobby" and player == room["players"][0]:
                 await start_match(room)
+            elif action == "juego" and room["phase"] == "lobby" and player == room["players"][0]:
+                picked = message.get("game")
+                if room["game"] is None and picked in ("categorias", "paises", "ahorcado"):
+                    room["game"] = picked
+                    names = {"categorias": "la ruleta de categorías",
+                             "paises": "la ruleta de países", "ahorcado": "el ahorcado"}
+                    await narrate(room, f"¡{player['name']} eligió {names[picked]}!")
+                    await start_match(room)
+            elif action == "guess" and room["phase"] == "ahorcado" and current_player(room) is player:
+                _, _, _, _, clean, parse_guess = ah_helpers()
+                guess = parse_guess(str(message.get("text") or ""))
+                if guess:
+                    await ah_guess(room, player, guess)
+                else:
+                    await narrate(room, f"No te entendí, {player['name']}. Decí una letra o la palabra.")
             elif action == "spin":
                 if room["spinning"] or current is not player:
                     if current is not player:
@@ -1007,12 +1228,13 @@ async def handle_chat(room, player, message):
         target = next((p for p in room["players"] if p["id"] == to_id and not p.get("gone")), None)
         if target is None:
             return
-    spoken = (f"{player['name']} le dice a {target['name']}: {text}" if target
-              else f"{player['name']} dice: {text}")
+    spoken = (f"{player['name']} te escribió: {text}" if target
+              else f"{player['name']} escribió: {text}")
     from app import synthesize
 
     try:
-        mp3 = await ogg_to_mp3(await synthesize(spoken, room.get("voice") or "es-AR-ElenaNeural"))
+        voice = room.get("chat_voices", {}).get(player["id"]) or room.get("voice") or "es-AR-ElenaNeural"
+        mp3 = await ogg_to_mp3(await synthesize(spoken, voice))
         url = f"/amor-con-aroma-a-cafe/audio/{cache_audio(mp3)}.mp3"
     except Exception:
         url = None
@@ -1048,7 +1270,20 @@ async def voice_clip(code: str, request: Request, to: str = "all", sender: int =
     url = f"/amor-con-aroma-a-cafe/audio/{cache_audio(mp3)}.mp3"
     payload = {"event": "clip", "from_id": sender_p["id"], "from_name": sender_p["name"],
                "to": to, "url": url}
+    intro_url = None
+    try:
+        from app import synthesize
+
+        voice = room.get("chat_voices", {}).get(sender_p["id"]) or room.get("voice") or "es-AR-ElenaNeural"
+        intro = await ogg_to_mp3(await synthesize(f"{sender_p['name']} mandó un audio.", voice))
+        intro_url = f"/amor-con-aroma-a-cafe/audio/{cache_audio(intro)}.mp3"
+    except Exception:
+        log.exception("Web sala: clip intro synthesis failed")
+    intro_msg = {"event": "say", "text": f"{sender_p['name']} mandó un audio.", "audio": intro_url}
     if to == "all":
+        for p in room["players"]:
+            if not p.get("gone") and p["id"] != sender_p["id"]:
+                await tell(p, intro_msg)
         await broadcast(room, payload)
     else:
         try:
@@ -1058,6 +1293,7 @@ async def voice_clip(code: str, request: Request, to: str = "all", sender: int =
         target = next((p for p in room["players"] if p["id"] == target_id and not p.get("gone")), None)
         if target is None:
             return Response(status_code=404)
+        await tell(target, intro_msg)
         await tell(target, payload)
         await tell(sender_p, {**payload, "echo": True})
     return {"ok": True}
@@ -1070,7 +1306,7 @@ async def voice_answer(code: str, request: Request, sender: int = -1):
     if room is None:
         return Response(status_code=404)
     player = next((p for p in room["players"] if p["id"] == sender and not p.get("gone")), None)
-    if player is None or current_player(room) is not player or room["phase"] != "question":
+    if player is None or current_player(room) is not player or room["phase"] not in ("question", "ahorcado"):
         return Response(status_code=409)
     body = await request.body()
     if not body or len(body) > 3_000_000:
@@ -1078,6 +1314,14 @@ async def voice_answer(code: str, request: Request, sender: int = -1):
     text = await transcribe_clip(body)
     if not text:
         return {"heard": False}
+    if room["phase"] == "ahorcado":
+        _, _, _, _, _, parse_guess = ah_helpers()
+        guess = parse_guess(text)
+        if guess is None:
+            await narrate(room, f"{player['name']}, no entendí tu letra. Decí una letra o la palabra.")
+            return {"heard": False, "text": text}
+        await ah_guess(room, player, guess)
+        return {"heard": True, "text": text}
     question = room.get("question")
     idx = match_option(text, question["options"]) if question else None
     if idx is None:
@@ -1142,7 +1386,8 @@ async def crear_sala(request: Request):
     capacity = None
     try:
         data = await request.json()
-        if data.get("mode") in ("solo", "sala", "solo_paises", "paises"):
+        if data.get("mode") in ("solo", "sala", "solo_paises", "paises",
+                                "solo_ahorcado", "ahorcado"):
             mode = data["mode"]
         capacity = int(data.get("capacity") or 0) or None
     except Exception:
@@ -1150,7 +1395,11 @@ async def crear_sala(request: Request):
     game = "categorias"
     if mode in ("solo_paises", "paises"):
         game = "paises"
-    if mode in ("solo", "solo_paises"):
+    elif mode in ("solo_ahorcado", "ahorcado"):
+        game = "ahorcado"
+    elif mode == "sala":
+        game = None  # the host picks the game in the lobby
+    if mode in ("solo", "solo_paises", "solo_ahorcado"):
         capacity = 1
     elif capacity is not None:
         capacity = max(2, min(MAX_PLAYERS, capacity))
@@ -1179,6 +1428,10 @@ async def crear_sala(request: Request):
         "country": None,
         "country_done": set(),
         "countries_won": {},
+        "ahorcado": {"levels": {}, "used": set(), "word": None, "hint": "",
+                     "guessed": set(), "wrong": set(), "attempts": 0},
+        "cat_progress": {},
+        "chat_voices": {},
     }
     return {"code": code}
 
@@ -1226,7 +1479,23 @@ PAGE = """<!DOCTYPE html>
     max-width: 34rem;
   }
   #pregunta { max-width: 34rem; }
-  #pregunta-texto { font-size: 1.3rem; color: #ffe082; }
+  #pregunta-texto { font-size: 1.5rem; font-weight: bold; color: #ffe082; }
+  /* Cada opción con su color, alto contraste, letra grande (baja visión). */
+  #pregunta .opcion[data-idx="0"] { background: #f9a825; color: #000; font-weight: bold; }
+  #pregunta .opcion[data-idx="1"] { background: #00c853; color: #000; font-weight: bold; }
+  #pregunta .opcion[data-idx="2"] { background: #29b6f6; color: #000; font-weight: bold; }
+  #pregunta .opcion:disabled { background: #555; color: #ddd; }
+  .ahorcado-btn { background: #6a1b9a; }
+  #ahorcado { max-width: 34rem; }
+  #ah-pista { font-size: 1.4rem; color: #ffe082; }
+  #ah-tablero {
+    font-size: 3rem; font-weight: bold; letter-spacing: 1.2rem; color: #80d8ff;
+    margin: 1rem 0; font-family: monospace;
+  }
+  #ah-intentos { font-size: 1.3rem; color: #ffab91; }
+  #ah-letras { font-size: 1.2rem; color: #ef9a9a; }
+  #ah-input { font-size: 1.5rem; padding: 0.7rem; border-radius: 0.6rem; width: 14rem; text-transform: uppercase; }
+  #elegir-juego h2 { color: #fdd835; }
   #chat { max-width: 34rem; margin-top: 1rem; border-top: 2px solid #333; padding-top: 0.8rem; }
   #chat-log { list-style: none; padding: 0; text-align: left; font-size: 1rem; color: #cfd8dc; }
   #chat-log li { margin: 0.3rem 0; }
@@ -1259,9 +1528,10 @@ PAGE = """<!DOCTYPE html>
       <button id="btn-paises" class="secondary" aria-label="Ruleta de Países, para jugar con amigos">Ruleta de Países</button>
     </section>
 
-    <section id="pantalla-modo" hidden aria-label="Qué ruleta querés">
+    <section id="pantalla-modo" hidden aria-label="A qué querés jugar">
       <button id="btn-modo-cat" aria-label="Ruleta de todas las categorías">Ruleta de categorías</button>
       <button id="btn-modo-paises" class="secondary" aria-label="Ruleta de países">Ruleta de países</button>
+      <button id="btn-modo-ahorcado" class="ahorcado-btn" aria-label="El ahorcado, adivinar la palabra">El ahorcado</button>
     </section>
 
     <section id="pantalla-cupos" hidden aria-label="Cuántos jugadores">
@@ -1282,6 +1552,12 @@ PAGE = """<!DOCTYPE html>
         Pasá este link a tus amigos:<br><strong id="link"></strong><br>
         <button id="btn-copiar" class="secondary" aria-label="Copiar el link para invitar a tus amigos"><span aria-hidden="true">📤 </span>Copiar el link</button>
       </div>
+      <div id="elegir-juego" hidden>
+        <h2>¿A qué jugamos?</h2>
+        <button id="btn-juego-cat" aria-label="Jugar a la ruleta de categorías">Ruleta de categorías</button>
+        <button id="btn-juego-paises" class="secondary" aria-label="Jugar a la ruleta de países">Ruleta de países</button>
+        <button id="btn-juego-ahorcado" class="ahorcado-btn" aria-label="Jugar al ahorcado">El ahorcado</button>
+      </div>
       <button id="btn-empezar" hidden aria-label="Empezar la partida ya">Empezar la partida</button>
       <p id="temporizador" role="timer" aria-hidden="true"></p>
       <canvas id="wheel" width="640" height="640" aria-hidden="true"></canvas>
@@ -1301,6 +1577,17 @@ PAGE = """<!DOCTYPE html>
         <button class="opcion secondary" data-idx="1"></button>
         <button class="opcion secondary" data-idx="2"></button>
         <button id="btn-voz-resp" aria-label="Responder por voz: decí A, B o C">Responder por voz</button>
+      </div>
+
+      <div id="ahorcado" hidden>
+        <p id="ah-pista" role="status"></p>
+        <p id="ah-tablero" aria-label="La palabra"></p>
+        <p id="ah-intentos"></p>
+        <p id="ah-letras"></p>
+        <label for="ah-input" id="ah-label">Escribí una letra o la palabra entera:</label><br>
+        <input id="ah-input" type="text" autocomplete="off" aria-labelledby="ah-label">
+        <button id="btn-ah-mandar" aria-label="Mandar la letra o palabra escrita">Mandar</button>
+        <button id="btn-ah-voz" class="secondary" aria-label="Decir una letra o la palabra por voz">Decirla por voz</button>
       </div>
 
       <div id="reto-verdad" hidden>
@@ -1558,13 +1845,18 @@ $("btn-solo").addEventListener("click", () => {
   unlockAudio();
   pendingMode = "solo";
   show("pantalla-modo");
-  announce("¿Qué ruleta querés? Ruleta de categorías o ruleta de países.");
+  announce("¿A qué querés jugar? Ruleta de categorías, ruleta de países, o el ahorcado.");
 });
 
 $("btn-modo-cat").addEventListener("click", () => { unlockAudio(); crearYEntrar(pendingMode); });
 $("btn-modo-paises").addEventListener("click", () => {
   unlockAudio();
   crearYEntrar(pendingMode === "solo" ? "solo_paises" : "paises");
+});
+
+$("btn-modo-ahorcado").addEventListener("click", () => {
+  unlockAudio();
+  crearYEntrar(pendingMode === "solo" ? "solo_ahorcado" : "ahorcado");
 });
 
 $("btn-sala").addEventListener("click", () => {
@@ -1641,6 +1933,7 @@ function connect(code, name) {
       onState(msg);
     } else if (msg.event === "your_turn") {
       if (msg.kind === "country") announce("Es tu turno. Tocá el botón Girar la ruleta de países.");
+      else if (msg.kind === "ahorcado") announce("Es tu turno. Decí una letra con el botón Decirla por voz, o escribila y tocá Mandar.");
       else announce("Es tu turno. Tocá el botón Girar la ruleta, o elegí la categoría y tocá Jugar esta categoría.");
     } else if (msg.event === "spin_start") {
       if (msg.labels) { LABELS = msg.labels; COLORS = PALETTE; }
@@ -1695,7 +1988,20 @@ function onState(msg) {
   $("btn-girar-text").textContent = msg.spinning ? "Girando..." : (mine ? girarText : "Esperando a " + (msg.turn_name || "alguien"));
   $("reto-verdad").hidden = !(mine && msg.phase === "verdad_reto");
   if (msg.phase !== "question") { $("pregunta").hidden = true; }
-  $("btn-empezar").hidden = !(msg.phase === "lobby" && msg.players.length && msg.players[0].id === myId && msg.capacity !== 1);
+  $("btn-empezar").hidden = !(msg.phase === "lobby" && msg.game && msg.players.length && msg.players[0].id === myId && msg.capacity !== 1);
+  const imHost = msg.players.length && msg.players[0].id === myId;
+  $("elegir-juego").hidden = !(msg.phase === "lobby" && !msg.game && imHost);
+  const ah = msg.ahorcado;
+  $("ahorcado").hidden = !(msg.game === "ahorcado" && ah);
+  if (msg.game === "ahorcado" && ah) {
+    $("ah-pista").textContent = "Pista: " + ah.hint;
+    $("ah-tablero").textContent = ah.board;
+    $("ah-intentos").textContent = "Quedan " + ah.attempts + " intentos para esta palabra";
+    $("ah-letras").textContent = ah.wrong.length ? "Letras que no están: " + ah.wrong.join(", ") : "";
+    $("btn-ah-mandar").disabled = !mine;
+    $("btn-ah-voz").disabled = !mine;
+    $("ah-input").disabled = !mine;
+  }
   if (newTurn && msg.phase !== "lobby" && msg.phase !== "gameover") { startClock(); startTicking(); }
   if (msg.phase === "lobby" || msg.phase === "gameover") stopTicking();
   if (msg.phase === "gameover") { clearInterval(timerInterval); $("temporizador").textContent = ""; }
@@ -1731,6 +2037,49 @@ document.querySelectorAll("#pregunta .opcion").forEach((btn) => {
     if (ws && ws.readyState === 1) ws.send(JSON.stringify({action: "answer", idx: parseInt(btn.dataset.idx, 10)}));
     $("pregunta").hidden = true;
   });
+});
+
+$("btn-juego-cat").addEventListener("click", () => {
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify({action: "juego", game: "categorias"}));
+});
+$("btn-juego-paises").addEventListener("click", () => {
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify({action: "juego", game: "paises"}));
+});
+$("btn-juego-ahorcado").addEventListener("click", () => {
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify({action: "juego", game: "ahorcado"}));
+});
+
+function sendGuess() {
+  const t = $("ah-input").value.trim();
+  if (!t || !ws || ws.readyState !== 1) return;
+  ws.send(JSON.stringify({action: "guess", text: t}));
+  $("ah-input").value = "";
+}
+$("btn-ah-mandar").addEventListener("click", sendGuess);
+$("ah-input").addEventListener("keydown", (e) => { if (e.key === "Enter") sendGuess(); });
+
+let ahRecorder = null, ahChunks = [];
+$("btn-ah-voz").addEventListener("click", async () => {
+  if (ahRecorder && ahRecorder.state === "recording") { ahRecorder.stop(); return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+    ahChunks = [];
+    ahRecorder = new MediaRecorder(stream);
+    ahRecorder.ondataavailable = (e) => { if (e.data.size) ahChunks.push(e.data); };
+    ahRecorder.onstop = async () => {
+      stream.getTracks().forEach((t) => t.stop());
+      $("btn-ah-voz").textContent = "Decirla por voz";
+      const blob = new Blob(ahChunks, {type: ahRecorder.mimeType || "audio/webm"});
+      announce("Escuchando tu letra...");
+      try {
+        const res = await fetch("/amor-con-aroma-a-cafe/api/voz-respuesta/" + salaCode + "?sender=" + myId, {method: "POST", body: blob});
+        if (!res.ok) announce("No te entendí. Escribila o probá de nuevo.");
+      } catch (err) { announce("No pude mandar tu voz. Escribila mejor."); }
+    };
+    ahRecorder.start();
+    $("btn-ah-voz").textContent = "Parar y mandar";
+    announce("Grabando. Decí una letra o la palabra, y tocá el botón de nuevo.");
+  } catch (err) { announce("No pude usar el micrófono. Escribila mejor."); }
 });
 
 let respRecorder = null, respChunks = [];
