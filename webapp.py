@@ -1,4 +1,4 @@
-"""Amor con aroma a cafÃ©: the shared web ruleta, v3.
+"""Amor con aroma a café: the shared web ruleta, v3.
 
 A real-time multiplayer party room for Rocky and his friends: one opens a
 room, shares the link, everyone plays in the browser. No Telegram, no login,
@@ -7,7 +7,7 @@ same catalog as the Telegram bot) narrate every event to ALL players at once.
 
 v3 (Rocky, 2026-11-10): start screen (Jugar solo / Sala de juego 2-20),
 joins announced by name, 60-second turn timer with spoken warnings, four
-categories (Verdad o Reto, Trivia, Refranes, PaÃ­ses) with local
+categories (Verdad o Reto, Trivia, Refranes, Países) with local
 multiple-choice banks, points and a winner, auto-rematch with a rotating
 starter, and in-room chat (text read aloud + recorded voice clips). Fully
 screen-reader accessible: real labeled buttons, aria-live on every beat.
@@ -32,68 +32,68 @@ router = APIRouter()
 # Verdad o Reto: curated, harmless, doable dares and questions. "No locuras."
 # ---------------------------------------------------------------------------
 RETOS = [
-    "ImitÃ¡ a un animal hasta que alguien adivine cuÃ¡l es.",
-    "CantÃ¡ el estribillo de una canciÃ³n que te guste.",
-    "ContÃ¡ un chiste corto, aunque sea malo.",
-    "HablÃ¡ con acento de otro paÃ­s por dos turnos.",
-    "DecÃ­ un trabalenguas tres veces seguidas.",
-    "DescribÃ­ tu comida favorita sin nombrarla; los demÃ¡s adivinan.",
-    "HacÃ© el brindis mÃ¡s exagerado que puedas por el grupo.",
-    "TarareÃ¡ una canciÃ³n conocida hasta que la adivinen.",
-    "DecÃ­ 5 cosas que te pongan contento, sin parar.",
-    "HablÃ¡ como locutor de radio por un minuto.",
-    "ContÃ¡ tu mejor anÃ©cdota de la escuela.",
-    "HacÃ© una publicidad inventada del mate o del cafÃ©.",
-    "DecÃ­ el abecedario lo mÃ¡s rÃ¡pido que puedas.",
-    "ImitÃ¡ a un personaje famoso; los demÃ¡s adivinan quiÃ©n es.",
-    "NombrÃ¡ 10 frutas en 15 segundos.",
-    "ContÃ¡ quÃ© harÃ­as con un millÃ³n de pesos, en 30 segundos.",
-    "HacÃ© una rima con el nombre de cada jugador.",
-    "DescribÃ­ tu pelÃ­cula favorita en tres frases, sin decir el tÃ­tulo.",
-    "SaludÃ¡ a cada jugador con un apodo cariÃ±oso inventado.",
-    "ContÃ¡ un recuerdo feliz de cuando eras chico.",
-    "HablÃ¡ en verso durante un turno completo.",
-    "HacÃ© el sonido de 3 animales; el grupo puntÃºa el mejor.",
-    "DecÃ­ una palabra bonita para cada letra de tu nombre.",
-    "ContÃ¡ quÃ© superpoder tendrÃ­as y por quÃ©.",
-    "HacÃ© una entrevista de 3 preguntas al jugador de tu derecha.",
-    "InventÃ¡ el nombre y el lema de una banda con otro jugador.",
-    "DescribÃ­ el plan perfecto de un domingo, con detalle.",
-    "HablÃ¡ como si fueras el clima del noticiero.",
-    "DecÃ­ 3 cosas buenas del jugador que girÃ³ antes que vos.",
-    "CantÃ¡ el feliz cumpleaÃ±os al que cumpla mÃ¡s cerca de hoy.",
+    "Imitá a un animal hasta que alguien adivine cuál es.",
+    "Cantá el estribillo de una canción que te guste.",
+    "Contá un chiste corto, aunque sea malo.",
+    "Hablá con acento de otro país por dos turnos.",
+    "Decí un trabalenguas tres veces seguidas.",
+    "Describí tu comida favorita sin nombrarla; los demás adivinan.",
+    "Hacé el brindis más exagerado que puedas por el grupo.",
+    "Tarareá una canción conocida hasta que la adivinen.",
+    "Decí 5 cosas que te pongan contento, sin parar.",
+    "Hablá como locutor de radio por un minuto.",
+    "Contá tu mejor anécdota de la escuela.",
+    "Hacé una publicidad inventada del mate o del café.",
+    "Decí el abecedario lo más rápido que puedas.",
+    "Imitá a un personaje famoso; los demás adivinan quién es.",
+    "Nombrá 10 frutas en 15 segundos.",
+    "Contá qué harías con un millón de pesos, en 30 segundos.",
+    "Hacé una rima con el nombre de cada jugador.",
+    "Describí tu película favorita en tres frases, sin decir el título.",
+    "Saludá a cada jugador con un apodo cariñoso inventado.",
+    "Contá un recuerdo feliz de cuando eras chico.",
+    "Hablá en verso durante un turno completo.",
+    "Hacé el sonido de 3 animales; el grupo puntúa el mejor.",
+    "Decí una palabra bonita para cada letra de tu nombre.",
+    "Contá qué superpoder tendrías y por qué.",
+    "Hacé una entrevista de 3 preguntas al jugador de tu derecha.",
+    "Inventá el nombre y el lema de una banda con otro jugador.",
+    "Describí el plan perfecto de un domingo, con detalle.",
+    "Hablá como si fueras el clima del noticiero.",
+    "Decí 3 cosas buenas del jugador que giró antes que vos.",
+    "Cantá el feliz cumpleaños al que cumpla más cerca de hoy.",
 ]
 VERDADES = [
-    "Â¿CuÃ¡l es tu comida favorita de todos los tiempos?",
-    "Â¿A quÃ© edad diste tu primer beso, mÃ¡s o menos?",
-    "Â¿QuÃ© canciÃ³n cantÃ¡s cuando nadie te escucha?",
-    "Â¿CuÃ¡l fue tu momento mÃ¡s vergonzoso que hoy te da risa?",
-    "Â¿QuÃ© es lo que mÃ¡s te gusta de este grupo?",
-    "Â¿QuÃ© harÃ­as si fueras invisible por un dÃ­a?",
-    "Â¿CuÃ¡l es tu recuerdo favorito del aÃ±o pasado?",
-    "Â¿QuÃ© comida odiabas de chico y ahora te encanta?",
-    "Â¿QuiÃ©n fue tu primer amor platÃ³nico?",
-    "Â¿QuÃ© es lo mÃ¡s loco que hiciste por un amigo?",
-    "Â¿QuÃ© programa o serie ves a escondidas?",
-    "Â¿QuÃ© te da un poco de miedo pero querÃ©s intentar?",
-    "Â¿CuÃ¡l es tu lugar feliz?",
-    "Â¿QuÃ© mentira chiquita dijiste esta semana?",
-    "Â¿A quiÃ©n del grupo llamarÃ­as a las 3 de la maÃ±ana?",
-    "Â¿QuÃ© es lo primero que harÃ­as si ganaras la loterÃ­a?",
-    "Â¿CuÃ¡l fue el mejor regalo que te hicieron?",
-    "Â¿QuÃ© apodo tuviste y cÃ³mo lo ganaste?",
-    "Â¿QuÃ© es algo que todos aman y a vos no te convence?",
-    "Â¿CuÃ¡l es tu talento secreto?",
-    "Â¿QuÃ© te gustarÃ­a que el grupo haga mÃ¡s seguido?",
-    "Â¿QuÃ© pelÃ­cula podÃ©s ver mil veces?",
-    "Â¿QuÃ© es lo mÃ¡s amable que hicieron por vos?",
-    "Â¿QuÃ© te pone de buen humor al instante?",
-    "Â¿Si pudieras cenar con cualquier persona, con quiÃ©n?",
-    "Â¿QuÃ© costumbre tuya hace reÃ­r a los demÃ¡s?",
-    "Â¿CuÃ¡l es tu olor favorito?",
-    "Â¿QuÃ© edad te gustarÃ­a tener para siempre y por quÃ©?",
-    "Â¿QuÃ© es lo mÃ¡s valiente que hiciste?",
-    "Â¿QuÃ© querÃ­as ser de grande cuando tenÃ­as 10 aÃ±os?",
+    "¿Cuál es tu comida favorita de todos los tiempos?",
+    "¿A qué edad diste tu primer beso, más o menos?",
+    "¿Qué canción cantás cuando nadie te escucha?",
+    "¿Cuál fue tu momento más vergonzoso que hoy te da risa?",
+    "¿Qué es lo que más te gusta de este grupo?",
+    "¿Qué harías si fueras invisible por un día?",
+    "¿Cuál es tu recuerdo favorito del año pasado?",
+    "¿Qué comida odiabas de chico y ahora te encanta?",
+    "¿Quién fue tu primer amor platónico?",
+    "¿Qué es lo más loco que hiciste por un amigo?",
+    "¿Qué programa o serie ves a escondidas?",
+    "¿Qué te da un poco de miedo pero querés intentar?",
+    "¿Cuál es tu lugar feliz?",
+    "¿Qué mentira chiquita dijiste esta semana?",
+    "¿A quién del grupo llamarías a las 3 de la mañana?",
+    "¿Qué es lo primero que harías si ganaras la lotería?",
+    "¿Cuál fue el mejor regalo que te hicieron?",
+    "¿Qué apodo tuviste y cómo lo ganaste?",
+    "¿Qué es algo que todos aman y a vos no te convence?",
+    "¿Cuál es tu talento secreto?",
+    "¿Qué te gustaría que el grupo haga más seguido?",
+    "¿Qué película podés ver mil veces?",
+    "¿Qué es lo más amable que hicieron por vos?",
+    "¿Qué te pone de buen humor al instante?",
+    "¿Si pudieras cenar con cualquier persona, con quién?",
+    "¿Qué costumbre tuya hace reír a los demás?",
+    "¿Cuál es tu olor favorito?",
+    "¿Qué edad te gustaría tener para siempre y por qué?",
+    "¿Qué es lo más valiente que hiciste?",
+    "¿Qué querías ser de grande cuando tenías 10 años?",
 ]
 
 SEGMENTS = ["reto", "verdad"]  # the wheel alternates these
@@ -101,345 +101,345 @@ SEGMENT_LABELS = {"reto": "RETO", "verdad": "VERDAD"}
 SEGMENT_COLORS = {"reto": "#e53935", "verdad": "#1e88e5"}
 
 # ---------------------------------------------------------------------------
-# Multiple-choice banks: (pregunta, [opciones...], Ã­ndice correcto).
-# Locales a propÃ³sito: sin LLM, sin costo, giro instantÃ¡neo.
+# Multiple-choice banks: (pregunta, [opciones...], índice correcto).
+# Locales a propósito: sin LLM, sin costo, giro instantáneo.
 # ---------------------------------------------------------------------------
 TRIVIA_MC = [
-    ("Â¿CuÃ¡l es el planeta mÃ¡s grande del sistema solar?", ["JÃºpiter", "Saturno", "Neptuno"], 0),
-    ("Â¿En quÃ© continente estÃ¡ Egipto?", ["Ãfrica", "Asia", "Europa"], 0),
-    ("Â¿CuÃ¡ntos jugadores tiene un equipo de fÃºtbol en la cancha?", ["Once", "Nueve", "Siete"], 0),
-    ("Â¿QuÃ© animal es conocido por cambiar de color?", ["El camaleÃ³n", "La iguana", "El sapo"], 0),
-    ("Â¿QuÃ© gas respiramos para vivir?", ["OxÃ­geno", "Carbono", "HidrÃ³geno"], 0),
-    ("Â¿CuÃ¡l es el ocÃ©ano mÃ¡s grande del mundo?", ["El PacÃ­fico", "El AtlÃ¡ntico", "El Ãndico"], 0),
-    ("Â¿En quÃ© paÃ­s naciÃ³ el tango?", ["Argentina", "Brasil", "EspaÃ±a"], 0),
-    ("Â¿QuÃ© instrumento tiene teclas blancas y negras?", ["El piano", "El violÃ­n", "La trompeta"], 0),
-    ("Â¿CuÃ¡ntos colores tiene el arcoÃ­ris?", ["Siete", "Cinco", "Nueve"], 0),
-    ("Â¿QuÃ© planeta es conocido como el planeta rojo?", ["Marte", "Venus", "Mercurio"], 0),
-    ("Â¿QuÃ© ave no puede volar y vive en el hielo?", ["El pingÃ¼ino", "La gaviota", "El cÃ³ndor"], 0),
-    ("Â¿CuÃ¡l es el metal mÃ¡s liviano usado en aviones?", ["El aluminio", "El plomo", "El oro"], 0),
-    ("Â¿QuÃ© fruta es la estrella de la sidra?", ["La manzana", "La pera", "La uva"], 0),
-    ("Â¿CuÃ¡nto es 7 por 8?", ["56", "48", "64"], 0),
-    ("Â¿QuÃ© Ã³rgano bombea la sangre?", ["El corazÃ³n", "El pulmÃ³n", "El hÃ­gado"], 0),
-    ("Â¿En quÃ© deporte se usa una raqueta y una pelotita amarilla?", ["Tenis", "BÃ¡squet", "Rugby"], 0),
-    ("Â¿QuÃ© paÃ­s tiene forma de bota?", ["Italia", "Grecia", "Portugal"], 0),
-    ("Â¿CuÃ¡l es el animal terrestre mÃ¡s rÃ¡pido?", ["El guepardo", "El leÃ³n", "El caballo"], 0),
-    ("Â¿QuÃ© se celebra el 25 de diciembre?", ["Navidad", "AÃ±o Nuevo", "Reyes"], 0),
-    ("Â¿QuÃ© ciencia estudia los dinosaurios?", ["La paleontologÃ­a", "La botÃ¡nica", "La quÃ­mica"], 0),
-    ("Â¿CuÃ¡l es el rÃ­o mÃ¡s largo de SudamÃ©rica?", ["El Amazonas", "El ParanÃ¡", "El Orinoco"], 0),
-    ("Â¿QuÃ© astro nos da luz y calor todos los dÃ­as?", ["El Sol", "La Luna", "Marte"], 0),
-    ("Â¿CuÃ¡ntas patas tiene una araÃ±a?", ["Ocho", "Seis", "Diez"], 0),
-    ("Â¿QuÃ© dulce se hace con leche y azÃºcar cocidas?", ["El dulce de leche", "El turrÃ³n", "El mazapÃ¡n"], 0),
-    ("Â¿QuÃ© paÃ­s ganÃ³ el Mundial de FÃºtbol 2022?", ["Argentina", "Francia", "Brasil"], 0),
-    ("Â¿QuÃ© aparato convierte el viento en electricidad?", ["El molino de viento", "La antena", "La turbina de vapor"], 0),
-    ("Â¿QuÃ© continente es el mÃ¡s poblado?", ["Asia", "Ãfrica", "Europa"], 0),
-    ("Â¿QuÃ© bebida se hace con granos tostados y molidos?", ["El cafÃ©", "El mate", "El tÃ©"], 0),
-    ("Â¿QuÃ© animal produce la miel?", ["La abeja", "La avispa", "La mariposa"], 0),
-    ("Â¿CuÃ¡l es la montaÃ±a mÃ¡s alta del mundo?", ["El Everest", "El Aconcagua", "El Kilimanjaro"], 0),
+    ("¿Cuál es el planeta más grande del sistema solar?", ["Júpiter", "Saturno", "Neptuno"], 0),
+    ("¿En qué continente está Egipto?", ["África", "Asia", "Europa"], 0),
+    ("¿Cuántos jugadores tiene un equipo de fútbol en la cancha?", ["Once", "Nueve", "Siete"], 0),
+    ("¿Qué animal es conocido por cambiar de color?", ["El camaleón", "La iguana", "El sapo"], 0),
+    ("¿Qué gas respiramos para vivir?", ["Oxígeno", "Carbono", "Hidrógeno"], 0),
+    ("¿Cuál es el océano más grande del mundo?", ["El Pacífico", "El Atlántico", "El Índico"], 0),
+    ("¿En qué país nació el tango?", ["Argentina", "Brasil", "España"], 0),
+    ("¿Qué instrumento tiene teclas blancas y negras?", ["El piano", "El violín", "La trompeta"], 0),
+    ("¿Cuántos colores tiene el arcoíris?", ["Siete", "Cinco", "Nueve"], 0),
+    ("¿Qué planeta es conocido como el planeta rojo?", ["Marte", "Venus", "Mercurio"], 0),
+    ("¿Qué ave no puede volar y vive en el hielo?", ["El pingüino", "La gaviota", "El cóndor"], 0),
+    ("¿Cuál es el metal más liviano usado en aviones?", ["El aluminio", "El plomo", "El oro"], 0),
+    ("¿Qué fruta es la estrella de la sidra?", ["La manzana", "La pera", "La uva"], 0),
+    ("¿Cuánto es 7 por 8?", ["56", "48", "64"], 0),
+    ("¿Qué órgano bombea la sangre?", ["El corazón", "El pulmón", "El hígado"], 0),
+    ("¿En qué deporte se usa una raqueta y una pelotita amarilla?", ["Tenis", "Básquet", "Rugby"], 0),
+    ("¿Qué país tiene forma de bota?", ["Italia", "Grecia", "Portugal"], 0),
+    ("¿Cuál es el animal terrestre más rápido?", ["El guepardo", "El león", "El caballo"], 0),
+    ("¿Qué se celebra el 25 de diciembre?", ["Navidad", "Año Nuevo", "Reyes"], 0),
+    ("¿Qué ciencia estudia los dinosaurios?", ["La paleontología", "La botánica", "La química"], 0),
+    ("¿Cuál es el río más largo de Sudamérica?", ["El Amazonas", "El Paraná", "El Orinoco"], 0),
+    ("¿Qué astro nos da luz y calor todos los días?", ["El Sol", "La Luna", "Marte"], 0),
+    ("¿Cuántas patas tiene una araña?", ["Ocho", "Seis", "Diez"], 0),
+    ("¿Qué dulce se hace con leche y azúcar cocidas?", ["El dulce de leche", "El turrón", "El mazapán"], 0),
+    ("¿Qué país ganó el Mundial de Fútbol 2022?", ["Argentina", "Francia", "Brasil"], 0),
+    ("¿Qué aparato convierte el viento en electricidad?", ["El molino de viento", "La antena", "La turbina de vapor"], 0),
+    ("¿Qué continente es el más poblado?", ["Asia", "África", "Europa"], 0),
+    ("¿Qué bebida se hace con granos tostados y molidos?", ["El café", "El mate", "El té"], 0),
+    ("¿Qué animal produce la miel?", ["La abeja", "La avispa", "La mariposa"], 0),
+    ("¿Cuál es la montaña más alta del mundo?", ["El Everest", "El Aconcagua", "El Kilimanjaro"], 0),
 ]
 REFRANES_MC = [
-    ("Â¿QuÃ© significa 'A caballo regalado no se le miran los dientes'?", ["A lo que te regalan, no le busques defectos", "Los caballos tienen buenos dientes", "No aceptes regalos de desconocidos"], 0),
-    ("Â¿QuÃ© significa 'MÃ¡s vale pÃ¡jaro en mano que cien volando'?", ["Mejor lo seguro, aunque sea poco", "Los pÃ¡jaros son difÃ­ciles de cazar", "Hay que soltar lo que uno tiene"], 0),
-    ("Â¿QuÃ© significa 'CamarÃ³n que se duerme se lo lleva la corriente'?", ["El que no estÃ¡ atento, pierde", "Los camarones duermen mucho", "La corriente es peligrosa"], 0),
-    ("Â¿QuÃ© significa 'No hay mal que dure cien aÃ±os'?", ["Todo lo malo termina algÃºn dÃ­a", "Los males duran muchÃ­simo", "La gente vive cien aÃ±os"], 0),
-    ("Â¿QuÃ© significa 'A falta de pan, buenas son tortas'?", ["Con lo que hay, uno se arregla", "Las tortas son mejores que el pan", "Hay que cocinar mÃ¡s tortas"], 0),
-    ("Â¿QuÃ© significa 'Perro que ladra no muerde'?", ["El que mucho amenaza, poco hace", "Los perros ladran de noche", "Hay que tenerle miedo a los perros"], 0),
-    ("Â¿QuÃ© significa 'Ojos que no ven, corazÃ³n que no siente'?", ["Lo que no sabÃ©s, no te duele", "Los ojos engaÃ±an siempre", "El corazÃ³n es frÃ­o"], 0),
-    ("Â¿QuÃ© significa 'Del dicho al hecho hay mucho trecho'?", ["Decir es mÃ¡s fÃ¡cil que hacer", "Hay que caminar mucho", "Las palabras sobran"], 0),
-    ("Â¿QuÃ© significa 'Quien madruga, Dios lo ayuda'?", ["El esfuerzo temprano da frutos", "Dios se levanta temprano", "Dormir es malo"], 0),
-    ("Â¿QuÃ© significa 'Agua que no has de beber, dÃ©jala correr'?", ["No te metas en lo que no te incumbe", "Hay que tomar mucha agua", "El agua corre rÃ¡pido"], 0),
-    ("Â¿QuÃ© significa 'En boca cerrada no entran moscas'?", ["A veces conviene callarse", "Las moscas molestan", "Hay que hablar despacio"], 0),
-    ("Â¿QuÃ© significa 'CrÃ­a cuervos y te sacarÃ¡n los ojos'?", ["A veces te traiciona a quien ayudaste", "Los cuervos son malas mascotas", "Hay que cuidar los ojos"], 0),
-    ("Â¿QuÃ© significa 'A lo hecho, pecho'?", ["Hay que hacerse cargo de lo hecho", "Hay que pelear siempre", "Lo hecho no se puede nombrar"], 0),
-    ("Â¿QuÃ© significa 'MÃ¡s sabe el diablo por viejo que por diablo'?", ["La experiencia vale mÃ¡s que la astucia", "El diablo es muy viejo", "Los viejos son diablos"], 0),
-    ("Â¿QuÃ© significa 'El que rÃ­e Ãºltimo, rÃ­e mejor'?", ["La victoria final es la que cuenta", "ReÃ­r es sano", "Hay que reÃ­rse despacio"], 0),
-    ("Â¿QuÃ© significa 'No por mucho madrugar amanece mÃ¡s temprano'?", ["Las cosas llevan su tiempo", "Hay que madrugar poco", "Amanece muy tarde"], 0),
-    ("Â¿QuÃ© significa 'Un clavo saca otro clavo'?", ["Lo nuevo ayuda a olvidar lo viejo", "Los clavos son Ãºtiles", "Hay que usar clavos grandes"], 0),
-    ("Â¿QuÃ© significa 'Piedra que rueda no crÃ­a moho'?", ["El que se mueve no se estanca", "Las piedras no tienen moho", "Rodar es peligroso"], 0),
-    ("Â¿QuÃ© significa 'HÃ¡blame del cuÃ±ado'?", ["No quiero hablar mÃ¡s de eso", "Mi cuÃ±ado es simpÃ¡tico", "Hablemos de familia"], 0),
-    ("Â¿QuÃ© significa 'CostÃ³ un ojo de la cara'?", ["Fue muy caro", "Se lastimÃ³ un ojo", "Fue gratis"], 0),
-    ("Â¿QuÃ© significa 'Estar en el horno'?", ["Estar en un problema", "Hace mucho calor", "EstÃ¡ cocinando"], 0),
-    ("Â¿QuÃ© significa 'No hay tu tÃ­a'?", ["No hay soluciÃ³n", "Tu tÃ­a no vino", "No hay problema"], 0),
-    ("Â¿QuÃ© significa 'Tirar los tejos'?", ["Coquetear con alguien", "Jugar a un deporte", "Tirar cosas viejas"], 0),
-    ("Â¿QuÃ© significa 'Ser pan comido'?", ["Ser muy fÃ¡cil", "Ser rico de comer", "Ser poco trabajo"], 0),
-    ("Â¿QuÃ© significa 'Meter la pata'?", ["Equivocarse", "Caminar rÃ¡pido", "Tropezar"], 0),
+    ("¿Qué significa 'A caballo regalado no se le miran los dientes'?", ["A lo que te regalan, no le busques defectos", "Los caballos tienen buenos dientes", "No aceptes regalos de desconocidos"], 0),
+    ("¿Qué significa 'Más vale pájaro en mano que cien volando'?", ["Mejor lo seguro, aunque sea poco", "Los pájaros son difíciles de cazar", "Hay que soltar lo que uno tiene"], 0),
+    ("¿Qué significa 'Camarón que se duerme se lo lleva la corriente'?", ["El que no está atento, pierde", "Los camarones duermen mucho", "La corriente es peligrosa"], 0),
+    ("¿Qué significa 'No hay mal que dure cien años'?", ["Todo lo malo termina algún día", "Los males duran muchísimo", "La gente vive cien años"], 0),
+    ("¿Qué significa 'A falta de pan, buenas son tortas'?", ["Con lo que hay, uno se arregla", "Las tortas son mejores que el pan", "Hay que cocinar más tortas"], 0),
+    ("¿Qué significa 'Perro que ladra no muerde'?", ["El que mucho amenaza, poco hace", "Los perros ladran de noche", "Hay que tenerle miedo a los perros"], 0),
+    ("¿Qué significa 'Ojos que no ven, corazón que no siente'?", ["Lo que no sabés, no te duele", "Los ojos engañan siempre", "El corazón es frío"], 0),
+    ("¿Qué significa 'Del dicho al hecho hay mucho trecho'?", ["Decir es más fácil que hacer", "Hay que caminar mucho", "Las palabras sobran"], 0),
+    ("¿Qué significa 'Quien madruga, Dios lo ayuda'?", ["El esfuerzo temprano da frutos", "Dios se levanta temprano", "Dormir es malo"], 0),
+    ("¿Qué significa 'Agua que no has de beber, déjala correr'?", ["No te metas en lo que no te incumbe", "Hay que tomar mucha agua", "El agua corre rápido"], 0),
+    ("¿Qué significa 'En boca cerrada no entran moscas'?", ["A veces conviene callarse", "Las moscas molestan", "Hay que hablar despacio"], 0),
+    ("¿Qué significa 'Cría cuervos y te sacarán los ojos'?", ["A veces te traiciona a quien ayudaste", "Los cuervos son malas mascotas", "Hay que cuidar los ojos"], 0),
+    ("¿Qué significa 'A lo hecho, pecho'?", ["Hay que hacerse cargo de lo hecho", "Hay que pelear siempre", "Lo hecho no se puede nombrar"], 0),
+    ("¿Qué significa 'Más sabe el diablo por viejo que por diablo'?", ["La experiencia vale más que la astucia", "El diablo es muy viejo", "Los viejos son diablos"], 0),
+    ("¿Qué significa 'El que ríe último, ríe mejor'?", ["La victoria final es la que cuenta", "Reír es sano", "Hay que reírse despacio"], 0),
+    ("¿Qué significa 'No por mucho madrugar amanece más temprano'?", ["Las cosas llevan su tiempo", "Hay que madrugar poco", "Amanece muy tarde"], 0),
+    ("¿Qué significa 'Un clavo saca otro clavo'?", ["Lo nuevo ayuda a olvidar lo viejo", "Los clavos son útiles", "Hay que usar clavos grandes"], 0),
+    ("¿Qué significa 'Piedra que rueda no cría moho'?", ["El que se mueve no se estanca", "Las piedras no tienen moho", "Rodar es peligroso"], 0),
+    ("¿Qué significa 'Háblame del cuñado'?", ["No quiero hablar más de eso", "Mi cuñado es simpático", "Hablemos de familia"], 0),
+    ("¿Qué significa 'Costó un ojo de la cara'?", ["Fue muy caro", "Se lastimó un ojo", "Fue gratis"], 0),
+    ("¿Qué significa 'Estar en el horno'?", ["Estar en un problema", "Hace mucho calor", "Está cocinando"], 0),
+    ("¿Qué significa 'No hay tu tía'?", ["No hay solución", "Tu tía no vino", "No hay problema"], 0),
+    ("¿Qué significa 'Tirar los tejos'?", ["Coquetear con alguien", "Jugar a un deporte", "Tirar cosas viejas"], 0),
+    ("¿Qué significa 'Ser pan comido'?", ["Ser muy fácil", "Ser rico de comer", "Ser poco trabajo"], 0),
+    ("¿Qué significa 'Meter la pata'?", ["Equivocarse", "Caminar rápido", "Tropezar"], 0),
 ]
 PAISES_MC = [
-    ("Â¿CuÃ¡l es la capital de Argentina?", ["Buenos Aires", "CÃ³rdoba", "Rosario"], 0),
-    ("Â¿CuÃ¡l es la capital de MÃ©xico?", ["Ciudad de MÃ©xico", "Guadalajara", "Monterrey"], 0),
-    ("Â¿CuÃ¡l es la capital de Bolivia?", ["La Paz", "Sucre", "Santa Cruz"], 0),
-    ("Â¿CuÃ¡l es la capital de Chile?", ["Santiago", "ValparaÃ­so", "ConcepciÃ³n"], 0),
-    ("Â¿CuÃ¡l es la capital de Colombia?", ["BogotÃ¡", "MedellÃ­n", "Cali"], 0),
-    ("Â¿CuÃ¡l es la capital de PerÃº?", ["Lima", "Cusco", "Arequipa"], 0),
-    ("Â¿CuÃ¡l es la capital de Uruguay?", ["Montevideo", "Punta del Este", "Salto"], 0),
-    ("Â¿CuÃ¡l es la capital de Paraguay?", ["AsunciÃ³n", "EncarnaciÃ³n", "Ciudad del Este"], 0),
-    ("Â¿CuÃ¡l es la capital de Brasil?", ["Brasilia", "RÃ­o de Janeiro", "San Pablo"], 0),
-    ("Â¿CuÃ¡l es la capital de EspaÃ±a?", ["Madrid", "Barcelona", "Sevilla"], 0),
-    ("Â¿CuÃ¡l es la capital de Venezuela?", ["Caracas", "Maracaibo", "Valencia"], 0),
-    ("Â¿CuÃ¡l es la capital de Ecuador?", ["Quito", "Guayaquil", "Cuenca"], 0),
-    ("Â¿En quÃ© continente estÃ¡ JapÃ³n?", ["Asia", "OceanÃ­a", "Europa"], 0),
-    ("Â¿En quÃ© continente estÃ¡ Marruecos?", ["Ãfrica", "Europa", "Asia"], 0),
-    ("Â¿En quÃ© continente estÃ¡ Australia?", ["OceanÃ­a", "Asia", "Ãfrica"], 0),
-    ("Â¿QuÃ© paÃ­s es famoso por la Torre Eiffel?", ["Francia", "Italia", "Inglaterra"], 0),
-    ("Â¿QuÃ© paÃ­s es famoso por el machu picchu?", ["PerÃº", "Bolivia", "Ecuador"], 0),
-    ("Â¿QuÃ© paÃ­s es famoso por las pirÃ¡mides de Giza?", ["Egipto", "MÃ©xico", "SudÃ¡n"], 0),
-    ("Â¿QuÃ© idioma se habla en Brasil?", ["PortuguÃ©s", "EspaÃ±ol", "BrasileÃ±o"], 0),
-    ("Â¿CuÃ¡l es el paÃ­s mÃ¡s grande de SudamÃ©rica?", ["Brasil", "Argentina", "PerÃº"], 0),
-    ("Â¿QuÃ© paÃ­s tiene el Canal de PanamÃ¡?", ["PanamÃ¡", "Costa Rica", "Colombia"], 0),
-    ("Â¿La Patagonia es de Argentina y de quÃ© otro paÃ­s?", ["Chile", "Uruguay", "Bolivia"], 0),
-    ("Â¿QuÃ© paÃ­s es famoso por el carnaval de RÃ­o?", ["Brasil", "Argentina", "Uruguay"], 0),
-    ("Â¿QuÃ© moneda se usa en la mayorÃ­a de Europa?", ["El euro", "El dÃ³lar", "La libra"], 0),
-    ("Â¿QuÃ© paÃ­s tiene la estatua del Cristo Redentor?", ["Brasil", "Portugal", "PerÃº"], 0),
+    ("¿Cuál es la capital de Argentina?", ["Buenos Aires", "Córdoba", "Rosario"], 0),
+    ("¿Cuál es la capital de México?", ["Ciudad de México", "Guadalajara", "Monterrey"], 0),
+    ("¿Cuál es la capital de Bolivia?", ["La Paz", "Sucre", "Santa Cruz"], 0),
+    ("¿Cuál es la capital de Chile?", ["Santiago", "Valparaíso", "Concepción"], 0),
+    ("¿Cuál es la capital de Colombia?", ["Bogotá", "Medellín", "Cali"], 0),
+    ("¿Cuál es la capital de Perú?", ["Lima", "Cusco", "Arequipa"], 0),
+    ("¿Cuál es la capital de Uruguay?", ["Montevideo", "Punta del Este", "Salto"], 0),
+    ("¿Cuál es la capital de Paraguay?", ["Asunción", "Encarnación", "Ciudad del Este"], 0),
+    ("¿Cuál es la capital de Brasil?", ["Brasilia", "Río de Janeiro", "San Pablo"], 0),
+    ("¿Cuál es la capital de España?", ["Madrid", "Barcelona", "Sevilla"], 0),
+    ("¿Cuál es la capital de Venezuela?", ["Caracas", "Maracaibo", "Valencia"], 0),
+    ("¿Cuál es la capital de Ecuador?", ["Quito", "Guayaquil", "Cuenca"], 0),
+    ("¿En qué continente está Japón?", ["Asia", "Oceanía", "Europa"], 0),
+    ("¿En qué continente está Marruecos?", ["África", "Europa", "Asia"], 0),
+    ("¿En qué continente está Australia?", ["Oceanía", "Asia", "África"], 0),
+    ("¿Qué país es famoso por la Torre Eiffel?", ["Francia", "Italia", "Inglaterra"], 0),
+    ("¿Qué país es famoso por el machu picchu?", ["Perú", "Bolivia", "Ecuador"], 0),
+    ("¿Qué país es famoso por las pirámides de Giza?", ["Egipto", "México", "Sudán"], 0),
+    ("¿Qué idioma se habla en Brasil?", ["Portugués", "Español", "Brasileño"], 0),
+    ("¿Cuál es el país más grande de Sudamérica?", ["Brasil", "Argentina", "Perú"], 0),
+    ("¿Qué país tiene el Canal de Panamá?", ["Panamá", "Costa Rica", "Colombia"], 0),
+    ("¿La Patagonia es de Argentina y de qué otro país?", ["Chile", "Uruguay", "Bolivia"], 0),
+    ("¿Qué país es famoso por el carnaval de Río?", ["Brasil", "Argentina", "Uruguay"], 0),
+    ("¿Qué moneda se usa en la mayoría de Europa?", ["El euro", "El dólar", "La libra"], 0),
+    ("¿Qué país tiene la estatua del Cristo Redentor?", ["Brasil", "Portugal", "Perú"], 0),
 ]
 
 DEPORTES_MC = [
-    ("Â¿En quÃ© deporte se usa un bate y una pelota pequeÃ±a?", ["BÃ©isbol", "Golf", "Hockey"], 0),
-    ("Â¿CuÃ¡ntos puntos vale un try en el rugby?", ["Cinco", "Tres", "Siete"], 0),
-    ("Â¿En quÃ© deporte compitiÃ³ Manu GinÃ³bili?", ["BÃ¡squet", "VÃ³ley", "Handball"], 0),
-    ("Â¿QuÃ© deporte se juega en un ring con guantes?", ["Boxeo", "Judo", "Esgrima"], 0),
-    ("Â¿En quÃ© deporte se nada estilo mariposa?", ["NataciÃ³n", "Remo", "Waterpolo"], 0),
-    ("Â¿QuÃ© se usa para jugar al golf?", ["Un palo y una pelotita", "Una raqueta", "Un arco"], 0),
-    ("Â¿CuÃ¡ntos jugadores de vÃ³ley hay por equipo en cancha?", ["Seis", "Cinco", "Siete"], 0),
-    ("Â¿QuÃ© deporte tiene caballos y se juega con mazo?", ["Polo", "Turf", "Doma"], 0),
-    ("Â¿En quÃ© deporte se gana por puntos con un shuttlecock?", ["BÃ¡dminton", "Squash", "FrontÃ³n"], 0),
-    ("Â¿QuÃ© carrera de atletismo es la mÃ¡s corta en los Juegos OlÃ­mpicos?", ["Los 100 metros", "La maratÃ³n", "Los 400 metros"], 0),
-    ("Â¿En quÃ© deporte argentino se usa una cancha de cemento y una pelota de cuero, de a parejas?", ["Pelota paleta", "Pato", "Bocho"], 0),
-    ("Â¿QuÃ© deporte se practica sobre hielo con piedras y escobas?", ["Curling", "Hockey sobre hielo", "Patinaje artÃ­stico"], 0),
+    ("¿En qué deporte se usa un bate y una pelota pequeña?", ["Béisbol", "Golf", "Hockey"], 0),
+    ("¿Cuántos puntos vale un try en el rugby?", ["Cinco", "Tres", "Siete"], 0),
+    ("¿En qué deporte compitió Manu Ginóbili?", ["Básquet", "Vóley", "Handball"], 0),
+    ("¿Qué deporte se juega en un ring con guantes?", ["Boxeo", "Judo", "Esgrima"], 0),
+    ("¿En qué deporte se nada estilo mariposa?", ["Natación", "Remo", "Waterpolo"], 0),
+    ("¿Qué se usa para jugar al golf?", ["Un palo y una pelotita", "Una raqueta", "Un arco"], 0),
+    ("¿Cuántos jugadores de vóley hay por equipo en cancha?", ["Seis", "Cinco", "Siete"], 0),
+    ("¿Qué deporte tiene caballos y se juega con mazo?", ["Polo", "Turf", "Doma"], 0),
+    ("¿En qué deporte se gana por puntos con un shuttlecock?", ["Bádminton", "Squash", "Frontón"], 0),
+    ("¿Qué carrera de atletismo es la más corta en los Juegos Olímpicos?", ["Los 100 metros", "La maratón", "Los 400 metros"], 0),
+    ("¿En qué deporte argentino se usa una cancha de cemento y una pelota de cuero, de a parejas?", ["Pelota paleta", "Pato", "Bocho"], 0),
+    ("¿Qué deporte se practica sobre hielo con piedras y escobas?", ["Curling", "Hockey sobre hielo", "Patinaje artístico"], 0),
 ]
 FUTBOL_MC = [
-    ("Â¿QuÃ© paÃ­s tiene mÃ¡s Mundiales ganados?", ["Brasil", "Alemania", "Italia"], 0),
-    ("Â¿CuÃ¡ntos Mundiales ganÃ³ Argentina?", ["Tres", "Dos", "Cuatro"], 0),
-    ("Â¿QuÃ© jugador es conocido como 'La Pulga'?", ["Messi", "Maradona", "Batistuta"], 0),
-    ("Â¿En quÃ© paÃ­s se jugÃ³ el Mundial 2014?", ["Brasil", "SudÃ¡frica", "Rusia"], 0),
-    ("Â¿QuÃ© selecciÃ³n ganÃ³ la primera Copa del Mundo en 1930?", ["Uruguay", "Argentina", "Brasil"], 0),
-    ("Â¿CuÃ¡nto dura un partido de fÃºtbol reglamentario?", ["Noventa minutos", "Ochenta minutos", "Cien minutos"], 0),
-    ("Â¿QuÃ© arquero argentino atajÃ³ en la final del Mundial 2022?", ["Dibu MartÃ­nez", "Armani", "Rulli"], 0),
-    ("Â¿QuÃ© club inglÃ©s tiene el apodo 'Red Devils'?", ["Manchester United", "Liverpool", "Arsenal"], 0),
-    ("Â¿QuÃ© competencia enfrenta a los mejores clubes de Europa?", ["La Champions League", "La Europa League", "La Supercopa"], 0),
-    ("Â¿QuÃ© delantero portuguÃ©s es histÃ³rico goleador de Champions?", ["Cristiano Ronaldo", "EusÃ©bio", "Figo"], 0),
-    ("Â¿Cada cuÃ¡ntos aÃ±os se juega el Mundial?", ["Cuatro", "Dos", "Cinco"], 0),
-    ("Â¿QuÃ© tarjeta expulsa a un jugador?", ["La roja", "La amarilla", "La azul"], 0),
+    ("¿Qué país tiene más Mundiales ganados?", ["Brasil", "Alemania", "Italia"], 0),
+    ("¿Cuántos Mundiales ganó Argentina?", ["Tres", "Dos", "Cuatro"], 0),
+    ("¿Qué jugador es conocido como 'La Pulga'?", ["Messi", "Maradona", "Batistuta"], 0),
+    ("¿En qué país se jugó el Mundial 2014?", ["Brasil", "Sudáfrica", "Rusia"], 0),
+    ("¿Qué selección ganó la primera Copa del Mundo en 1930?", ["Uruguay", "Argentina", "Brasil"], 0),
+    ("¿Cuánto dura un partido de fútbol reglamentario?", ["Noventa minutos", "Ochenta minutos", "Cien minutos"], 0),
+    ("¿Qué arquero argentino atajó en la final del Mundial 2022?", ["Dibu Martínez", "Armani", "Rulli"], 0),
+    ("¿Qué club inglés tiene el apodo 'Red Devils'?", ["Manchester United", "Liverpool", "Arsenal"], 0),
+    ("¿Qué competencia enfrenta a los mejores clubes de Europa?", ["La Champions League", "La Europa League", "La Supercopa"], 0),
+    ("¿Qué delantero portugués es histórico goleador de Champions?", ["Cristiano Ronaldo", "Eusébio", "Figo"], 0),
+    ("¿Cada cuántos años se juega el Mundial?", ["Cuatro", "Dos", "Cinco"], 0),
+    ("¿Qué tarjeta expulsa a un jugador?", ["La roja", "La amarilla", "La azul"], 0),
 ]
 PELICULAS_MC = [
-    ("Â¿QuÃ© pelÃ­cula argentina ganÃ³ el Oscar en 2010?", ["El secreto de sus ojos", "Relatos salvajes", "Nueve reinas"], 0),
-    ("Â¿QuiÃ©n dirigiÃ³ la trilogÃ­a de 'El seÃ±or de los anillos'?", ["Peter Jackson", "Steven Spielberg", "James Cameron"], 0),
-    ("Â¿QuÃ© pelÃ­cula tiene un barco llamado Titanic?", ["Titanic", "Avatar", "PoseidÃ³n"], 0),
-    ("Â¿QuÃ© saga tiene a Darth Vader?", ["Star Wars", "Star Trek", "Dune"], 0),
-    ("Â¿QuÃ© actor interpretÃ³ a Jack Sparrow?", ["Johnny Depp", "Orlando Bloom", "Brad Pitt"], 0),
-    ("Â¿QuÃ© pelÃ­cula de Pixar trata de emociones dentro de la cabeza?", ["Intensamente", "Coco", "Up"], 0),
-    ("Â¿QuÃ© pelÃ­cula mexicana de 2018 ganÃ³ el Oscar a mejor pelÃ­cula extranjera?", ["Roma", "Amores perros", "El laberinto del fauno"], 0),
-    ("Â¿En quÃ© pelÃ­cula un niÃ±o queda solo en casa en Navidad?", ["Mi pobre angelito", "El regalo prometido", "Frozen"], 0),
-    ("Â¿QuÃ© dinosaurio es el malo famoso de Jurassic Park?", ["El T-Rex", "El triceratops", "El brontosaurio"], 0),
-    ("Â¿QuÃ© pelÃ­cula argentina de 1985 ganÃ³ el primer Oscar del paÃ­s?", ["La historia oficial", "Camila", "Tango"], 0),
-    ("Â¿QuÃ© superhÃ©roe tiene un martillo llamado Mjolnir?", ["Thor", "Iron Man", "Superman"], 0),
-    ("Â¿QuÃ© pelÃ­cula tiene la frase 'Hasta la vista, baby'?", ["Terminator 2", "RoboCop", "Rambo"], 0),
+    ("¿Qué película argentina ganó el Oscar en 2010?", ["El secreto de sus ojos", "Relatos salvajes", "Nueve reinas"], 0),
+    ("¿Quién dirigió la trilogía de 'El señor de los anillos'?", ["Peter Jackson", "Steven Spielberg", "James Cameron"], 0),
+    ("¿Qué película tiene un barco llamado Titanic?", ["Titanic", "Avatar", "Poseidón"], 0),
+    ("¿Qué saga tiene a Darth Vader?", ["Star Wars", "Star Trek", "Dune"], 0),
+    ("¿Qué actor interpretó a Jack Sparrow?", ["Johnny Depp", "Orlando Bloom", "Brad Pitt"], 0),
+    ("¿Qué película de Pixar trata de emociones dentro de la cabeza?", ["Intensamente", "Coco", "Up"], 0),
+    ("¿Qué película mexicana de 2018 ganó el Oscar a mejor película extranjera?", ["Roma", "Amores perros", "El laberinto del fauno"], 0),
+    ("¿En qué película un niño queda solo en casa en Navidad?", ["Mi pobre angelito", "El regalo prometido", "Frozen"], 0),
+    ("¿Qué dinosaurio es el malo famoso de Jurassic Park?", ["El T-Rex", "El triceratops", "El brontosaurio"], 0),
+    ("¿Qué película argentina de 1985 ganó el primer Oscar del país?", ["La historia oficial", "Camila", "Tango"], 0),
+    ("¿Qué superhéroe tiene un martillo llamado Mjolnir?", ["Thor", "Iron Man", "Superman"], 0),
+    ("¿Qué película tiene la frase 'Hasta la vista, baby'?", ["Terminator 2", "RoboCop", "Rambo"], 0),
 ]
 
 SERIES_MC = [
-    ("Â¿QuÃ© serie tiene a un profesor de quÃ­mica que cocina metanfetamina?", ["Breaking Bad", "Better Call Saul", "Narcos"], 0),
-    ("Â¿QuÃ© serie argentina tiene a los hermanos DÃ­az y una remiserÃ­a?", ["Los simuladores", "Okupas", "El marginal"], 0),
-    ("Â¿En quÃ© serie los personajes viven en el pueblo de Hawkins?", ["Stranger Things", "Dark", "The OA"], 0),
-    ("Â¿QuÃ© serie coreana de juegos mortales fue furor mundial?", ["El juego del calamar", "Kingdom", "Alice in Borderland"], 0),
-    ("Â¿QuÃ© serie tiene tronos, dragones y la familia Stark?", ["Game of Thrones", "Vikings", "The Witcher"], 0),
-    ("Â¿QuÃ© serie colombiana cuenta la vida de Pablo Escobar?", ["Narcos", "El patrÃ³n del mal", "Sin tetas no hay paraÃ­so"], 0),
-    ("Â¿QuÃ© serie espaÃ±ola trata de un robo a la Casa de la Moneda?", ["La casa de papel", "Ãlite", "Vis a vis"], 0),
-    ("Â¿QuÃ© serie sigue a un grupo de amigos en un cafÃ© de Nueva York?", ["Friends", "How I Met Your Mother", "Seinfeld"], 0),
-    ("Â¿QuÃ© serie argentina de los 90 tenÃ­a a 'el Pollo' y a 'el CabezÃ³n'?", ["Verano del 98", "Chiquititas", "MuÃ±eca brava"], 0),
-    ("Â¿QuÃ© serie de zombis empieza con Rick despertando en un hospital?", ["The Walking Dead", "Z Nation", "Fear the Walking Dead"], 0),
-    ("Â¿QuÃ© serie animada amarilla vive en Springfield?", ["Los Simpson", "Futurama", "Padre de familia"], 0),
-    ("Â¿QuÃ© serie tiene al detective Sherlock Holmes moderno en Londres?", ["Sherlock", "Elementary", "Luther"], 0),
+    ("¿Qué serie tiene a un profesor de química que cocina metanfetamina?", ["Breaking Bad", "Better Call Saul", "Narcos"], 0),
+    ("¿Qué serie argentina tiene a los hermanos Díaz y una remisería?", ["Los simuladores", "Okupas", "El marginal"], 0),
+    ("¿En qué serie los personajes viven en el pueblo de Hawkins?", ["Stranger Things", "Dark", "The OA"], 0),
+    ("¿Qué serie coreana de juegos mortales fue furor mundial?", ["El juego del calamar", "Kingdom", "Alice in Borderland"], 0),
+    ("¿Qué serie tiene tronos, dragones y la familia Stark?", ["Game of Thrones", "Vikings", "The Witcher"], 0),
+    ("¿Qué serie colombiana cuenta la vida de Pablo Escobar?", ["Narcos", "El patrón del mal", "Sin tetas no hay paraíso"], 0),
+    ("¿Qué serie española trata de un robo a la Casa de la Moneda?", ["La casa de papel", "Élite", "Vis a vis"], 0),
+    ("¿Qué serie sigue a un grupo de amigos en un café de Nueva York?", ["Friends", "How I Met Your Mother", "Seinfeld"], 0),
+    ("¿Qué serie argentina de los 90 tenía a 'el Pollo' y a 'el Cabezón'?", ["Verano del 98", "Chiquititas", "Muñeca brava"], 0),
+    ("¿Qué serie de zombis empieza con Rick despertando en un hospital?", ["The Walking Dead", "Z Nation", "Fear the Walking Dead"], 0),
+    ("¿Qué serie animada amarilla vive en Springfield?", ["Los Simpson", "Futurama", "Padre de familia"], 0),
+    ("¿Qué serie tiene al detective Sherlock Holmes moderno en Londres?", ["Sherlock", "Elementary", "Luther"], 0),
 ]
 HISTORIA_MC = [
-    ("Â¿En quÃ© aÃ±o llegÃ³ ColÃ³n a AmÃ©rica?", ["1492", "1500", "1485"], 0),
-    ("Â¿QuÃ© prÃ³cer argentino cruzÃ³ los Andes?", ["San MartÃ­n", "Belgrano", "Sarmiento"], 0),
-    ("Â¿QuÃ© imperio construyÃ³ el Coliseo?", ["El romano", "El griego", "El egipcio"], 0),
-    ("Â¿En quÃ© aÃ±o se declarÃ³ la independencia argentina?", ["1816", "1810", "1820"], 0),
-    ("Â¿QuiÃ©n fue el primer presidente de Estados Unidos?", ["George Washington", "Abraham Lincoln", "Thomas Jefferson"], 0),
-    ("Â¿QuÃ© guerra mundial empezÃ³ en 1939?", ["La Segunda", "La Primera", "La de Corea"], 0),
-    ("Â¿QuÃ© civilizaciÃ³n construyÃ³ Machu Picchu?", ["La inca", "La azteca", "La maya"], 0),
-    ("Â¿QuÃ© faraona egipcia es la mÃ¡s famosa de la historia?", ["Cleopatra", "Nefertiti", "Hatshepsut"], 0),
-    ("Â¿QuiÃ©n pintÃ³ la Capilla Sixtina?", ["Miguel Ãngel", "Leonardo da Vinci", "Rafael"], 0),
-    ("Â¿QuÃ© revoluciÃ³n empezÃ³ en Francia en 1789?", ["La RevoluciÃ³n Francesa", "La RevoluciÃ³n Industrial", "La Comuna"], 0),
-    ("Â¿QuÃ© muro cayÃ³ en 1989?", ["El Muro de BerlÃ­n", "La Muralla China", "El Muro de Adriano"], 0),
-    ("Â¿QuiÃ©n fue el Libertador de Venezuela, Colombia y Bolivia?", ["SimÃ³n BolÃ­var", "San MartÃ­n", "Sucre"], 0),
+    ("¿En qué año llegó Colón a América?", ["1492", "1500", "1485"], 0),
+    ("¿Qué prócer argentino cruzó los Andes?", ["San Martín", "Belgrano", "Sarmiento"], 0),
+    ("¿Qué imperio construyó el Coliseo?", ["El romano", "El griego", "El egipcio"], 0),
+    ("¿En qué año se declaró la independencia argentina?", ["1816", "1810", "1820"], 0),
+    ("¿Quién fue el primer presidente de Estados Unidos?", ["George Washington", "Abraham Lincoln", "Thomas Jefferson"], 0),
+    ("¿Qué guerra mundial empezó en 1939?", ["La Segunda", "La Primera", "La de Corea"], 0),
+    ("¿Qué civilización construyó Machu Picchu?", ["La inca", "La azteca", "La maya"], 0),
+    ("¿Qué faraona egipcia es la más famosa de la historia?", ["Cleopatra", "Nefertiti", "Hatshepsut"], 0),
+    ("¿Quién pintó la Capilla Sixtina?", ["Miguel Ángel", "Leonardo da Vinci", "Rafael"], 0),
+    ("¿Qué revolución empezó en Francia en 1789?", ["La Revolución Francesa", "La Revolución Industrial", "La Comuna"], 0),
+    ("¿Qué muro cayó en 1989?", ["El Muro de Berlín", "La Muralla China", "El Muro de Adriano"], 0),
+    ("¿Quién fue el Libertador de Venezuela, Colombia y Bolivia?", ["Simón Bolívar", "San Martín", "Sucre"], 0),
 ]
 CIENCIA_MC = [
-    ("Â¿CuÃ¡l es la fÃ³rmula quÃ­mica del agua?", ["H2O", "CO2", "O2"], 0),
-    ("Â¿QuÃ© cientÃ­fico propuso la teorÃ­a de la relatividad?", ["Einstein", "Newton", "Galileo"], 0),
-    ("Â¿QuÃ© partÃ­cula tiene carga negativa?", ["El electrÃ³n", "El protÃ³n", "El neutrÃ³n"], 0),
-    ("Â¿QuÃ© planeta estÃ¡ mÃ¡s cerca del Sol?", ["Mercurio", "Venus", "Marte"], 0),
-    ("Â¿QuÃ© Ã³rgano humano filtra la sangre y produce orina?", ["El riÃ±Ã³n", "El hÃ­gado", "El bazo"], 0),
-    ("Â¿QuÃ© fuerza nos mantiene con los pies en el suelo?", ["La gravedad", "El magnetismo", "La fricciÃ³n"], 0),
-    ("Â¿QuÃ© gas expulsan las plantas al hacer la fotosÃ­ntesis?", ["OxÃ­geno", "DiÃ³xido de carbono", "NitrÃ³geno"], 0),
-    ("Â¿CuÃ¡ntos huesos tiene el cuerpo humano adulto, mÃ¡s o menos?", ["206", "150", "300"], 0),
-    ("Â¿QuÃ© mide la escala de Richter?", ["Los terremotos", "Los huracanes", "La temperatura"], 0),
-    ("Â¿QuÃ© cientÃ­fica ganÃ³ dos premios Nobel en quÃ­mica y fÃ­sica?", ["Marie Curie", "Rosalind Franklin", "Ada Lovelace"], 0),
-    ("Â¿A quÃ© velocidad viaja la luz, aproximadamente?", ["300 mil km por segundo", "300 mil km por hora", "30 mil km por segundo"], 0),
-    ("Â¿QuÃ© metal es lÃ­quido a temperatura ambiente?", ["El mercurio", "El sodio", "El aluminio"], 0),
+    ("¿Cuál es la fórmula química del agua?", ["H2O", "CO2", "O2"], 0),
+    ("¿Qué científico propuso la teoría de la relatividad?", ["Einstein", "Newton", "Galileo"], 0),
+    ("¿Qué partícula tiene carga negativa?", ["El electrón", "El protón", "El neutrón"], 0),
+    ("¿Qué planeta está más cerca del Sol?", ["Mercurio", "Venus", "Marte"], 0),
+    ("¿Qué órgano humano filtra la sangre y produce orina?", ["El riñón", "El hígado", "El bazo"], 0),
+    ("¿Qué fuerza nos mantiene con los pies en el suelo?", ["La gravedad", "El magnetismo", "La fricción"], 0),
+    ("¿Qué gas expulsan las plantas al hacer la fotosíntesis?", ["Oxígeno", "Dióxido de carbono", "Nitrógeno"], 0),
+    ("¿Cuántos huesos tiene el cuerpo humano adulto, más o menos?", ["206", "150", "300"], 0),
+    ("¿Qué mide la escala de Richter?", ["Los terremotos", "Los huracanes", "La temperatura"], 0),
+    ("¿Qué científica ganó dos premios Nobel en química y física?", ["Marie Curie", "Rosalind Franklin", "Ada Lovelace"], 0),
+    ("¿A qué velocidad viaja la luz, aproximadamente?", ["300 mil km por segundo", "300 mil km por hora", "30 mil km por segundo"], 0),
+    ("¿Qué metal es líquido a temperatura ambiente?", ["El mercurio", "El sodio", "El aluminio"], 0),
 ]
 
 ARTE_MC = [
-    ("Â¿QuiÃ©n pintÃ³ la Mona Lisa?", ["Leonardo da Vinci", "Miguel Ãngel", "Picasso"], 0),
-    ("Â¿QuÃ© pintor argentino es famoso por sus figuras gorditas?", ["Quinquela MartÃ­n", "Xul Solar", "Spilimbergo"], 0),
-    ("Â¿QuÃ© pintor se cortÃ³ parte de la oreja?", ["Van Gogh", "Monet", "DalÃ­"], 0),
-    ("Â¿QuÃ© estilo artÃ­stico usaba puntitos de color?", ["El puntillismo", "El cubismo", "El surrealismo"], 0),
-    ("Â¿QuiÃ©n pintÃ³ 'La persistencia de la memoria', con relojes blandos?", ["Salvador DalÃ­", "Pablo Picasso", "Frida Kahlo"], 0),
-    ("Â¿QuÃ© artista mexicana es famosa por sus autorretratos?", ["Frida Kahlo", "Diego Rivera", "Remedios Varo"], 0),
-    ("Â¿QuÃ© museo de ParÃ­s guarda la Mona Lisa?", ["El Louvre", "El Prado", "El MoMA"], 0),
-    ("Â¿QuÃ© movimiento artÃ­stico fundÃ³ Picasso con Braque?", ["El cubismo", "El impresionismo", "El expresionismo"], 0),
-    ("Â¿QuÃ© bailarina clÃ¡sica usa zapatillas de punta y tutÃº?", ["La bailarina de ballet", "La de flamenco", "La de tango"], 0),
-    ("Â¿QuÃ© pintor holandÃ©s pintÃ³ 'La noche estrellada'?", ["Van Gogh", "Rembrandt", "Vermeer"], 0),
-    ("Â¿QuÃ© escultor hizo 'El pensador'?", ["Rodin", "Miguel Ãngel", "Bernini"], 0),
-    ("Â¿QuÃ© tanguero argentino es el mÃ¡s famoso de la historia?", ["Carlos Gardel", "AnÃ­bal Troilo", "Astor Piazzolla"], 0),
+    ("¿Quién pintó la Mona Lisa?", ["Leonardo da Vinci", "Miguel Ángel", "Picasso"], 0),
+    ("¿Qué pintor argentino es famoso por sus figuras gorditas?", ["Quinquela Martín", "Xul Solar", "Spilimbergo"], 0),
+    ("¿Qué pintor se cortó parte de la oreja?", ["Van Gogh", "Monet", "Dalí"], 0),
+    ("¿Qué estilo artístico usaba puntitos de color?", ["El puntillismo", "El cubismo", "El surrealismo"], 0),
+    ("¿Quién pintó 'La persistencia de la memoria', con relojes blandos?", ["Salvador Dalí", "Pablo Picasso", "Frida Kahlo"], 0),
+    ("¿Qué artista mexicana es famosa por sus autorretratos?", ["Frida Kahlo", "Diego Rivera", "Remedios Varo"], 0),
+    ("¿Qué museo de París guarda la Mona Lisa?", ["El Louvre", "El Prado", "El MoMA"], 0),
+    ("¿Qué movimiento artístico fundó Picasso con Braque?", ["El cubismo", "El impresionismo", "El expresionismo"], 0),
+    ("¿Qué bailarina clásica usa zapatillas de punta y tutú?", ["La bailarina de ballet", "La de flamenco", "La de tango"], 0),
+    ("¿Qué pintor holandés pintó 'La noche estrellada'?", ["Van Gogh", "Rembrandt", "Vermeer"], 0),
+    ("¿Qué escultor hizo 'El pensador'?", ["Rodin", "Miguel Ángel", "Bernini"], 0),
+    ("¿Qué tanguero argentino es el más famoso de la historia?", ["Carlos Gardel", "Aníbal Troilo", "Astor Piazzolla"], 0),
 ]
 COMIDA_MC = [
-    ("Â¿QuÃ© comida argentina es de masa rellena al horno o frita?", ["La empanada", "El locro", "La milanesa"], 0),
-    ("Â¿De quÃ© paÃ­s es el sushi?", ["JapÃ³n", "China", "Tailandia"], 0),
-    ("Â¿QuÃ© comida italiana lleva masa, salsa y queso al horno?", ["La pizza", "El risotto", "La lasaÃ±a"], 0),
-    ("Â¿QuÃ© grano es la base del pan?", ["El trigo", "El arroz", "El maÃ­z"], 0),
-    ("Â¿QuÃ© comida mexicana es una tortilla rellena y doblada?", ["El taco", "La quesadilla", "El burrito"], 0),
-    ("Â¿QuÃ© fruta amarilla se pela y es rica en potasio?", ["La banana", "El ananÃ¡", "El mango"], 0),
-    ("Â¿QuÃ© asado argentino se cocina a la parrilla con brasas?", ["El asado", "El puchero", "El matambre"], 0),
-    ("Â¿De quÃ© paÃ­s es la paella?", ["EspaÃ±a", "Portugal", "Italia"], 0),
-    ("Â¿QuÃ© verdura es la base de la ensalada CÃ©sar?", ["La lechuga", "La espinaca", "La rÃºcula"], 0),
-    ("Â¿QuÃ© postre italiano significa 'levantame'?", ["El tiramisÃº", "El gelato", "El panetone"], 0),
-    ("Â¿QuÃ© legumbre es la base del hummus?", ["El garbanzo", "La lenteja", "El poroto"], 0),
-    ("Â¿QuÃ© pescado crudo se usa en el ceviche peruano?", ["Pescado blanco", "SalmÃ³n ahumado", "AtÃºn en lata"], 0),
+    ("¿Qué comida argentina es de masa rellena al horno o frita?", ["La empanada", "El locro", "La milanesa"], 0),
+    ("¿De qué país es el sushi?", ["Japón", "China", "Tailandia"], 0),
+    ("¿Qué comida italiana lleva masa, salsa y queso al horno?", ["La pizza", "El risotto", "La lasaña"], 0),
+    ("¿Qué grano es la base del pan?", ["El trigo", "El arroz", "El maíz"], 0),
+    ("¿Qué comida mexicana es una tortilla rellena y doblada?", ["El taco", "La quesadilla", "El burrito"], 0),
+    ("¿Qué fruta amarilla se pela y es rica en potasio?", ["La banana", "El ananá", "El mango"], 0),
+    ("¿Qué asado argentino se cocina a la parrilla con brasas?", ["El asado", "El puchero", "El matambre"], 0),
+    ("¿De qué país es la paella?", ["España", "Portugal", "Italia"], 0),
+    ("¿Qué verdura es la base de la ensalada César?", ["La lechuga", "La espinaca", "La rúcula"], 0),
+    ("¿Qué postre italiano significa 'levantame'?", ["El tiramisú", "El gelato", "El panetone"], 0),
+    ("¿Qué legumbre es la base del hummus?", ["El garbanzo", "La lenteja", "El poroto"], 0),
+    ("¿Qué pescado crudo se usa en el ceviche peruano?", ["Pescado blanco", "Salmón ahumado", "Atún en lata"], 0),
 ]
 NOMBRES_MC = [
-    ("Â¿De dÃ³nde viene el nombre Diego?", ["Del latÃ­n Jacobus, como Santiago", "Del griego 'guerrero'", "Del Ã¡rabe 'regalo'"], 0),
-    ("Â¿QuÃ© nombre significa 'la que trae la victoria'?", ["VerÃ³nica", "Victoria", "Valeria"], 0),
-    ("Â¿QuÃ© nombre de varÃ³n significa 'pequeÃ±o' en latÃ­n?", ["Pablo", "Pedro", "Pascual"], 0),
-    ("Â¿QuÃ© apellido es el mÃ¡s comÃºn en Argentina?", ["GonzÃ¡lez", "RodrÃ­guez", "GarcÃ­a"], 0),
-    ("Â¿QuÃ© nombre significa 'regalo de Dios'?", ["Mateo", "MartÃ­n", "Marcos"], 0),
-    ("Â¿De quÃ© idioma vienen la mayorÃ­a de los apellidos terminados en 'ez'?", ["Del espaÃ±ol: hijo de", "Del italiano: familia", "Del francÃ©s: lugar"], 0),
-    ("Â¿QuÃ© nombre femenino significa 'bella' en italiano?", ["Bella", "Luna", "Alma"], 0),
-    ("Â¿QuÃ© famoso futbolista se llama Lionel?", ["Messi", "Scaloni", "Di MarÃ­a"], 0),
-    ("Â¿QuÃ© nombre significa 'leÃ³n' en latÃ­n?", ["LeÃ³n", "Bruno", "Dante"], 0),
-    ("Â¿QuÃ© nombre de mujer viene de la palabra 'gracia'?", ["Graciela", "Estela", "Noelia"], 0),
-    ("Â¿QuÃ© apellido indica oficio de herrero en espaÃ±ol?", ["Herrero", "Molinero", "Pastor"], 0),
-    ("Â¿QuÃ© nombre griego significa 'amante de los caballos'?", ["Felipe", "Carlos", "AndrÃ©s"], 0),
+    ("¿De dónde viene el nombre Diego?", ["Del latín Jacobus, como Santiago", "Del griego 'guerrero'", "Del árabe 'regalo'"], 0),
+    ("¿Qué nombre significa 'la que trae la victoria'?", ["Verónica", "Victoria", "Valeria"], 0),
+    ("¿Qué nombre de varón significa 'pequeño' en latín?", ["Pablo", "Pedro", "Pascual"], 0),
+    ("¿Qué apellido es el más común en Argentina?", ["González", "Rodríguez", "García"], 0),
+    ("¿Qué nombre significa 'regalo de Dios'?", ["Mateo", "Martín", "Marcos"], 0),
+    ("¿De qué idioma vienen la mayoría de los apellidos terminados en 'ez'?", ["Del español: hijo de", "Del italiano: familia", "Del francés: lugar"], 0),
+    ("¿Qué nombre femenino significa 'bella' en italiano?", ["Bella", "Luna", "Alma"], 0),
+    ("¿Qué famoso futbolista se llama Lionel?", ["Messi", "Scaloni", "Di María"], 0),
+    ("¿Qué nombre significa 'león' en latín?", ["León", "Bruno", "Dante"], 0),
+    ("¿Qué nombre de mujer viene de la palabra 'gracia'?", ["Graciela", "Estela", "Noelia"], 0),
+    ("¿Qué apellido indica oficio de herrero en español?", ["Herrero", "Molinero", "Pastor"], 0),
+    ("¿Qué nombre griego significa 'amante de los caballos'?", ["Felipe", "Carlos", "Andrés"], 0),
 ]
 
 MARCAS_MC = [
-    ("Â¿QuÃ© marca de gaseosa tiene el logo rojo con letra blanca?", ["Coca-Cola", "Pepsi", "Fanta"], 0),
-    ("Â¿QuÃ© marca de autos tiene cuatro aros en el logo?", ["Audi", "BMW", "Mercedes"], 0),
-    ("Â¿QuÃ© marca de tecnologÃ­a tiene una manzana mordida?", ["Apple", "Samsung", "Xiaomi"], 0),
-    ("Â¿QuÃ© marca deportiva usa el lema 'Just Do It'?", ["Nike", "Adidas", "Puma"], 0),
-    ("Â¿QuÃ© marca de yerba mate argentina viene en paquete verde?", ["TaragÃ¼i", "Rosamonte", "Playadito"], 0),
-    ("Â¿QuÃ© marca de hamburguesas tiene un arco dorado?", ["McDonald's", "Burger King", "Wendy's"], 0),
-    ("Â¿QuÃ© marca de chocolate suizo es famosa por sus barritas con leche y miel?", ["Toblerone", "Lindt", "NestlÃ©"], 0),
-    ("Â¿QuÃ© marca de aviones es la mÃ¡s grande del mundo junto con Airbus?", ["Boeing", "Embraer", "Bombardier"], 0),
-    ("Â¿QuÃ© marca argentina de alfajores es de Mar del Plata?", ["Havanna", "Cachafaz", "Jorgito"], 0),
-    ("Â¿QuÃ© marca de relojes suizos es sinÃ³nimo de lujo?", ["Rolex", "Casio", "Swatch"], 0),
-    ("Â¿QuÃ© marca de zapatillas tiene tres tiras?", ["Adidas", "Nike", "Reebok"], 0),
-    ("Â¿QuÃ© marca de helados tiene corazÃ³n en el logo y es famosa mundial?", ["HÃ¤agen-Dazs", "Grido", "Freddo"], 0),
+    ("¿Qué marca de gaseosa tiene el logo rojo con letra blanca?", ["Coca-Cola", "Pepsi", "Fanta"], 0),
+    ("¿Qué marca de autos tiene cuatro aros en el logo?", ["Audi", "BMW", "Mercedes"], 0),
+    ("¿Qué marca de tecnología tiene una manzana mordida?", ["Apple", "Samsung", "Xiaomi"], 0),
+    ("¿Qué marca deportiva usa el lema 'Just Do It'?", ["Nike", "Adidas", "Puma"], 0),
+    ("��Qué marca de yerba mate argentina viene en paquete verde?", ["Taragüi", "Rosamonte", "Playadito"], 0),
+    ("¿Qué marca de hamburguesas tiene un arco dorado?", ["McDonald's", "Burger King", "Wendy's"], 0),
+    ("¿Qué marca de chocolate suizo es famosa por sus barritas con leche y miel?", ["Toblerone", "Lindt", "Nestlé"], 0),
+    ("¿Qué marca de aviones es la más grande del mundo junto con Airbus?", ["Boeing", "Embraer", "Bombardier"], 0),
+    ("¿Qué marca argentina de alfajores es de Mar del Plata?", ["Havanna", "Cachafaz", "Jorgito"], 0),
+    ("¿Qué marca de relojes suizos es sinónimo de lujo?", ["Rolex", "Casio", "Swatch"], 0),
+    ("¿Qué marca de zapatillas tiene tres tiras?", ["Adidas", "Nike", "Reebok"], 0),
+    ("¿Qué marca de helados tiene corazón en el logo y es famosa mundial?", ["Häagen-Dazs", "Grido", "Freddo"], 0),
 ]
 ANIMALES_MC = [
-    ("Â¿CuÃ¡l es el animal mÃ¡s grande del mundo?", ["La ballena azul", "El elefante", "La jirafa"], 0),
-    ("Â¿QuÃ© animal pone huevos y tiene pico de pato?", ["El ornitorrinco", "El equidna", "El cisne"], 0),
-    ("Â¿QuÃ© animal argentino tiene peluche y vive en la Patagonia?", ["La mara", "El guanaco", "El zorrino"], 0),
-    ("Â¿QuÃ© animal puede dormir de pie?", ["El caballo", "El perro", "El gato"], 0),
-    ("Â¿CuÃ¡l es el ave mÃ¡s grande que vuela?", ["El cÃ³ndor", "El Ã¡guila", "El albatros"], 0),
-    ("Â¿QuÃ© animal tiene la lengua mÃ¡s larga en relaciÃ³n a su cuerpo?", ["El camaleÃ³n", "La jirafa", "El oso hormiguero"], 0),
-    ("Â¿QuÃ© animal marino tiene ocho brazos?", ["El pulpo", "El calamar", "La medusa"], 0),
-    ("Â¿CuÃ¡l es el Ãºnico mamÃ­fero que vuela?", ["El murciÃ©lago", "La ardilla voladora", "El petrel"], 0),
-    ("Â¿QuÃ© animal simboliza la sabidurÃ­a en los cuentos?", ["El bÃºho", "El cuervo", "El zorro"], 0),
-    ("Â¿QuÃ© animal puede vivir mÃ¡s de 100 aÃ±os en el mar?", ["La tortuga", "El delfÃ­n", "El tiburÃ³n"], 0),
-    ("Â¿QuÃ© animal produce el capullo de seda?", ["El gusano de seda", "La oruga comÃºn", "La araÃ±a"], 0),
-    ("Â¿QuÃ© animal es el mejor amigo del hombre?", ["El perro", "El gato", "El caballo"], 0),
+    ("¿Cuál es el animal más grande del mundo?", ["La ballena azul", "El elefante", "La jirafa"], 0),
+    ("¿Qué animal pone huevos y tiene pico de pato?", ["El ornitorrinco", "El equidna", "El cisne"], 0),
+    ("¿Qué animal argentino tiene peluche y vive en la Patagonia?", ["La mara", "El guanaco", "El zorrino"], 0),
+    ("¿Qué animal puede dormir de pie?", ["El caballo", "El perro", "El gato"], 0),
+    ("¿Cuál es el ave más grande que vuela?", ["El cóndor", "El águila", "El albatros"], 0),
+    ("¿Qué animal tiene la lengua más larga en relación a su cuerpo?", ["El camaleón", "La jirafa", "El oso hormiguero"], 0),
+    ("¿Qué animal marino tiene ocho brazos?", ["El pulpo", "El calamar", "La medusa"], 0),
+    ("¿Cuál es el único mamífero que vuela?", ["El murciélago", "La ardilla voladora", "El petrel"], 0),
+    ("¿Qué animal simboliza la sabiduría en los cuentos?", ["El búho", "El cuervo", "El zorro"], 0),
+    ("¿Qué animal puede vivir más de 100 años en el mar?", ["La tortuga", "El delfín", "El tiburón"], 0),
+    ("¿Qué animal produce el capullo de seda?", ["El gusano de seda", "La oruga común", "La araña"], 0),
+    ("¿Qué animal es el mejor amigo del hombre?", ["El perro", "El gato", "El caballo"], 0),
 ]
 POLITICA_MC = [
-    ("Â¿QuÃ© Ã³rgano argentino hace las leyes?", ["El Congreso", "La Corte Suprema", "La Presidencia"], 0),
-    ("Â¿Cada cuÃ¡ntos aÃ±os se elige presidente en Argentina?", ["Cuatro", "Seis", "Dos"], 0),
-    ("Â¿QuÃ© casa de gobierno argentina es rosada?", ["La Casa Rosada", "El Cabildo", "El Congreso"], 0),
-    ("Â¿QuÃ© signo polÃ­tico argentino fue famoso por los paÃ±uelos?", ["Las Madres de Plaza de Mayo", "Los piqueteros", "Los sindicatos"], 0),
-    ("Â¿QuÃ© organismo internacional tiene sede en Nueva York?", ["La ONU", "La OMS", "La FIFA"], 0),
-    ("Â¿QuÃ© presidente argentino fue famoso por el 'vamos carajo'?", ["AlfonsÃ­n", "Menem", "Illia"], 0),
-    ("Â¿CÃ³mo se llama el sistema donde el pueblo elige a sus gobernantes?", ["La democracia", "La monarquÃ­a", "La dictadura"], 0),
-    ("Â¿QuÃ© documento argentino empieza con 'Nos los representantes'?", ["La ConstituciÃ³n", "El Acta de Independencia", "El CÃ³digo Civil"], 0),
-    ("Â¿QuÃ© cargo gobierna una provincia argentina?", ["El gobernador", "El intendente", "El senador"], 0),
-    ("Â¿QuÃ© cargo gobierna un municipio?", ["El intendente", "El gobernador", "El diputado"], 0),
-    ("Â¿QuÃ© paÃ­s tuvo a Nelson Mandela como presidente?", ["SudÃ¡frica", "Nigeria", "Ghana"], 0),
-    ("Â¿QuÃ© reina de Inglaterra reinÃ³ mÃ¡s de 70 aÃ±os?", ["Isabel II", "Victoria", "Ana"], 0),
+    ("¿Qué órgano argentino hace las leyes?", ["El Congreso", "La Corte Suprema", "La Presidencia"], 0),
+    ("¿Cada cuántos años se elige presidente en Argentina?", ["Cuatro", "Seis", "Dos"], 0),
+    ("¿Qué casa de gobierno argentina es rosada?", ["La Casa Rosada", "El Cabildo", "El Congreso"], 0),
+    ("¿Qué signo político argentino fue famoso por los pañuelos?", ["Las Madres de Plaza de Mayo", "Los piqueteros", "Los sindicatos"], 0),
+    ("¿Qué organismo internacional tiene sede en Nueva York?", ["La ONU", "La OMS", "La FIFA"], 0),
+    ("¿Qué presidente argentino fue famoso por el 'vamos carajo'?", ["Alfonsín", "Menem", "Illia"], 0),
+    ("¿Cómo se llama el sistema donde el pueblo elige a sus gobernantes?", ["La democracia", "La monarquía", "La dictadura"], 0),
+    ("¿Qué documento argentino empieza con 'Nos los representantes'?", ["La Constitución", "El Acta de Independencia", "El Código Civil"], 0),
+    ("¿Qué cargo gobierna una provincia argentina?", ["El gobernador", "El intendente", "El senador"], 0),
+    ("¿Qué cargo gobierna un municipio?", ["El intendente", "El gobernador", "El diputado"], 0),
+    ("¿Qué país tuvo a Nelson Mandela como presidente?", ["Sudáfrica", "Nigeria", "Ghana"], 0),
+    ("¿Qué reina de Inglaterra reinó más de 70 años?", ["Isabel II", "Victoria", "Ana"], 0),
 ]
 
 RELIGION_MC = [
-    ("Â¿QuÃ© religiÃ³n tiene la Biblia como libro sagrado?", ["El cristianismo", "El islam", "El budismo"], 0),
-    ("Â¿QuÃ© profeta fundÃ³ el islam?", ["Mahoma", "MoisÃ©s", "Abraham"], 0),
-    ("Â¿QuÃ© papa argentino gobierna la Iglesia desde 2013?", ["Francisco", "Benedicto XVI", "Juan Pablo II"], 0),
-    ("Â¿En quÃ© ciudad estÃ¡ el Vaticano?", ["Roma", "MilÃ¡n", "Florencia"], 0),
-    ("Â¿QuÃ© religiÃ³n sigue las enseÃ±anzas de Buda?", ["El budismo", "El hinduismo", "El sintoÃ­smo"], 0),
-    ("Â¿QuÃ© libro sagrado leen los musulmanes?", ["El CorÃ¡n", "La TorÃ¡", "Los Vedas"], 0),
-    ("Â¿QuÃ© fiesta cristiana celebra el nacimiento de JesÃºs?", ["La Navidad", "La Pascua", "La EpifanÃ­a"], 0),
-    ("Â¿QuÃ© religiÃ³n tiene el Diwali como fiesta de las luces?", ["El hinduismo", "El budismo", "El judaÃ­smo"], 0),
-    ("Â¿QuÃ© dÃ­a sagrado guardan los judÃ­os desde el atardecer del viernes?", ["El Shabat", "El RamadÃ¡n", "La Pascua"], 0),
-    ("Â¿En quÃ© rÃ­o fue bautizado JesÃºs segÃºn la Biblia?", ["El JordÃ¡n", "El Nilo", "El Ãufrates"], 0),
-    ("Â¿QuÃ© arca salvÃ³ a los animales del diluvio?", ["La de NoÃ©", "La de MoisÃ©s", "La de Abraham"], 0),
-    ("Â¿QuÃ© virgen es patrona de Argentina?", ["La Virgen de LujÃ¡n", "La Virgen del Carmen", "La Virgen de Guadalupe"], 0),
+    ("¿Qué religión tiene la Biblia como libro sagrado?", ["El cristianismo", "El islam", "El budismo"], 0),
+    ("¿Qué profeta fundó el islam?", ["Mahoma", "Moisés", "Abraham"], 0),
+    ("¿Qué papa argentino gobierna la Iglesia desde 2013?", ["Francisco", "Benedicto XVI", "Juan Pablo II"], 0),
+    ("¿En qué ciudad está el Vaticano?", ["Roma", "Milán", "Florencia"], 0),
+    ("¿Qué religión sigue las enseñanzas de Buda?", ["El budismo", "El hinduismo", "El sintoísmo"], 0),
+    ("¿Qué libro sagrado leen los musulmanes?", ["El Corán", "La Torá", "Los Vedas"], 0),
+    ("¿Qué fiesta cristiana celebra el nacimiento de Jesús?", ["La Navidad", "La Pascua", "La Epifanía"], 0),
+    ("¿Qué religión tiene el Diwali como fiesta de las luces?", ["El hinduismo", "El budismo", "El judaísmo"], 0),
+    ("¿Qué día sagrado guardan los judíos desde el atardecer del viernes?", ["El Shabat", "El Ramadán", "La Pascua"], 0),
+    ("¿En qué río fue bautizado Jesús según la Biblia?", ["El Jordán", "El Nilo", "El Éufrates"], 0),
+    ("¿Qué arca salvó a los animales del diluvio?", ["La de Noé", "La de Moisés", "La de Abraham"], 0),
+    ("¿Qué virgen es patrona de Argentina?", ["La Virgen de Luján", "La Virgen del Carmen", "La Virgen de Guadalupe"], 0),
 ]
 MUSICA_MC = [
-    ("Â¿QuÃ© instrumento tiene 6 cuerdas y se toca con los dedos o pÃºa?", ["La guitarra", "El ukelele", "El bajo"], 0),
-    ("Â¿QuÃ© banda britÃ¡nica cantÃ³ 'Hey Jude'?", ["The Beatles", "Queen", "Rolling Stones"], 0),
-    ("Â¿QuÃ© cantante argentina es la voz de 'La Llorona' en el folklore?", ["Mercedes Sosa", "Soledad", "Marilina Ross"], 0),
-    ("Â¿QuÃ© gÃ©nero musical naciÃ³ en Jamaica?", ["El reggae", "El ska", "El calypso"], 0),
-    ("Â¿QuÃ© bandoneonista revolucionÃ³ el tango?", ["Astor Piazzolla", "AnÃ­bal Troilo", "Osvaldo Pugliese"], 0),
-    ("Â¿QuÃ© rey del pop hizo 'Thriller'?", ["Michael Jackson", "Prince", "Stevie Wonder"], 0),
-    ("Â¿QuÃ© grupo argentino cantÃ³ 'De mÃºsica ligera'?", ["Soda Stereo", "Los Fabulosos Cadillacs", "Divididos"], 0),
-    ("Â¿QuÃ© instrumento de viento tiene lengÃ¼eta simple?", ["El clarinete", "La flauta", "La trompeta"], 0),
-    ("Â¿QuÃ© cantante es conocida como 'La Sole'?", ["Soledad Pastorutti", "Karina", "LucÃ­a GalÃ¡n"], 0),
-    ("Â¿QuÃ© rockero argentino es 'El Flaco'?", ["Luis Alberto Spinetta", "Charly GarcÃ­a", "Fito PÃ¡ez"], 0),
-    ("Â¿QuÃ© gÃ©nero popular argentino se baila en pareja abrazada?", ["El tango", "El cuarteto", "La cumbia"], 0),
-    ("Â¿QuÃ© compositor sordo escribiÃ³ la Novena SinfonÃ­a?", ["Beethoven", "Mozart", "Bach"], 0),
+    ("¿Qué instrumento tiene 6 cuerdas y se toca con los dedos o púa?", ["La guitarra", "El ukelele", "El bajo"], 0),
+    ("¿Qué banda británica cantó 'Hey Jude'?", ["The Beatles", "Queen", "Rolling Stones"], 0),
+    ("¿Qué cantante argentina es la voz de 'La Llorona' en el folklore?", ["Mercedes Sosa", "Soledad", "Marilina Ross"], 0),
+    ("¿Qué género musical nació en Jamaica?", ["El reggae", "El ska", "El calypso"], 0),
+    ("¿Qué bandoneonista revolucionó el tango?", ["Astor Piazzolla", "Aníbal Troilo", "Osvaldo Pugliese"], 0),
+    ("¿Qué rey del pop hizo 'Thriller'?", ["Michael Jackson", "Prince", "Stevie Wonder"], 0),
+    ("¿Qué grupo argentino cantó 'De música ligera'?", ["Soda Stereo", "Los Fabulosos Cadillacs", "Divididos"], 0),
+    ("¿Qué instrumento de viento tiene lengüeta simple?", ["El clarinete", "La flauta", "La trompeta"], 0),
+    ("¿Qué cantante es conocida como 'La Sole'?", ["Soledad Pastorutti", "Karina", "Lucía Galán"], 0),
+    ("¿Qué rockero argentino es 'El Flaco'?", ["Luis Alberto Spinetta", "Charly García", "Fito Páez"], 0),
+    ("¿Qué género popular argentino se baila en pareja abrazada?", ["El tango", "El cuarteto", "La cumbia"], 0),
+    ("¿Qué compositor sordo escribió la Novena Sinfonía?", ["Beethoven", "Mozart", "Bach"], 0),
 ]
 GEOGRAFIA_MC = [
-    ("Â¿CuÃ¡l es el desierto mÃ¡s grande del mundo?", ["El Sahara", "El Gobi", "El Atacama"], 0),
-    ("Â¿QuÃ© cordillera recorre SudamÃ©rica de norte a sur?", ["Los Andes", "Las Rocallosas", "Los Alpes"], 0),
-    ("Â¿CuÃ¡l es la cascada mÃ¡s famosa entre Argentina y Brasil?", ["Las Cataratas del IguazÃº", "El Salto Ãngel", "El NiÃ¡gara"], 0),
-    ("Â¿QuÃ© rÃ­o pasa por Buenos Aires?", ["El RÃ­o de la Plata", "El ParanÃ¡", "El Uruguay"], 0),
-    ("Â¿CuÃ¡l es el paÃ­s mÃ¡s grande del mundo?", ["Rusia", "China", "CanadÃ¡"], 0),
-    ("Â¿QuÃ© lago navegable es el mÃ¡s alto del mundo, entre PerÃº y Bolivia?", ["El Titicaca", "El Nahuel Huapi", "El Maracaibo"], 0),
-    ("Â¿CuÃ¡l es la isla mÃ¡s grande del mundo?", ["Groenlandia", "Australia", "Borneo"], 0),
-    ("Â¿QuÃ© canal une el AtlÃ¡ntico con el PacÃ­fico?", ["El Canal de PanamÃ¡", "El Canal de Suez", "El Beagle"], 0),
-    ("Â¿CuÃ¡l es la capital de Australia?", ["Canberra", "SÃ­dney", "Melbourne"], 0),
-    ("Â¿QuÃ© volcÃ¡n japonÃ©s es sÃ­mbolo del paÃ­s?", ["El Monte Fuji", "El Monte Aso", "El Sakurajima"], 0),
-    ("Â¿QuÃ© desierto chileno es el mÃ¡s Ã¡rido del mundo?", ["Atacama", "Sonora", "Mojave"], 0),
-    ("Â¿QuÃ© glaciar argentino es famoso por sus rupturas?", ["El Perito Moreno", "El Upsala", "El Viedma"], 0),
+    ("¿Cuál es el desierto más grande del mundo?", ["El Sahara", "El Gobi", "El Atacama"], 0),
+    ("¿Qué cordillera recorre Sudamérica de norte a sur?", ["Los Andes", "Las Rocallosas", "Los Alpes"], 0),
+    ("¿Cuál es la cascada más famosa entre Argentina y Brasil?", ["Las Cataratas del Iguazú", "El Salto Ángel", "El Niágara"], 0),
+    ("¿Qué río pasa por Buenos Aires?", ["El Río de la Plata", "El Paraná", "El Uruguay"], 0),
+    ("¿Cuál es el país más grande del mundo?", ["Rusia", "China", "Canadá"], 0),
+    ("¿Qué lago navegable es el más alto del mundo, entre Perú y Bolivia?", ["El Titicaca", "El Nahuel Huapi", "El Maracaibo"], 0),
+    ("¿Cuál es la isla más grande del mundo?", ["Groenlandia", "Australia", "Borneo"], 0),
+    ("¿Qué canal une el Atlántico con el Pacífico?", ["El Canal de Panamá", "El Canal de Suez", "El Beagle"], 0),
+    ("¿Cuál es la capital de Australia?", ["Canberra", "Sídney", "Melbourne"], 0),
+    ("¿Qué volcán japonés es símbolo del país?", ["El Monte Fuji", "El Monte Aso", "El Sakurajima"], 0),
+    ("¿Qué desierto chileno es el más árido del mundo?", ["Atacama", "Sonora", "Mojave"], 0),
+    ("¿Qué glaciar argentino es famoso por sus rupturas?", ["El Perito Moreno", "El Upsala", "El Viedma"], 0),
 ]
 
 TECNOLOGIA_MC = [
-    ("Â¿QuÃ© significa WWW en internet?", ["World Wide Web", "World Web Wide", "Web World Wide"], 0),
-    ("Â¿QuÃ© empresa creÃ³ el sistema Android?", ["Google", "Apple", "Microsoft"], 0),
-    ("Â¿QuÃ© red social tiene un pajarito o una X?", ["Twitter", "Facebook", "Instagram"], 0),
-    ("Â¿QuÃ© aparato guarda fotos, contactos y apps en el bolsillo?", ["El celular", "La tablet", "La notebook"], 0),
-    ("Â¿QuÃ© inventor es famoso por la lÃ¡mpara elÃ©ctrica?", ["Edison", "Tesla", "Bell"], 0),
-    ("Â¿QuÃ© lenguaje de programaciÃ³n tiene nombre de serpiente?", ["Python", "Cobra", "Java"], 0),
-    ("Â¿QuÃ© empresa hace las consolas PlayStation?", ["Sony", "Nintendo", "Microsoft"], 0),
-    ("Â¿QuÃ© satÃ©lite natural orbita la Tierra?", ["La Luna", "El Hubble", "La ISS"], 0),
-    ("Â¿QuÃ© significa Wi-Fi, en criollo?", ["ConexiÃ³n inalÃ¡mbrica a internet", "Cable de red", "SeÃ±al de celular"], 0),
-    ("Â¿QuÃ© robot aspiradora es famoso por limpiar casas solo?", ["El Roomba", "El Terminator", "El R2D2"], 0),
-    ("Â¿QuÃ© app de mensajerÃ­a usa el telÃ©fono y es verde?", ["WhatsApp", "Telegram", "Signal"], 0),
-    ("Â¿QuÃ© letra identifica una unidad de almacenamiento gigante, mil veces el giga?", ["La T (tera)", "La M (mega)", "La K (kilo)"], 0),
+    ("¿Qué significa WWW en internet?", ["World Wide Web", "World Web Wide", "Web World Wide"], 0),
+    ("¿Qué empresa creó el sistema Android?", ["Google", "Apple", "Microsoft"], 0),
+    ("¿Qué red social tiene un pajarito o una X?", ["Twitter", "Facebook", "Instagram"], 0),
+    ("¿Qué aparato guarda fotos, contactos y apps en el bolsillo?", ["El celular", "La tablet", "La notebook"], 0),
+    ("¿Qué inventor es famoso por la lámpara eléctrica?", ["Edison", "Tesla", "Bell"], 0),
+    ("¿Qué lenguaje de programación tiene nombre de serpiente?", ["Python", "Cobra", "Java"], 0),
+    ("¿Qué empresa hace las consolas PlayStation?", ["Sony", "Nintendo", "Microsoft"], 0),
+    ("¿Qué satélite natural orbita la Tierra?", ["La Luna", "El Hubble", "La ISS"], 0),
+    ("¿Qué significa Wi-Fi, en criollo?", ["Conexión inalámbrica a internet", "Cable de red", "Señal de celular"], 0),
+    ("¿Qué robot aspiradora es famoso por limpiar casas solo?", ["El Roomba", "El Terminator", "El R2D2"], 0),
+    ("¿Qué app de mensajería usa el teléfono y es verde?", ["WhatsApp", "Telegram", "Signal"], 0),
+    ("¿Qué letra identifica una unidad de almacenamiento gigante, mil veces el giga?", ["La T (tera)", "La M (mega)", "La K (kilo)"], 0),
 ]
 VIDEOJUEGOS_MC = [
-    ("Â¿QuÃ© fontanero bigotudo salta sobre tortugas?", ["Mario", "Luigi", "Sonic"], 0),
-    ("Â¿QuÃ© juego tiene bloques cuadrados y creepers?", ["Minecraft", "Roblox", "Terraria"], 0),
-    ("Â¿QuÃ© erizo azul corre a toda velocidad?", ["Sonic", "Crash", "Spyro"], 0),
-    ("Â¿QuÃ© juego de fÃºtbol hace EA todos los aÃ±os?", ["El EA Sports FC", "El PES", "El Rocket League"], 0),
-    ("Â¿QuÃ© juego tiene batallas de 100 jugadores en una isla?", ["Fortnite", "Minecraft", "Among Us"], 0),
-    ("Â¿QuÃ© consola portÃ¡til tiene dos pantallas?", ["La Nintendo DS", "La PlayStation Vita", "La Switch"], 0),
-    ("Â¿QuÃ© personaje amarillo come bolitas en un laberinto?", ["Pac-Man", "Kirby", "Pikachu"], 0),
-    ("Â¿QuÃ© juego de carreras tiene caparazones y bananas?", ["Mario Kart", "Need for Speed", "Gran Turismo"], 0),
-    ("Â¿QuÃ© juego argentino de cartas se juega con truco y envido?", ["El Truco", "La Escoba", "El ChinchÃ³n"], 0),
-    ("Â¿QuÃ© juego tiene impostores en una nave espacial?", ["Among Us", "Fall Guys", "Fortnite"], 0),
-    ("Â¿QuÃ© saga tiene a Link y la princesa Zelda?", ["Zelda", "Final Fantasy", "Metroid"], 0),
-    ("Â¿QuÃ© juego de pelea tiene a Scorpion y Sub-Zero?", ["Mortal Kombat", "Street Fighter", "Tekken"], 0),
+    ("¿Qué fontanero bigotudo salta sobre tortugas?", ["Mario", "Luigi", "Sonic"], 0),
+    ("¿Qué juego tiene bloques cuadrados y creepers?", ["Minecraft", "Roblox", "Terraria"], 0),
+    ("¿Qué erizo azul corre a toda velocidad?", ["Sonic", "Crash", "Spyro"], 0),
+    ("¿Qué juego de fútbol hace EA todos los años?", ["El EA Sports FC", "El PES", "El Rocket League"], 0),
+    ("¿Qué juego tiene batallas de 100 jugadores en una isla?", ["Fortnite", "Minecraft", "Among Us"], 0),
+    ("¿Qué consola portátil tiene dos pantallas?", ["La Nintendo DS", "La PlayStation Vita", "La Switch"], 0),
+    ("¿Qué personaje amarillo come bolitas en un laberinto?", ["Pac-Man", "Kirby", "Pikachu"], 0),
+    ("¿Qué juego de carreras tiene caparazones y bananas?", ["Mario Kart", "Need for Speed", "Gran Turismo"], 0),
+    ("¿Qué juego argentino de cartas se juega con truco y envido?", ["El Truco", "La Escoba", "El Chinchón"], 0),
+    ("¿Qué juego tiene impostores en una nave espacial?", ["Among Us", "Fall Guys", "Fortnite"], 0),
+    ("¿Qué saga tiene a Link y la princesa Zelda?", ["Zelda", "Final Fantasy", "Metroid"], 0),
+    ("¿Qué juego de pelea tiene a Scorpion y Sub-Zero?", ["Mortal Kombat", "Street Fighter", "Tekken"], 0),
 ]
 
 CATEGORIES = {
     "verdad_reto": "Verdad o Reto",
     "deportes": "Deportes",
-    "fÃºtbol mundial": "FÃºtbol mundial",
-    "pelÃ­culas": "PelÃ­culas",
+    "fútbol mundial": "Fútbol mundial",
+    "películas": "Películas",
     "series": "Series",
     "cultura": "Cultura",
     "historia": "Historia",
@@ -449,23 +449,23 @@ CATEGORIES = {
     "nombres y apellidos": "Nombres y apellidos",
     "marcas": "Marcas",
     "animales": "Animales",
-    "polÃ­tica": "PolÃ­tica",
-    "religiÃ³n": "ReligiÃ³n",
-    "mÃºsica": "MÃºsica",
-    "geografÃ­a": "GeografÃ­a",
-    "tecnologÃ­a": "TecnologÃ­a",
+    "política": "Política",
+    "religión": "Religión",
+    "música": "Música",
+    "geografía": "Geografía",
+    "tecnología": "Tecnología",
     "videojuegos": "Videojuegos",
     "refranes": "Refranes",
-    "paÃ­ses": "PaÃ­ses",
+    "países": "Países",
 }
 MC_BANKS = {
-    "deportes": DEPORTES_MC, "fÃºtbol mundial": FUTBOL_MC,
-    "pelÃ­culas": PELICULAS_MC, "series": SERIES_MC, "cultura": TRIVIA_MC,
+    "deportes": DEPORTES_MC, "fútbol mundial": FUTBOL_MC,
+    "películas": PELICULAS_MC, "series": SERIES_MC, "cultura": TRIVIA_MC,
     "historia": HISTORIA_MC, "ciencia": CIENCIA_MC, "arte": ARTE_MC,
     "comida": COMIDA_MC, "nombres y apellidos": NOMBRES_MC, "marcas": MARCAS_MC,
-    "animales": ANIMALES_MC, "polÃ­tica": POLITICA_MC, "religiÃ³n": RELIGION_MC,
-    "mÃºsica": MUSICA_MC, "geografÃ­a": GEOGRAFIA_MC, "tecnologÃ­a": TECNOLOGIA_MC,
-    "videojuegos": VIDEOJUEGOS_MC, "refranes": REFRANES_MC, "paÃ­ses": PAISES_MC,
+    "animales": ANIMALES_MC, "política": POLITICA_MC, "religión": RELIGION_MC,
+    "música": MUSICA_MC, "geografía": GEOGRAFIA_MC, "tecnología": TECNOLOGIA_MC,
+    "videojuegos": VIDEOJUEGOS_MC, "refranes": REFRANES_MC, "países": PAISES_MC,
 }
 MC_USED_KEYS = {cat: "used_" + str(i) for i, cat in enumerate(MC_BANKS)}
 
@@ -479,13 +479,13 @@ NARRATOR_VOICES = ["es-AR-ElenaNeural", "es-AR-TomasNeural", "es-UY-ValentinaNeu
 MAX_PLAYERS = 20
 
 GAME_DESCRIPTIONS = {
-    "categorias": "La ruleta de categorÃ­as: girÃ¡s la ruleta, te toca una categorÃ­a y "
-                  "respondÃ©s una pregunta con tres opciones. Con 3 aciertos en una categorÃ­a "
-                  "la pasÃ¡s de nivel; el primero en pasar 3 categorÃ­as gana.",
-    "paises": "La ruleta de paÃ­ses: primero girÃ¡s la ruleta de paÃ­ses y despuÃ©s respondÃ©s "
-              "preguntas por ese paÃ­s. El primero en ganar 2 paÃ­ses gana la partida.",
-    "ahorcado": "El ahorcado: adivinÃ¡s la palabra letra por letra, hablando o escribiendo. "
-                "Si la letra estÃ¡, seguÃ­s jugando; si no, pasa el turno. "
+    "categorias": "La ruleta de categorías: girás la ruleta, te toca una categoría y "
+                  "respondés una pregunta con tres opciones. Con 3 aciertos en una categoría "
+                  "la pasás de nivel; el primero en pasar 3 categorías gana.",
+    "paises": "La ruleta de países: primero girás la ruleta de países y después respondés "
+              "preguntas por ese país. El primero en ganar 2 países gana la partida.",
+    "ahorcado": "El ahorcado: adivinás la palabra letra por letra, hablando o escribiendo. "
+                "Si la letra está, seguís jugando; si no, pasa el turno. "
                 "El que adivina la palabra sube de nivel; el primero en pasar el nivel 5 gana.",
 }
 
@@ -633,18 +633,18 @@ def cancel_timer(room):
 CHATTER_VOICES = ["es-AR-ElenaNeural", "es-AR-TomasNeural", "es-UY-ValentinaNeural",
                   "es-MX-DaliaNeural", "es-CO-GonzaloNeural", "es-CL-CatalinaNeural"]
 CHATTER_30 = [
-    "Dale, {name}, Â¡apurate!",
-    "Â¡Vamos {name}, que se pasa el tiempo!",
-    "PensÃ¡ rÃ¡pido, {name}, Â¡dale!",
-    "Â¡{name}, che, el reloj corre!",
-    "Ãrale {name}, Â¡que no se te pase el turno!",
-    "Â¡Dale {name}, vos podÃ©s!",
+    "Dale, {name}, ¡apurate!",
+    "¡Vamos {name}, que se pasa el tiempo!",
+    "Pensá rápido, {name}, ¡dale!",
+    "¡{name}, che, el reloj corre!",
+    "Órale {name}, ¡que no se te pase el turno!",
+    "¡Dale {name}, vos podés!",
 ]
 CHATTER_10 = [
-    "Â¡10 segundos, {name}!",
-    "Â¡Se te acaba, {name}! Â¡10!",
-    "Â¡Ãltimos 10, dale {name}!",
-    "Â¡Apurate que son 10, {name}!",
+    "¡10 segundos, {name}!",
+    "¡Se te acaba, {name}! ¡10!",
+    "¡Últimos 10, dale {name}!",
+    "¡Apurate que son 10, {name}!",
 ]
 
 
@@ -673,7 +673,7 @@ async def turn_clock(room, player_id):
             nxt = current_player(room)
             await narrate(
                 room,
-                f"Se acabÃ³ el tiempo. Ahora le toca a {nxt['name']}." if nxt else "Se acabÃ³ el tiempo.",
+                f"Se acabó el tiempo. Ahora le toca a {nxt['name']}." if nxt else "Se acabó el tiempo.",
             )
             await begin_turn(room)
     except asyncio.CancelledError:
@@ -710,8 +710,8 @@ async def start_match(room):
     if room["game"] == "ahorcado":
         room["ahorcado"] = {"levels": {}, "used": set(), "word": None, "hint": "",
                             "guessed": set(), "wrong": set(), "attempts": 0}
-        await narrate(room, f"Â¡Arranca el ahorcado! AdivinÃ¡ la palabra letra por letra. "
-                            f"Si errÃ¡s, pasa al siguiente. "
+        await narrate(room, f"¡Arranca el ahorcado! Adiviná la palabra letra por letra. "
+                            f"Si errás, pasa al siguiente. "
                             f"El primero en llegar al nivel {AHORCADO_WIN_LEVEL + 1} gana.")
         await begin_turn(room)
         return
@@ -721,11 +721,11 @@ async def start_match(room):
     if player is None:
         return
     if room["game"] == "categorias":
-        await narrate(room, f"Â¡Arranca la partida {room['match']}! El primero en pasar "
-                            f"{CATEGORIES_TO_PASS} categorÃ­as gana: con {QUESTIONS_PER_LEVEL} "
-                            f"correctas pasÃ¡s cada categorÃ­a. Empieza {player['name']}.")
+        await narrate(room, f"¡Arranca la partida {room['match']}! El primero en pasar "
+                            f"{CATEGORIES_TO_PASS} categorías gana: con {QUESTIONS_PER_LEVEL} "
+                            f"correctas pasás cada categoría. Empieza {player['name']}.")
     else:
-        await narrate(room, f"Â¡Arranca la partida {room['match']}! El primero en llegar a "
+        await narrate(room, f"¡Arranca la partida {room['match']}! El primero en llegar a "
                             f"{WIN_SCORE} puntos gana. Empieza {player['name']}.")
     await begin_turn(room)
 
@@ -751,10 +751,10 @@ async def game_over(room, winner):
     others = [p["name"] for p in room["players"] if not p.get("gone") and p["id"] != winner["id"]]
     beat = ""
     if len(others) == 1:
-        beat = f" Le ganÃ³ a {others[0]}."
+        beat = f" Le ganó a {others[0]}."
     elif others:
-        beat = " Le ganÃ³ a " + ", a ".join(others[:-1]) + " y a " + others[-1] + "."
-    await narrate(room, f"Â¡GanÃ³ {winner['name']} con {room['scores'][winner['id']]} puntos!{beat} "
+        beat = " Le ganó a " + ", a ".join(others[:-1]) + " y a " + others[-1] + "."
+    await narrate(room, f"¡Ganó {winner['name']} con {room['scores'][winner['id']]} puntos!{beat} "
                         f"En {REMATCH_SECONDS} segundos arranca una partida nueva.")
     await broadcast(room, room_state(room))
     await asyncio.sleep(REMATCH_SECONDS)
@@ -786,7 +786,7 @@ async def do_category_spin(room, player, chosen=None):
     await asyncio.sleep(3.5)
     room["spinning"] = False
     if cat == "verdad_reto":
-        await narrate(room, "Â¡Giramos la ruleta! Gira, gira... Â¡parÃ³! Â¡Verdad o Reto!")
+        await narrate(room, "¡Giramos la ruleta! Gira, gira... ¡paró! ¡Verdad o Reto!")
         room["phase"] = "verdad_reto_ready"
         await broadcast(room, room_state(room))
         await do_spin(room, player)
@@ -797,7 +797,7 @@ async def do_category_spin(room, player, chosen=None):
 
 
 async def do_country_spin(room, player):
-    """La ruleta de paÃ­ses: lands the country the room plays for."""
+    """La ruleta de países: lands the country the room plays for."""
     from app import TRIVIA_COUNTRIES
 
     room["spinning"] = True
@@ -810,8 +810,8 @@ async def do_country_spin(room, player):
     room["country"] = country
     room["country_done"] = set()
     room["spinning"] = False
-    await narrate(room, f"Â¡Gira la ruleta de paÃ­ses! Gira, gira... Â¡parÃ³! Â¡{country}! "
-                        f"Para ganar {country} hay que completar todas las categorÃ­as. "
+    await narrate(room, f"¡Gira la ruleta de países! Gira, gira... ¡paró! ¡{country}! "
+                        f"Para ganar {country} hay que completar todas las categorías. "
                         f"Arranca {player['name']}.")
     room["phase"] = "spin_ready"
     await broadcast(room, room_state(room))
@@ -838,7 +838,7 @@ async def do_spin(room, player):
     })
     label = SEGMENT_LABELS[segment]
     announce = (
-        f"Â¡Giramos la ruleta! Gira, gira... Â¡parÃ³! Â¡{player['name']}, te saliÃ³ {label}! "
+        f"¡Giramos la ruleta! Gira, gira... ¡paró! ¡{player['name']}, te salió {label}! "
         f"{label} para {player['name']}: {pick}"
     )
     await asyncio.sleep(3.5)  # the wheel spins ~4s; the voice lands as it stops
@@ -854,8 +854,8 @@ async def ask_question(room, player, category, where=""):
     room["question"] = {"category": category, "q": question, "options": options, "correct": correct}
     room["phase"] = "question"
     letters = ["A", "B", "C"]
-    spoken = question + " " + " ".join(f"OpciÃ³n {letters[i]}: {opt}." for i, opt in enumerate(options))
-    await narrate(room, f"CategorÃ­a {CATEGORIES[category]}{where}, para {player['name']}. {spoken}",
+    spoken = question + " " + " ".join(f"Opción {letters[i]}: {opt}." for i, opt in enumerate(options))
+    await narrate(room, f"Categoría {CATEGORIES[category]}{where}, para {player['name']}. {spoken}",
                   voice=room["question_voice"])
     await broadcast(room, {
         "event": "question", "category": category, "q": question,
@@ -884,12 +884,12 @@ async def resolve_answer(room, player, idx):
                 room["phase"] = "question"  # coherent until game_over
                 await game_over(room, player)
                 return
-            await narrate(room, f"Â¡Correcto! Â¡{player['name']} pasÃ³ el nivel de {label}! "
-                                f"Con {QUESTIONS_PER_LEVEL} correctas, esa categorÃ­a ya es de "
+            await narrate(room, f"¡Correcto! ¡{player['name']} pasó el nivel de {label}! "
+                                f"Con {QUESTIONS_PER_LEVEL} correctas, esa categoría ya es de "
                                 f"{player['name']}. Lleva {passed} "
-                                f"{'categorÃ­a pasada' if passed == 1 else 'categorÃ­as pasadas'}.")
+                                f"{'categoría pasada' if passed == 1 else 'categorías pasadas'}.")
         else:
-            await narrate(room, f"Â¡Correcto, {player['name']}! Lleva {progress[cat]} de "
+            await narrate(room, f"¡Correcto, {player['name']}! Lleva {progress[cat]} de "
                                 f"{QUESTIONS_PER_LEVEL} en {label}.")
     else:
         letters = ["A", "B", "C"]
@@ -901,7 +901,7 @@ async def resolve_answer(room, player, idx):
 
 
 async def resolve_answer_paises(room, player, question, correct, idx):
-    """PaÃ­ses: seguÃ­s jugando hasta fallar; completar el paÃ­s suma un paÃ­s ganado."""
+    """Países: seguís jugando hasta fallar; completar el país suma un país ganado."""
     if correct:
         room["country_done"].add(question["category"])
         done = len(room["country_done"])
@@ -917,14 +917,14 @@ async def resolve_answer_paises(room, player, question, correct, idx):
                 room["phase"] = "question"  # keeps state coherent until game_over
                 await game_over(room, player)
                 return
-            await narrate(room, f"Â¡{player['name']} completÃ³ {country}! "
-                                f"{'PaÃ­s ganado' if won == 1 else f'Ya lleva {won} paÃ­ses'}. "
-                                "Â¡Va por el prÃ³ximo paÃ­s!")
+            await narrate(room, f"¡{player['name']} completó {country}! "
+                                f"{'País ganado' if won == 1 else f'Ya lleva {won} países'}. "
+                                "¡Va por el próximo país!")
             await begin_turn(room)  # same player spins for a new country
             return
-        await narrate(room, f"Â¡Correcto! {player['name']} ganÃ³ la categorÃ­a "
+        await narrate(room, f"¡Correcto! {player['name']} ganó la categoría "
                             f"{CATEGORIES[question['category']]} por {room['country']}. "
-                            f"PasÃ³ al nivel {done + 1}. SeguÃ­s, {player['name']}.")
+                            f"Pasó al nivel {done + 1}. Seguís, {player['name']}.")
         await begin_turn(room)  # same player keeps going
         return
     letters = ["A", "B", "C"]
@@ -932,7 +932,7 @@ async def resolve_answer_paises(room, player, question, correct, idx):
     picked = letters[idx] if 0 <= idx < 3 else "?"
     room["turn"] += 1
     nxt = current_player(room)
-    await narrate(room, f"PerdiÃ³ {player['name']}: la {picked} no es la correcta. "
+    await narrate(room, f"Perdió {player['name']}: la {picked} no es la correcta. "
                         f"Es la {letters[question['correct']]}: {right}. "
                         + (f"Ahora gira {nxt['name']}." if nxt else ""))
     cancel_timer(room)
@@ -943,7 +943,7 @@ async def resolve_answer_paises(room, player, question, correct, idx):
 async def complete_verdad_reto(room, player, done):
     if done:
         room["scores"][player["id"]] = room["scores"].get(player["id"], 0) + 1
-        await narrate(room, f"Â¡Muy bien, {player['name']}! Un punto. Lleva {room['scores'][player['id']]}.")
+        await narrate(room, f"¡Muy bien, {player['name']}! Un punto. Lleva {room['scores'][player['id']]}.")
     else:
         await narrate(room, f"{player['name']} pasa. Sin punto esta vez.")
     await end_turn(room)
@@ -954,7 +954,7 @@ async def complete_verdad_reto(room, player, done):
 # ---------------------------------------------------------------------------
 AHORCADO_WIN_LEVEL = 5
 AH_ORDINALES = ["primer", "segundo", "tercer", "cuarto", "quinto",
-                "sexto", "sÃ©ptimo", "octavo", "noveno", "dÃ©cimo"]
+                "sexto", "séptimo", "octavo", "noveno", "décimo"]
 
 
 def ah_helpers():
@@ -983,7 +983,7 @@ def ah_positions_text(word, letter, speak):
 
 
 def ah_adjacency_text(word, letter, guessed, speak):
-    """'La A y la T estÃ¡n juntas.' for newly revealed neighbours."""
+    """'La A y la T están juntas.' for newly revealed neighbours."""
     pairs = []
     for i, char in enumerate(word):
         if char != letter:
@@ -996,7 +996,7 @@ def ah_adjacency_text(word, letter, guessed, speak):
             pair = (word[i - 1], word[i])
             if pair not in pairs:
                 pairs.append(pair)
-    return " ".join(f"La {speak[a]} y la {speak[b]} estÃ¡n juntas." for a, b in pairs)
+    return " ".join(f"La {speak[a]} y la {speak[b]} están juntas." for a, b in pairs)
 
 
 async def ah_start_turn(room):
@@ -1022,7 +1022,7 @@ async def ah_start_turn(room):
     room["phase"] = "ahorcado"
     await narrate(room, f"Turno de {player['name']}, nivel {level}. "
                         f"La palabra tiene {len(word)} letras. Pista: {hint} "
-                        f"TenÃ©s {ah['attempts']} intentos. DecÃ­ una letra o arriesgÃ¡ la palabra.")
+                        f"Tenés {ah['attempts']} intentos. Decí una letra o arriesgá la palabra.")
     await broadcast(room, room_state(room))
     await tell(player, {"event": "your_turn", "kind": "ahorcado"})
     room["timer_task"] = asyncio.create_task(turn_clock(room, player["id"]))
@@ -1044,7 +1044,7 @@ async def ah_guess(room, player, guess):
     kind, value = guess
     if kind == "letter":
         if value in ah["guessed"] or value in ah["wrong"]:
-            await narrate(room, f"La {speak[value]} ya saliÃ³, {player['name']}. ProbÃ¡ otra.")
+            await narrate(room, f"La {speak[value]} ya salió, {player['name']}. Probá otra.")
             return
         if value in word:
             ah["guessed"].add(value)
@@ -1053,15 +1053,15 @@ async def ah_guess(room, player, guess):
                 return
             positions = ah_positions_text(word, value, speak)
             adjacency = ah_adjacency_text(word, value, ah["guessed"], speak)
-            spoken_board = ", ".join(speak[c] if c in ah["guessed"] else "vacÃ­o" for c in word)
-            await narrate(room, f"Â¡SÃ­! {positions} {adjacency} "
-                                f"AsÃ­ va: {spoken_board}. "
-                                f"SeguÃ­s, {player['name']}.")
+            spoken_board = ", ".join(speak[c] if c in ah["guessed"] else "vacío" for c in word)
+            await narrate(room, f"¡Sí! {positions} {adjacency} "
+                                f"Así va: {spoken_board}. "
+                                f"Seguís, {player['name']}.")
             await broadcast(room, room_state(room))
             return
         ah["wrong"].add(value)
         ah["attempts"] -= 1
-        miss_beat = random.choice(["Uh, pifiaste. ", "Â¡Uy, no! ", "Esa no era, che. "])
+        miss_beat = random.choice(["Uh, pifiaste. ", "¡Uy, no! ", "Esa no era, che. "])
         if ah["attempts"] <= 0:
             await ah_pass(room, miss_beat + f"No hay {speak[value]} y se te acabaron los intentos, "
                                 f"{player['name']}. La palabra era {ah_spelled(word, speak)}.")
@@ -1076,7 +1076,7 @@ async def ah_guess(room, player, guess):
         return
     ah["attempts"] -= 1
     if ah["attempts"] <= 0:
-        await ah_pass(room, f"Â¡{ah_spelled(value, speak)} no es y se te acabaron los intentos, "
+        await ah_pass(room, f"¡{ah_spelled(value, speak)} no es y se te acabaron los intentos, "
                             f"{player['name']}! La palabra era {ah_spelled(word, speak)}.")
         return
     left = ah["attempts"]
@@ -1095,13 +1095,13 @@ async def ah_solved(room, player):
     if others:
         otros_niveles = {ah["levels"].get(p["id"], 1) for p in others}
         if len(otros_niveles) == 1:
-            standing = f"; ustedes estÃ¡n en el nivel {otros_niveles.pop()}"
+            standing = f"; ustedes están en el nivel {otros_niveles.pop()}"
     if level > AHORCADO_WIN_LEVEL:
         room["phase"] = "ahorcado"  # coherent until game_over
         await game_over(room, player)
         return
-    await narrate(room, f"Â¡{player['name']} adivinÃ³ la palabra! "
-                        f"{player['name']} pasÃ³ al nivel {level}{standing}.")
+    await narrate(room, f"¡{player['name']} adivinó la palabra! "
+                        f"{player['name']} pasó al nivel {level}{standing}.")
     room["turn"] += 1
     await ah_start_turn(room)
 
@@ -1126,7 +1126,7 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = ""):
     active = [p for p in room["players"] if not p.get("gone")]
     if seat is None and room["capacity"] and len(active) >= room["capacity"]:
         await websocket.send_text(json.dumps(
-            {"event": "say", "text": "La sala estÃ¡ llena.", "audio": None}, ensure_ascii=False))
+            {"event": "say", "text": "La sala está llena.", "audio": None}, ensure_ascii=False))
         await websocket.close(code=4009)
         return
     if seat is not None:
@@ -1145,15 +1145,15 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = ""):
                         "code": code, "capacity": room["capacity"], "phase": room["phase"]})
     count = len([p for p in room["players"] if not p.get("gone")])
     if seat is not None:
-        await narrate(room, f"Â¡{player['name']} volviÃ³ a la mesa!")
+        await narrate(room, f"¡{player['name']} volvió a la mesa!")
     elif count == 1:
         await say(room,
-                  f"Â¡Listo, {player['name']}! Ya estÃ¡s en la mesa. No hace falta escribir nada. "
-                  "Pasales el link a tus amigos con el botÃ³n Copiar el link.",
+                  f"¡Listo, {player['name']}! Ya estás en la mesa. No hace falta escribir nada. "
+                  "Pasales el link a tus amigos con el botón Copiar el link.",
                   to=player)
-        await narrate(room, f"Se uniÃ³ {player['name']}. Ahora son {count} en la sala.")
+        await narrate(room, f"Se unió {player['name']}. Ahora son {count} en la sala.")
     else:
-        await narrate(room, f"Se uniÃ³ {player['name']}. Ahora son {count} en la sala.")
+        await narrate(room, f"Se unió {player['name']}. Ahora son {count} en la sala.")
     await broadcast(room, room_state(room))
     # Solo starts at once; a sala starts when full or when the host taps Empezar.
     if room["phase"] == "lobby" and room["capacity"] == 1:
@@ -1178,9 +1178,9 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = ""):
                 picked = message.get("game")
                 if room["game"] is None and picked in ("categorias", "paises", "ahorcado"):
                     room["game"] = picked
-                    names = {"categorias": "la ruleta de categorÃ­as",
-                             "paises": "la ruleta de paÃ­ses", "ahorcado": "el ahorcado"}
-                    await narrate(room, f"Â¡{player['name']} eligiÃ³ {names[picked]}!")
+                    names = {"categorias": "la ruleta de categorías",
+                             "paises": "la ruleta de países", "ahorcado": "el ahorcado"}
+                    await narrate(room, f"¡{player['name']} eligió {names[picked]}!")
                     await start_match(room)
             elif action == "guess" and room["phase"] == "ahorcado" and current_player(room) is player:
                 _, _, _, _, clean, parse_guess = ah_helpers()
@@ -1188,11 +1188,11 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = ""):
                 if guess:
                     await ah_guess(room, player, guess)
                 else:
-                    await narrate(room, f"No te entendÃ­, {player['name']}. DecÃ­ una letra o la palabra.")
+                    await narrate(room, f"No te entendí, {player['name']}. Decí una letra o la palabra.")
             elif action == "spin":
                 if room["spinning"] or current is not player:
                     if current is not player:
-                        await tell(player, {"event": "say", "text": "TodavÃ­a no es tu turno.", "audio": None})
+                        await tell(player, {"event": "say", "text": "Todavía no es tu turno.", "audio": None})
                     continue
                 if room["phase"] == "country_spin_ready":
                     asyncio.create_task(do_country_spin(room, player))
@@ -1209,12 +1209,12 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = ""):
                     continue
                 if room["game"] == "paises" and cat == "verdad_reto":
                     await tell(player, {"event": "say", "audio": None,
-                                        "text": "En la ruleta de paÃ­ses no hay Verdad o Reto. "
-                                                "ElegÃ­ otra categorÃ­a o girÃ¡ la ruleta."})
+                                        "text": "En la ruleta de países no hay Verdad o Reto. "
+                                                "Elegí otra categoría o girá la ruleta."})
                     continue
                 room["question"] = None
                 if cat == "verdad_reto":
-                    await narrate(room, f"{player['name']} eligiÃ³ Verdad o Reto. Â¡Que gire la ruleta!")
+                    await narrate(room, f"{player['name']} eligió Verdad o Reto. ¡Que gire la ruleta!")
                     room["phase"] = "verdad_reto_ready"
                     await broadcast(room, room_state(room))
                     await do_spin(room, player)
@@ -1272,8 +1272,8 @@ async def handle_chat(room, player, message):
         target = next((p for p in room["players"] if p["id"] == to_id and not p.get("gone")), None)
         if target is None:
             return
-    spoken = (f"{player['name']} te escribiÃ³: {text}" if target
-              else f"{player['name']} escribiÃ³: {text}")
+    spoken = (f"{player['name']} te escribió: {text}" if target
+              else f"{player['name']} escribió: {text}")
     from app import synthesize
 
     try:
@@ -1319,11 +1319,11 @@ async def voice_clip(code: str, request: Request, to: str = "all", sender: int =
         from app import synthesize
 
         voice = room.get("chat_voices", {}).get(sender_p["id"]) or room.get("voice") or "es-AR-ElenaNeural"
-        intro = await ogg_to_mp3(await synthesize(f"{sender_p['name']} mandÃ³ un audio.", voice))
+        intro = await ogg_to_mp3(await synthesize(f"{sender_p['name']} mandó un audio.", voice))
         intro_url = f"/amor-con-aroma-a-cafe/audio/{cache_audio(intro)}.mp3"
     except Exception:
         log.exception("Web sala: clip intro synthesis failed")
-    intro_msg = {"event": "say", "text": f"{sender_p['name']} mandÃ³ un audio.", "audio": intro_url}
+    intro_msg = {"event": "say", "text": f"{sender_p['name']} mandó un audio.", "audio": intro_url}
     if to == "all":
         for p in room["players"]:
             if not p.get("gone") and p["id"] != sender_p["id"]:
@@ -1357,21 +1357,21 @@ async def voice_answer(code: str, request: Request, sender: int = -1):
         return Response(status_code=400)
     text = await transcribe_clip(body)
     if not text:
-        await narrate(room, f"No te escuchÃ© bien, {player['name']}. ProbÃ¡ de nuevo o escribila.",
+        await narrate(room, f"No te escuché bien, {player['name']}. Probá de nuevo o escribila.",
                       to=player)
         return {"heard": False}
     if room["phase"] == "ahorcado":
         _, _, _, _, _, parse_guess = ah_helpers()
         guess = parse_guess(text)
         if guess is None:
-            await narrate(room, f"{player['name']}, no entendÃ­ tu letra. DecÃ­ una letra o la palabra.")
+            await narrate(room, f"{player['name']}, no entendí tu letra. Decí una letra o la palabra.")
             return {"heard": False, "text": text}
         await ah_guess(room, player, guess)
         return {"heard": True, "text": text}
     question = room.get("question")
     idx = match_option(text, question["options"]) if question else None
     if idx is None:
-        await narrate(room, f"{player['name']}, no entendÃ­ tu respuesta. DecÃ­ A, B o C.")
+        await narrate(room, f"{player['name']}, no entendí tu respuesta. Decí A, B o C.")
         return {"heard": False, "text": text}
     await resolve_answer(room, player, idx)
     return {"heard": True, "text": text, "idx": idx}
@@ -1409,7 +1409,7 @@ def match_option(text, options):
     t = text.lower().strip()
     if not t:
         return None
-    m = re.search(r"(?:opci[oÃ³]n|la|letra)\s+([abc])\b", t)
+    m = re.search(r"(?:opci[oó]n|la|letra)\s+([abc])\b", t)
     if m:
         return "abc".index(m.group(1))
     for i, word in enumerate(("primera", "segunda", "tercera")):
@@ -1491,7 +1491,7 @@ PAGE = """<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ð Amor con aroma a cafÃ© ð</title>
+<title>💕 Amor con aroma a café 💕</title>
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -1526,7 +1526,7 @@ PAGE = """<!DOCTYPE html>
   }
   #pregunta { max-width: 34rem; }
   #pregunta-texto { font-size: 1.5rem; font-weight: bold; color: #ffe082; }
-  /* Cada opciÃ³n con su color, alto contraste, letra grande (baja visiÃ³n). */
+  /* Cada opción con su color, alto contraste, letra grande (baja visión). */
   #pregunta .opcion[data-idx="0"] { background: #f9a825; color: #000; font-weight: bold; }
   #pregunta .opcion[data-idx="1"] { background: #00c853; color: #000; font-weight: bold; }
   #pregunta .opcion[data-idx="2"] { background: #29b6f6; color: #000; font-weight: bold; }
@@ -1559,13 +1559,13 @@ PAGE = """<!DOCTYPE html>
 </head>
 <body>
   <header>
-    <h1>ð Amor con aroma a cafÃ© ð</h1>
-    <div class="icons" aria-hidden="true">â ð§ ð§ ð</div>
+    <h1>💕 Amor con aroma a café 💕</h1>
+    <div class="icons" aria-hidden="true">☕ 🧉 🧁 💗</div>
   </header>
 
   <main>
     <p class="visually-hidden">
-      Juego de la ruleta con amigos: Verdad o Reto, Trivia, Refranes y PaÃ­ses.
+      Juego de la ruleta con amigos: Verdad o Reto, Trivia, Refranes y Países.
       Todo se hace con botones y cada jugada se anuncia en voz alta.
     </p>
     <p id="estado" role="status" tabindex="-1">Bienvenido a la mesa.</p>
@@ -1573,46 +1573,46 @@ PAGE = """<!DOCTYPE html>
     <section id="pantalla-inicio" aria-label="Pantalla de inicio">
       <button id="btn-solo" aria-label="Jugar solo, sin amigos">Jugar solo</button>
       <button id="btn-sala" class="secondary" aria-label="Sala de juegos, para jugar con amigos">Sala de juegos (con amigos)</button>
-      <button id="btn-paises" class="secondary" aria-label="Ruleta de PaÃ­ses, para jugar con amigos">Ruleta de PaÃ­ses</button>
+      <button id="btn-paises" class="secondary" aria-label="Ruleta de Países, para jugar con amigos">Ruleta de Países</button>
     </section>
 
-    <section id="pantalla-modo" hidden aria-label="A quÃ© querÃ©s jugar">
-      <button id="btn-modo-cat" aria-label="Ruleta de todas las categorÃ­as">Ruleta de categorÃ­as</button>
-      <button id="btn-modo-paises" class="secondary" aria-label="Ruleta de paÃ­ses">Ruleta de paÃ­ses</button>
+    <section id="pantalla-modo" hidden aria-label="A qué querés jugar">
+      <button id="btn-modo-cat" aria-label="Ruleta de todas las categorías">Ruleta de categorías</button>
+      <button id="btn-modo-paises" class="secondary" aria-label="Ruleta de países">Ruleta de países</button>
       <button id="btn-modo-ahorcado" class="ahorcado-btn" aria-label="El ahorcado, adivinar la palabra">El ahorcado</button>
     </section>
 
-    <section id="pantalla-cupos" hidden aria-label="CuÃ¡ntos jugadores">
-      <label for="cupos-select" id="cupos-label">Â¿CuÃ¡ntos jugadores son? De 2 a 20.</label><br>
+    <section id="pantalla-cupos" hidden aria-label="Cuántos jugadores">
+      <label for="cupos-select" id="cupos-label">¿Cuántos jugadores son? De 2 a 20.</label><br>
       <select id="cupos-select" aria-labelledby="cupos-label"></select><br>
       <button id="btn-crear" aria-label="Crear la sala de juego">Crear la sala</button>
       <button id="btn-volver" class="secondary" aria-label="Volver a la pantalla de inicio">Volver</button>
     </section>
 
     <section id="pantalla-unirse" hidden aria-label="Unirse a la sala">
-      <label for="nombre-input" id="nombre-label">Tu nombre (si no escribÃ­s nada, sos Jugador N):</label><br>
+      <label for="nombre-input" id="nombre-label">Tu nombre (si no escribís nada, sos Jugador N):</label><br>
       <input id="nombre-input" type="text" autocomplete="off" aria-labelledby="nombre-label"><br>
       <button id="btn-entrar" aria-label="Entrar a jugar">Entrar a jugar</button>
     </section>
 
     <section id="sala" hidden aria-label="Sala de juego">
-      <button id="btn-musica" class="secondary info-btn" aria-pressed="false" aria-label="Prender o apagar la musiquita de fondo">ðµ Musiquita: apagada</button>
+      <button id="btn-musica" class="secondary info-btn" aria-pressed="false" aria-label="Prender o apagar la musiquita de fondo">🎵 Musiquita: apagada</button>
       <div id="compartir" hidden>
-        PasÃ¡ este link a tus amigos:<br><strong id="link"></strong><br>
-        <button id="btn-copiar" class="secondary" aria-label="Copiar el link para invitar a tus amigos"><span aria-hidden="true">ð¤ </span>Copiar el link</button>
+        Pasá este link a tus amigos:<br><strong id="link"></strong><br>
+        <button id="btn-copiar" class="secondary" aria-label="Copiar el link para invitar a tus amigos"><span aria-hidden="true">📤 </span>Copiar el link</button>
       </div>
       <div id="elegir-juego" hidden>
-        <h2>Â¿A quÃ© jugamos?</h2>
-        <button id="btn-juego-cat" aria-label="Jugar a la ruleta de categorÃ­as">Ruleta de categorÃ­as</button>
-        <button id="btn-juego-paises" class="secondary" aria-label="Jugar a la ruleta de paÃ­ses">Ruleta de paÃ­ses</button>
+        <h2>¿A qué jugamos?</h2>
+        <button id="btn-juego-cat" aria-label="Jugar a la ruleta de categorías">Ruleta de categorías</button>
+        <button id="btn-juego-paises" class="secondary" aria-label="Jugar a la ruleta de países">Ruleta de países</button>
         <button id="btn-juego-ahorcado" class="ahorcado-btn" aria-label="Jugar al ahorcado">El ahorcado</button>
-        <button id="btn-info" class="secondary info-btn" aria-label="De quÃ© se trata el juego elegido">Â¿De quÃ© se trata?</button>
+        <button id="btn-info" class="secondary info-btn" aria-label="De qué se trata el juego elegido">¿De qué se trata?</button>
       </div>
       <div id="elegir-info" hidden>
-        <p class="info-titulo">Â¿De quÃ© se trata cada juego?</p>
-        <button id="btn-info-cat" class="secondary info-btn" aria-label="De quÃ© se trata la ruleta de categorÃ­as">Ruleta de categorÃ­as</button>
-        <button id="btn-info-paises" class="secondary info-btn" aria-label="De quÃ© se trata la ruleta de paÃ­ses">Ruleta de paÃ­ses</button>
-        <button id="btn-info-ahorcado" class="secondary info-btn" aria-label="De quÃ© se trata el ahorcado">El ahorcado</button>
+        <p class="info-titulo">¿De qué se trata cada juego?</p>
+        <button id="btn-info-cat" class="secondary info-btn" aria-label="De qué se trata la ruleta de categorías">Ruleta de categorías</button>
+        <button id="btn-info-paises" class="secondary info-btn" aria-label="De qué se trata la ruleta de países">Ruleta de países</button>
+        <button id="btn-info-ahorcado" class="secondary info-btn" aria-label="De qué se trata el ahorcado">El ahorcado</button>
       </div>
       <button id="btn-empezar" hidden aria-label="Empezar la partida ya">Empezar la partida</button>
       <p id="temporizador" role="timer" aria-hidden="true"></p>
@@ -1620,19 +1620,19 @@ PAGE = """<!DOCTYPE html>
       <ul id="jugadores" role="status" aria-label="Jugadores en la mesa"></ul>
 
       <div id="categorias" hidden>
-        <label for="elegir-cat" id="elegir-label">O elegÃ­ la categorÃ­a vos:</label><br>
+        <label for="elegir-cat" id="elegir-label">O elegí la categoría vos:</label><br>
         <select id="elegir-cat" aria-labelledby="elegir-label"></select>
-        <button id="btn-elegir" class="secondary chatbtn" aria-label="Jugar la categorÃ­a elegida">Jugar esta categorÃ­a</button>
+        <button id="btn-elegir" class="secondary chatbtn" aria-label="Jugar la categoría elegida">Jugar esta categoría</button>
       </div>
 
-      <button id="btn-girar" hidden disabled><span aria-hidden="true">ð¡ </span><span id="btn-girar-text">Girar la ruleta</span></button>
+      <button id="btn-girar" hidden disabled><span aria-hidden="true">🎡 </span><span id="btn-girar-text">Girar la ruleta</span></button>
 
       <div id="pregunta" hidden>
         <p id="pregunta-texto" role="status"></p>
         <button class="opcion secondary" data-idx="0"></button>
         <button class="opcion secondary" data-idx="1"></button>
         <button class="opcion secondary" data-idx="2"></button>
-        <button id="btn-voz-resp" aria-label="Responder por voz: decÃ­ A, B o C">Responder por voz</button>
+        <button id="btn-voz-resp" aria-label="Responder por voz: decí A, B o C">Responder por voz</button>
       </div>
 
       <div id="ahorcado" hidden>
@@ -1640,7 +1640,7 @@ PAGE = """<!DOCTYPE html>
         <p id="ah-tablero" aria-label="La palabra"></p>
         <p id="ah-intentos"></p>
         <p id="ah-letras"></p>
-        <label for="ah-input" id="ah-label">EscribÃ­ una letra o la palabra entera:</label><br>
+        <label for="ah-input" id="ah-label">Escribí una letra o la palabra entera:</label><br>
         <input id="ah-input" type="text" autocomplete="off" aria-labelledby="ah-label">
         <button id="btn-ah-mandar" aria-label="Mandar la letra o palabra escrita">Mandar</button>
         <button id="btn-ah-voz" class="secondary" aria-label="Decir una letra o la palabra por voz">Decirla por voz</button>
@@ -1648,7 +1648,7 @@ PAGE = """<!DOCTYPE html>
 
       <div id="reto-verdad" hidden>
         <p id="carta-texto" role="status"></p>
-        <button id="btn-listo" aria-label="Listo, ya lo hice">Â¡Listo, ya lo hice!</button>
+        <button id="btn-listo" aria-label="Listo, ya lo hice">¡Listo, ya lo hice!</button>
         <button id="btn-pasar" class="secondary" aria-label="Pasar, sin punto">Paso</button>
       </div>
 
@@ -1658,8 +1658,8 @@ PAGE = """<!DOCTYPE html>
         <ul id="chat-log" aria-live="polite" aria-label="Mensajes del chat"></ul>
         <label for="chat-para" class="visually-hidden">Destinatario del mensaje</label>
         <select id="chat-para" aria-label="Destinatario del mensaje"></select>
-        <label for="chat-texto" class="visually-hidden">EscribÃ­ tu mensaje</label>
-        <input id="chat-texto" type="text" autocomplete="off" placeholder="EscribÃ­ un mensaje (opcional)">
+        <label for="chat-texto" class="visually-hidden">Escribí tu mensaje</label>
+        <input id="chat-texto" type="text" autocomplete="off" placeholder="Escribí un mensaje (opcional)">
         <button id="btn-chat" class="chatbtn" aria-label="Mandar el mensaje de texto">Mandar mensaje</button>
         <button id="btn-grabar" class="chatbtn secondary" aria-label="Grabar una nota de voz">Grabar nota de voz</button>
       </div>
@@ -1767,7 +1767,7 @@ function startTicking() {
 }
 function stopTicking() { if (clockTimer) { clearInterval(clockTimer); clockTimer = null; } }
 
-// --- La ruleta (canvas decorativo; el control real es el botÃ³n) ---
+// --- La ruleta (canvas decorativo; el control real es el botón) ---
 const canvas = $("wheel"), ctx = canvas.getContext("2d");
 let LABELS = ["RETO", "VERDAD"];
 let COLORS = ["#e53935", "#1e88e5"];
@@ -1853,12 +1853,12 @@ const inviteCode = parts[2] === "sala" ? (parts[3] || "").toUpperCase() : null;
 
 (function fillCats() {
   const sel = $("elegir-cat");
-  const cats = ["Verdad o Reto|verdad_reto", "Deportes|deportes", "FÃºtbol mundial|fÃºtbol mundial",
-    "PelÃ­culas|pelÃ­culas", "Series|series", "Cultura|cultura", "Historia|historia", "Ciencia|ciencia",
+  const cats = ["Verdad o Reto|verdad_reto", "Deportes|deportes", "Fútbol mundial|fútbol mundial",
+    "Películas|películas", "Series|series", "Cultura|cultura", "Historia|historia", "Ciencia|ciencia",
     "Arte|arte", "Comida|comida", "Nombres y apellidos|nombres y apellidos", "Marcas|marcas",
-    "Animales|animales", "PolÃ­tica|polÃ­tica", "ReligiÃ³n|religiÃ³n", "MÃºsica|mÃºsica",
-    "GeografÃ­a|geografÃ­a", "TecnologÃ­a|tecnologÃ­a", "Videojuegos|videojuegos",
-    "Refranes|refranes", "PaÃ­ses|paÃ­ses"];
+    "Animales|animales", "Política|política", "Religión|religión", "Música|música",
+    "Geografía|geografía", "Tecnología|tecnología", "Videojuegos|videojuegos",
+    "Refranes|refranes", "Países|países"];
   for (const item of cats) {
     const label = item.split("|")[0], val = item.split("|")[1];
     const opt = document.createElement("option");
@@ -1879,10 +1879,10 @@ const inviteCode = parts[2] === "sala" ? (parts[3] || "").toUpperCase() : null;
 if (inviteCode) {
   $("nombre-input").value = myName;
   show("pantalla-unirse");
-  announce("Te invitaron a una mesa. Si querÃ©s, escribÃ­ tu nombre; si no, sos Jugador N. TocÃ¡ Entrar a jugar.");
+  announce("Te invitaron a una mesa. Si querés, escribí tu nombre; si no, sos Jugador N. Tocá Entrar a jugar.");
 } else {
   show("pantalla-inicio");
-  announce("Bienvenido. TenÃ©s tres opciones: Jugar solo, Sala de juegos de 2 a 20 jugadores, o Ruleta de PaÃ­ses.");
+  announce("Bienvenido. Tenés tres opciones: Jugar solo, Sala de juegos de 2 a 20 jugadores, o Ruleta de Países.");
 }
 let pendingMode = "sala";
 
@@ -1901,7 +1901,7 @@ $("btn-solo").addEventListener("click", () => {
   unlockAudio();
   pendingMode = "solo";
   show("pantalla-modo");
-  announce("Â¿A quÃ© querÃ©s jugar? Ruleta de categorÃ­as, ruleta de paÃ­ses, o el ahorcado.");
+  announce("¿A qué querés jugar? Ruleta de categorías, ruleta de países, o el ahorcado.");
 });
 
 $("btn-modo-cat").addEventListener("click", () => { unlockAudio(); crearYEntrar(pendingMode); });
@@ -1919,19 +1919,19 @@ $("btn-sala").addEventListener("click", () => {
   unlockAudio();
   pendingMode = "sala";
   show("pantalla-cupos");
-  announce("Â¿CuÃ¡ntos jugadores son? ElegÃ­ un nÃºmero de 2 a 20 y tocÃ¡ Crear la sala.");
+  announce("¿Cuántos jugadores son? Elegí un número de 2 a 20 y tocá Crear la sala.");
 });
 
 $("btn-paises").addEventListener("click", () => {
   unlockAudio();
   pendingMode = "paises";
   show("pantalla-cupos");
-  announce("Ruleta de PaÃ­ses. Â¿CuÃ¡ntos jugadores son? ElegÃ­ un nÃºmero de 2 a 20 y tocÃ¡ Crear la sala.");
+  announce("Ruleta de Países. ¿Cuántos jugadores son? Elegí un número de 2 a 20 y tocá Crear la sala.");
 });
 
 $("btn-volver").addEventListener("click", () => {
   show("pantalla-inicio");
-  announce("TocÃ¡ Jugar solo o Sala de juego.");
+  announce("Tocá Jugar solo o Sala de juego.");
 });
 
 $("btn-crear").addEventListener("click", async () => {
@@ -1958,7 +1958,7 @@ $("btn-copiar").addEventListener("click", async () => {
     await navigator.clipboard.writeText($("link").textContent);
     announce("Link copiado. Pegalo en un mensaje para invitar a tus amigos.");
   } catch (err) {
-    announce("No pude copiarlo. El link estÃ¡ escrito arriba.");
+    announce("No pude copiarlo. El link está escrito arriba.");
   }
 });
 
@@ -1984,13 +1984,13 @@ function connect(code, name) {
       myId = msg.id; myName = msg.name;
       localStorage.setItem("cafe_nombre", myName);
       const codeSpelled = code.split("").join(" ");
-      announce("EstÃ¡s en la mesa " + codeSpelled + " como " + myName + ".");
+      announce("Estás en la mesa " + codeSpelled + " como " + myName + ".");
     } else if (msg.event === "state") {
       onState(msg);
     } else if (msg.event === "your_turn") {
-      if (msg.kind === "country") announce("Es tu turno. TocÃ¡ el botÃ³n Girar la ruleta de paÃ­ses.");
-      else if (msg.kind === "ahorcado") announce("Es tu turno. DecÃ­ una letra con el botÃ³n Decirla por voz, o escribila y tocÃ¡ Mandar.");
-      else announce("Es tu turno. TocÃ¡ el botÃ³n Girar la ruleta, o elegÃ­ la categorÃ­a y tocÃ¡ Jugar esta categorÃ­a.");
+      if (msg.kind === "country") announce("Es tu turno. Tocá el botón Girar la ruleta de países.");
+      else if (msg.kind === "ahorcado") announce("Es tu turno. Decí una letra con el botón Decirla por voz, o escribila y tocá Mandar.");
+      else announce("Es tu turno. Tocá el botón Girar la ruleta, o elegí la categoría y tocá Jugar esta categoría.");
     } else if (msg.event === "spin_start") {
       if (msg.labels) { LABELS = msg.labels; COLORS = PALETTE; }
       announce("Gira la ruleta de " + msg.player + "...");
@@ -2013,10 +2013,10 @@ function connect(code, name) {
     }
   };
   ws.onclose = (ev) => {
-    if (ev.code === 4004) announce("Esa mesa ya no existe. CreÃ¡ una nueva.");
-    else if (ev.code === 4009) announce("La sala estÃ¡ llena. Pediles que armen otra.");
+    if (ev.code === 4004) announce("Esa mesa ya no existe. Creá una nueva.");
+    else if (ev.code === 4009) announce("La sala está llena. Pediles que armen otra.");
     else {
-      announce("Se cortÃ³ la conexiÃ³n. Reintentando...");
+      announce("Se cortó la conexión. Reintentando...");
       setTimeout(() => connect(code, myName), 2000);
     }
   };
@@ -2040,7 +2040,7 @@ function onState(msg) {
   $("btn-girar").hidden = !spinPhases.includes(msg.phase);
   $("btn-girar").disabled = !mine || msg.spinning;
   let girarText = "Girar la ruleta";
-  if (msg.phase === "country_spin_ready") girarText = "Girar la ruleta de paÃ­ses";
+  if (msg.phase === "country_spin_ready") girarText = "Girar la ruleta de países";
   $("btn-girar-text").textContent = msg.spinning ? "Girando..." : (mine ? girarText : "Esperando a " + (msg.turn_name || "alguien"));
   $("reto-verdad").hidden = !(mine && msg.phase === "verdad_reto");
   if (msg.phase !== "question") { $("pregunta").hidden = true; }
@@ -2059,7 +2059,7 @@ function onState(msg) {
     }
     $("ah-tablero").textContent = ah.board;
     $("ah-intentos").textContent = "Quedan " + ah.attempts + " intentos para esta palabra";
-    $("ah-letras").textContent = ah.wrong.length ? "Letras que no estÃ¡n: " + ah.wrong.join(", ") : "";
+    $("ah-letras").textContent = ah.wrong.length ? "Letras que no están: " + ah.wrong.join(", ") : "";
     $("btn-ah-mandar").disabled = !mine;
     $("btn-ah-voz").disabled = !mine;
     $("ah-input").disabled = !mine;
@@ -2076,8 +2076,8 @@ function onQuestion(msg) {
   $("pregunta-texto").textContent = msg.q;
   const mine = msg.player === myId;
   document.querySelectorAll("#pregunta .opcion").forEach((btn, i) => {
-    btn.textContent = "OpciÃ³n " + letters[i] + ": " + msg.options[i];
-    btn.setAttribute("aria-label", "OpciÃ³n " + letters[i] + ": " + msg.options[i]);
+    btn.textContent = "Opción " + letters[i] + ": " + msg.options[i];
+    btn.setAttribute("aria-label", "Opción " + letters[i] + ": " + msg.options[i]);
     btn.disabled = !mine;
   });
   $("btn-voz-resp").disabled = !mine;
@@ -2111,9 +2111,9 @@ $("btn-juego-ahorcado").addEventListener("click", () => {
   if (ws && ws.readyState === 1) ws.send(JSON.stringify({action: "juego", game: "ahorcado"}));
 });
 const LOCAL_DESCRIPTIONS = {
-  categorias: "La ruleta de categorÃ­as: girÃ¡s la ruleta, te toca una categorÃ­a y respondÃ©s una pregunta con tres opciones. Con 3 aciertos en una categorÃ­a la pasÃ¡s de nivel; el primero en pasar 3 categorÃ­as gana.",
-  paises: "La ruleta de paÃ­ses: primero girÃ¡s la ruleta de paÃ­ses y despuÃ©s respondÃ©s preguntas por ese paÃ­s. El primero en ganar 2 paÃ­ses gana la partida.",
-  ahorcado: "El ahorcado: adivinÃ¡s la palabra letra por letra, hablando o escribiendo. Si la letra estÃ¡, seguÃ­s jugando; si no, pasa el turno. El que adivina la palabra sube de nivel; el primero en pasar el nivel 5 gana.",
+  categorias: "La ruleta de categorías: girás la ruleta, te toca una categoría y respondés una pregunta con tres opciones. Con 3 aciertos en una categoría la pasás de nivel; el primero en pasar 3 categorías gana.",
+  paises: "La ruleta de países: primero girás la ruleta de países y después respondés preguntas por ese país. El primero en ganar 2 países gana la partida.",
+  ahorcado: "El ahorcado: adivinás la palabra letra por letra, hablando o escribiendo. Si la letra está, seguís jugando; si no, pasa el turno. El que adivina la palabra sube de nivel; el primero en pasar el nivel 5 gana.",
 };
 function askDescription(game) {
   if (salaCode && ws && ws.readyState === 1) ws.send(JSON.stringify({action: "descripcion", game: game}));
@@ -2148,13 +2148,13 @@ $("btn-ah-voz").addEventListener("click", async () => {
       announce("Escuchando tu letra...");
       try {
         const res = await fetch("/amor-con-aroma-a-cafe/api/voz-respuesta/" + salaCode + "?sender=" + myId, {method: "POST", body: blob});
-        if (!res.ok) announce("No te entendÃ­. Escribila o probÃ¡ de nuevo.");
+        if (!res.ok) announce("No te entendí. Escribila o probá de nuevo.");
       } catch (err) { announce("No pude mandar tu voz. Escribila mejor."); }
     };
     ahRecorder.start();
     $("btn-ah-voz").textContent = "Parar y mandar";
-    announce("Grabando. DecÃ­ una letra o la palabra, y tocÃ¡ el botÃ³n de nuevo.");
-  } catch (err) { announce("No pude usar el micrÃ³fono. Escribila mejor."); }
+    announce("Grabando. Decí una letra o la palabra, y tocá el botón de nuevo.");
+  } catch (err) { announce("No pude usar el micrófono. Escribila mejor."); }
 });
 
 function oneTapVoice(id) {
@@ -2167,7 +2167,7 @@ function oneTapVoice(id) {
       recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
       const stopped = new Promise((res) => { recorder.onstop = res; });
       recorder.start();
-      announce("Te escucho. HablÃ¡ tranquilo: se manda sola cuando terminÃ¡s.");
+      announce("Te escucho. Hablá tranquilo: se manda sola cuando terminás.");
       const mic = new (window.AudioContext || window.webkitAudioContext)();
       const analyser = mic.createAnalyser();
       analyser.fftSize = 512;
@@ -2186,14 +2186,14 @@ function oneTapVoice(id) {
       await stopped;
       stream.getTracks().forEach((t) => t.stop());
       mic.close();
-      if (!heard) { announce("No escuchÃ© nada. TocÃ¡ el botÃ³n y hablÃ¡ mÃ¡s cerca del micrÃ³fono."); return; }
+      if (!heard) { announce("No escuché nada. Tocá el botón y hablá más cerca del micrófono."); return; }
       const blob = new Blob(chunks, {type: recorder.mimeType || "audio/webm"});
       announce("Mandando lo que dijiste...");
       try {
         const res = await fetch("/amor-con-aroma-a-cafe/api/voz-respuesta/" + salaCode + "?sender=" + myId, {method: "POST", body: blob});
-        if (!res.ok) announce("No te entendÃ­. ProbÃ¡ de nuevo o escribila.");
+        if (!res.ok) announce("No te entendí. Probá de nuevo o escribila.");
       } catch (err) { announce("No pude mandar tu voz. Escribila mejor."); }
-    } catch (err) { announce("No pude usar el micrÃ³fono. Escribila mejor."); }
+    } catch (err) { announce("No pude usar el micrófono. Escribila mejor."); }
   });
 }
 oneTapVoice("btn-voz-resp");
@@ -2237,17 +2237,17 @@ $("btn-grabar").addEventListener("click", async () => {
       announce("Mandando tu nota de voz...");
       try {
         const res = await fetch("/amor-con-aroma-a-cafe/api/voz/" + salaCode + "?to=" + encodeURIComponent(to) + "&sender=" + myId, {method: "POST", body: blob});
-        announce(res.ok ? "Nota de voz mandada." : "No pude mandar la nota. ProbÃ¡ de nuevo.");
+        announce(res.ok ? "Nota de voz mandada." : "No pude mandar la nota. Probá de nuevo.");
       } catch (err) {
-        announce("No pude mandar la nota. ProbÃ¡ de nuevo.");
+        announce("No pude mandar la nota. Probá de nuevo.");
       }
     };
     recorder.start();
     $("btn-grabar").textContent = "Parar y mandar";
-    $("btn-grabar").setAttribute("aria-label", "Parar la grabaciÃ³n y mandar la nota de voz");
-    announce("Grabando. TocÃ¡ Parar y mandar cuando termines.");
+    $("btn-grabar").setAttribute("aria-label", "Parar la grabación y mandar la nota de voz");
+    announce("Grabando. Tocá Parar y mandar cuando termines.");
   } catch (err) {
-    announce("No tengo permiso para el micrÃ³fono. PodÃ©s escribir el mensaje.");
+    announce("No tengo permiso para el micrófono. Podés escribir el mensaje.");
   }
 });
 </script>
