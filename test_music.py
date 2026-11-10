@@ -221,6 +221,8 @@ class MusicVoiceStatusTests(unittest.IsolatedAsyncioTestCase):
         spoken = voice.await_args[0][1]
         self.assertIn("2 canciones", spoken)
         self.assertIn("Artista", spoken)
+        self.assertIn("Tema 1", spoken)
+        self.assertIn("El primero de la lista es Tema 1, de Artista", spoken)
 
     async def test_not_found_status_is_spoken(self):
         with patch.object(app, "apple_music_results", AsyncMock(return_value=[])), \
