@@ -253,8 +253,10 @@ async def telegram(method: str, **kwargs):
 
 async def send_text(chat_id: int, text: str, **kwargs):
     chunks = [text[i : i + 4000] for i in range(0, len(text), 4000)] or [""]
+    result = None
     for chunk in chunks:
-        await telegram("sendMessage", chat_id=chat_id, text=chunk, **kwargs)
+        result = await telegram("sendMessage", chat_id=chat_id, text=chunk, **kwargs)
+    return result
 
 
 def speech_text(text: str) -> str:
@@ -337,8 +339,10 @@ async def send_voice(chat_id: int, text: str):
             log.error("Telegram sendVoice failed: %s %s", response.status_code, response.text[:500])
         response.raise_for_status()
         log.info("Sent individual voice message for chat %s", chat_id)
+        return (response.json().get("result") or {}).get("message_id")
     except Exception:
         log.exception("Could not synthesize or send voice")
+    return None
 
 
 async def complete_openrouter(messages):
@@ -1540,6 +1544,55 @@ TRIVIA_COUNTRY_PRIZES = {
 trivia_games = {}
 trivia_lineups = {}
 trivia_media = {}
+# chat_id -> message_id of the one live ruleta keyboard (tidy-chat rule).
+trivia_last_keyboard = {}
+
+
+async def trivia_clear_keyboard(chat_id: int):
+    """Retire the previous ruleta keyboard so old buttons never pile up."""
+    old = trivia_last_keyboard.pop(chat_id, None)
+    if old:
+        try:
+            await telegram(
+                "editMessageReplyMarkup", chat_id=chat_id,
+                message_id=old, reply_markup={"inline_keyboard": []},
+            )
+        except Exception:
+            pass  # message gone or already cleared; nothing to clean
+
+
+async def trivia_send_keyboard(chat_id: int, text: str, keyboard):
+    """Post the next ruleta keyboard: at most ONE live keyboard at a time."""
+    await trivia_clear_keyboard(chat_id)
+    result = await send_text(
+        chat_id, text, reply_markup={"inline_keyboard": keyboard},
+    )
+    mid = (result or {}).get("message_id")
+    if isinstance(mid, int):
+        trivia_last_keyboard[chat_id] = mid
+    return mid
+
+
+def trivia_track(game, *results):
+    """Remember bot message ids so a finished game can tidy up after itself."""
+    if not game:
+        return
+    sent = game.setdefault("sent_ids", [])
+    for result in results:
+        mid = result.get("message_id") if isinstance(result, dict) else result
+        if isinstance(mid, int):
+            sent.append(mid)
+
+
+async def trivia_delete_flow(chat_id: int, game):
+    """On exit the game deletes its own messages, leaving one summary line."""
+    trivia_last_keyboard.pop(chat_id, None)
+    for mid in game.get("sent_ids", []):
+        try:
+            await telegram("deleteMessage", chat_id=chat_id, message_id=mid)
+        except Exception:
+            log.debug("Could not delete ruleta message %s", mid)
+    game["sent_ids"] = []
 
 
 TRIVIA_NUMBER_WORDS = {
@@ -1746,19 +1799,21 @@ async def send_voice_audio(chat_id: int, audio: bytes, filename="ruleta.ogg"):
         if response.status_code >= 400:
             log.error("Telegram sendVoice failed: %s %s", response.status_code, response.text[:500])
         response.raise_for_status()
+        return (response.json().get("result") or {}).get("message_id")
     except Exception:
         log.exception("Could not send trivia voice note")
+    return None
 
 
 async def send_spin_animation(chat_id: int):
     file_id = trivia_media.get("gif_file_id")
     if file_id:
         try:
-            await telegram(
+            result = await telegram(
                 "sendAnimation", chat_id=chat_id, animation=file_id,
                 caption="🎡 Girando la ruleta...",
             )
-            return
+            return (result or {}).get("message_id")
         except Exception:
             trivia_media.pop("gif_file_id", None)
     gif = trivia_media.get("gif_bytes")
@@ -1777,6 +1832,7 @@ async def send_spin_animation(chat_id: int):
     animation = result.get("animation") or result.get("document") or {}
     if animation.get("file_id"):
         trivia_media["gif_file_id"] = animation["file_id"]
+    return result.get("message_id")
 
 
 def parse_trivia_question(text: str):
@@ -1854,7 +1910,7 @@ def trivia_match_answer(user_text: str, options):
 
 
 async def trivia_menu(chat_id: int):
-    await send_text(
+    await trivia_send_keyboard(
         chat_id,
         "🎡 LA RULETA SABROSA\n"
         f"Tenés {TRIVIA_LIVES} vidas por partida: cada error te saca una, "
@@ -1867,12 +1923,12 @@ async def trivia_menu(chat_id: int):
         "Respondés con los botones, o hablado: decí el número o el nombre de la opción. "
         "Las voces cambian en cada ronda: una presenta, otra lee la pregunta y otra reacciona.\n\n"
         "Elegí cómo jugar:",
-        reply_markup={"inline_keyboard": [
+        [
             [{"text": "🎡 Ruleta clásica (categorías)", "callback_data": "trivia:start:classic"}],
             [{"text": "🌍 Ruleta de países (país + categoría)", "callback_data": "trivia:start:countries"}],
             [{"text": "🎭 Elegir mis 3 voces del juego", "callback_data": "trivia:lineup"}],
             [{"text": "⬅️ Volver al menú principal", "callback_data": "mode:menu"}],
-        ]},
+        ],
     )
 
 
@@ -1897,28 +1953,35 @@ async def trivia_begin(chat_id: int, countries_mode: bool):
     }
     mode_line = "con países y categorías cruzados" if countries_mode else "con las categorías"
     name = get_preferred_name(chat_id) or "campeón"
-    await send_text(
+    mid = await trivia_send_keyboard(
         chat_id,
-        f"🎡 Arranca la ruleta {mode_line}. Tenés {TRIVIA_LIVES} vidas y un "
-        "cronómetro de 10 minutos por categoría. "
+        f"🎡 EMPIEZA LA RULETA\nArranca la ruleta {mode_line}. Tenés "
+        f"{TRIVIA_LIVES} vidas y un cronómetro de 10 minutos por categoría. "
         "Girá con el botón de abajo o decime 'girá'.",
-        reply_markup={"inline_keyboard": [
+        [
             [{"text": "🎡 Girar la ruleta", "callback_data": "trivia:spin"}],
             [{"text": "🚪 Salir de la ruleta", "callback_data": "trivia:quit"}],
-        ]},
+        ],
     )
-    await send_voice(
+    game = trivia_games.get(chat_id)
+    trivia_track(game, mid)
+    voice_mid = await send_voice(
         chat_id,
         f"{name}, arranca la ruleta {mode_line}. Tenés {TRIVIA_LIVES} vidas. "
         "Decime girá cuando quieras.",
     )
+    trivia_track(game, voice_mid)
 
 
 async def trivia_end(chat_id: int):
-    trivia_games.pop(chat_id, None)
+    game = trivia_games.pop(chat_id, None)
+    await trivia_clear_keyboard(chat_id)
+    if game:
+        await trivia_delete_flow(chat_id, game)
     await send_text(
         chat_id,
-        "Se terminó la ruleta. Escribí /ruleta o pulsá el botón del menú para jugar de nuevo.",
+        "🏁 TERMINÓ LA RULETA. Escribí /ruleta o pulsá el botón del menú "
+        "para jugar de nuevo.",
     )
 
 
@@ -1964,13 +2027,15 @@ async def trivia_spin(chat_id: int):
                 f"{country} te regala {prize}. Llevás {done} de {total} países. "
                 "Girá de nuevo para conocer tu próximo destino."
             )
-            await send_text(chat_id, text, reply_markup={"inline_keyboard": [
+            mid = await trivia_send_keyboard(chat_id, text, [
                 [{"text": "🌍 Girar por otro país", "callback_data": "trivia:spin"}],
                 [{"text": "🚪 Salir de la ruleta", "callback_data": "trivia:quit"}],
-            ]})
+            ])
+            trivia_track(game, mid)
             try:
                 _, _, announcer = trivia_round_voices(chat_id)
-                await send_voice_audio(chat_id, await synthesize(text, announcer), "premio.ogg")
+                voice_mid = await send_voice_audio(chat_id, await synthesize(text, announcer), "premio.ogg")
+                trivia_track(game, voice_mid)
             except Exception:
                 log.exception("Could not send the prize voice note")
             return
@@ -1978,6 +2043,7 @@ async def trivia_spin(chat_id: int):
         available = [c for c in TRIVIA_CATEGORIES if c not in game["won"]]
         if not available:
             trivia_cancel_timer(game)
+            await trivia_delete_flow(chat_id, game)
             await send_text(
                 chat_id,
                 f"🏆 ¡Ganaste todas las categorías, {name}! Desbloqueaste "
@@ -1990,7 +2056,7 @@ async def trivia_spin(chat_id: int):
     category = random.choice(available)
     announcer, reader, reactor = trivia_round_voices(chat_id)
     try:
-        await send_spin_animation(chat_id)
+        trivia_track(game, await send_spin_animation(chat_id))
     except Exception:
         log.exception("Could not send the spin animation; continuing without it")
     if country and new_country:
@@ -2002,7 +2068,7 @@ async def trivia_spin(chat_id: int):
     try:
         sfx = await trivia_sfx_ogg()
         voice_part = await synthesize(announce, announcer)
-        await send_voice_audio(chat_id, await join_ogg([sfx, voice_part]))
+        trivia_track(game, await send_voice_audio(chat_id, await join_ogg([sfx, voice_part])))
     except Exception:
         log.exception("Could not send the spin announcement")
     question = await trivia_generate_question(
@@ -2010,13 +2076,12 @@ async def trivia_spin(chat_id: int):
     )
     if not question:
         game["phase"] = "ready"
-        await send_text(
+        mid = await trivia_send_keyboard(
             chat_id,
             "No me salió armar la pregunta. Girá de nuevo con el botón o decime 'girá'.",
-            reply_markup={"inline_keyboard": [
-                [{"text": "🎡 Girar la ruleta", "callback_data": "trivia:spin"}],
-            ]},
+            [[{"text": "🎡 Girar la ruleta", "callback_data": "trivia:spin"}]],
         )
+        trivia_track(game, mid)
         return
     game["asked"].append(question["question"])
     game["phase"] = "question"
@@ -2042,6 +2107,7 @@ async def trivia_spin(chat_id: int):
         [{"text": f"{index + 1}. {option[:45]}", "callback_data": f"tans:{index}"}]
         for index, option in enumerate(question["options"])
     ]
+    await trivia_clear_keyboard(chat_id)
     result = await telegram(
         "sendMessage",
         chat_id=chat_id,
@@ -2051,6 +2117,9 @@ async def trivia_spin(chat_id: int):
         reply_markup={"inline_keyboard": keyboard},
     )
     game["current"]["message_id"] = result.get("message_id")
+    if isinstance(game["current"]["message_id"], int):
+        trivia_last_keyboard[chat_id] = game["current"]["message_id"]
+    trivia_track(game, result)
     numbers = ["uno", "dos", "tres", "cuatro"]
     read_text = (
         f"Pregunta: {question['question']} "
@@ -2061,7 +2130,10 @@ async def trivia_spin(chat_id: int):
         + " Decí el número o el nombre de la opción."
     )
     try:
-        await send_voice_audio(chat_id, await synthesize(read_text, reader), "pregunta.ogg")
+        trivia_track(
+            game,
+            await send_voice_audio(chat_id, await synthesize(read_text, reader), "pregunta.ogg"),
+        )
     except Exception:
         log.exception("Could not send the question voice note")
 
@@ -2116,6 +2188,7 @@ async def trivia_handle_answer(chat_id: int, index: int, callback=None):
             )
         except Exception:
             log.exception("Could not mark the trivia answer in place")
+        trivia_last_keyboard.pop(chat_id, None)
     _, _, reactor = current["voices"]
     if index == correct:
         game["streak"] = game.get("streak", 0) + 1
@@ -2164,22 +2237,26 @@ async def trivia_handle_answer(chat_id: int, index: int, callback=None):
             f"{trivia_lives_line(game['lives'])}"
         )
         game_over = game["lives"] <= 0
-    await send_text(chat_id, feedback)
+    trivia_track(game, await send_text(chat_id, feedback))
     try:
-        await send_voice_audio(chat_id, await synthesize(feedback, reactor), "reaccion.ogg")
+        trivia_track(
+            game,
+            await send_voice_audio(chat_id, await synthesize(feedback, reactor), "reaccion.ogg"),
+        )
     except Exception:
         log.exception("Could not send the feedback voice note")
     if game_over:
         await trivia_game_over(chat_id, game, name)
         return
-    await send_text(
+    mid = await trivia_send_keyboard(
         chat_id,
         "¿Seguimos? Girá con el botón o decime 'girá'.",
-        reply_markup={"inline_keyboard": [
+        [
             [{"text": "🎡 Girar de nuevo", "callback_data": "trivia:spin"}],
             [{"text": "🚪 Salir de la ruleta", "callback_data": "trivia:quit"}],
-        ]},
+        ],
     )
+    trivia_track(game, mid)
 
 
 async def trivia_game_over(chat_id: int, game, name: str):
@@ -2202,13 +2279,14 @@ async def trivia_game_over(chat_id: int, game, name: str):
             if game["won"] else "No ganaste ninguna categoría esta vez."
         )
         restart = ""
-    await send_text(
+    await trivia_delete_flow(chat_id, game)
+    await trivia_send_keyboard(
         chat_id,
-        f"💀 Fin de la partida, {name}. {summary}{restart} ¿Revancha?",
-        reply_markup={"inline_keyboard": [
+        f"🏁 TERMINÓ LA RULETA\n💀 Fin de la partida, {name}. {summary}{restart} ¿Revancha?",
+        [
             [{"text": "🎡 Jugar de nuevo", "callback_data": "trivia:menu"}],
             [{"text": "⬅️ Menú principal", "callback_data": "mode:menu"}],
-        ]},
+        ],
     )
     trivia_games.pop(chat_id, None)
 
@@ -2242,10 +2320,13 @@ async def trivia_timer_warning(chat_id: int, gen: int, remaining: int):
         text = f"⏳ ¡Último minuto, {name}! ¡Dale que se acaba!"
     else:
         text = f"⏳ ¡{remaining} segundos, {name}, apurate!"
-    await send_text(chat_id, text)
+    trivia_track(game, await send_text(chat_id, text))
     try:
         announcer = trivia_round_voices(chat_id)[0]
-        await send_voice_audio(chat_id, await synthesize(text, announcer), "cronometro.ogg")
+        trivia_track(
+            game,
+            await send_voice_audio(chat_id, await synthesize(text, announcer), "cronometro.ogg"),
+        )
     except Exception:
         log.exception("Could not send the cronometro warning voice")
 
@@ -2281,7 +2362,12 @@ async def trivia_timer_timeout(chat_id: int, gen: int):
     # The clock restarts with his next spin, not while he is away.
     game["sprint"] = None
     if over:
-        await send_text(chat_id, f"⏰ ¡Se acabó el cronómetro, {name}! Y era tu última vida...")
+        trivia_track(
+            game,
+            await send_text(
+                chat_id, f"⏰ ¡Se acabó el cronómetro, {name}! Y era tu última vida..."
+            ),
+        )
         await trivia_game_over(chat_id, game, name)
         return
     text = (
@@ -2289,13 +2375,17 @@ async def trivia_timer_timeout(chat_id: int, gen: int):
         + trivia_lives_line(game["lives"])
         + " El cronómetro arranca de nuevo con tu próximo giro."
     )
-    await send_text(chat_id, text, reply_markup={"inline_keyboard": [
+    mid = await trivia_send_keyboard(chat_id, text, [
         [{"text": "🎡 Girar de nuevo", "callback_data": "trivia:spin"}],
         [{"text": "🚪 Salir de la ruleta", "callback_data": "trivia:quit"}],
-    ]})
+    ])
+    trivia_track(game, mid)
     try:
         announcer = trivia_round_voices(chat_id)[0]
-        await send_voice_audio(chat_id, await synthesize(text, announcer), "cronometro.ogg")
+        trivia_track(
+            game,
+            await send_voice_audio(chat_id, await synthesize(text, announcer), "cronometro.ogg"),
+        )
     except Exception:
         log.exception("Could not send the timeout voice")
 
@@ -2323,14 +2413,14 @@ async def complete_trivia_lineup(chat_id: int, callback: dict, voices):
         "answerCallbackQuery", callback_query_id=callback["id"],
         text=f"Voces de la ruleta: {', '.join(names)}",
     )
-    await send_text(
+    await trivia_send_keyboard(
         chat_id,
         f"🎭 Tus voces de la ruleta: {names[0]} presenta, {names[1]} lee las "
         f"preguntas y {names[2]} reacciona. Ya podés girar.",
-        reply_markup={"inline_keyboard": [
+        [
             [{"text": "🎡 Ruleta clásica", "callback_data": "trivia:start:classic"}],
             [{"text": "🌍 Ruleta de países", "callback_data": "trivia:start:countries"}],
-        ]},
+        ],
     )
 
 
@@ -2785,6 +2875,19 @@ async def process_update(update: dict):
         log.exception("Failed to process update")
 
 
+async def keep_alive():
+    """Render free sleeps after ~15 minutes without traffic, and his messages
+    then hit a 50+ second cold start (and pending updates get dropped on the
+    restart). Ping our own health endpoint so the bot stays warm. Free plan
+    covers one always-on service (750 h/month)."""
+    while True:
+        await asyncio.sleep(600)
+        try:
+            await http.get(f"{PUBLIC_URL}/", timeout=15)
+        except Exception:
+            log.exception("Keep-alive ping failed")
+
+
 @app.on_event("startup")
 async def startup():
     try:
@@ -2799,6 +2902,7 @@ async def startup():
             payload["secret_token"] = WEBHOOK_SECRET
         await telegram("setWebhook", **payload)
         log.info("Telegram webhook configured at %s/webhook", PUBLIC_URL)
+        asyncio.create_task(keep_alive())
 
 
 @app.on_event("shutdown")
