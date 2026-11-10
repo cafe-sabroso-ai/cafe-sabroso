@@ -56,22 +56,29 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         fresh_state()
 
-    async def test_voices_lists_all_38_numbered(self):
+    async def test_voices_lists_all_43_numbered(self):
         texts, _, _ = await send("/voces")
         listing = "\n".join(texts)
-        self.assertIn("1. Tomás - argentino", listing)
-        self.assertIn("38. Lorena - El Salvador", listing)
+        self.assertIn("1. Voz Lector - estilo NVDA", listing)
+        self.assertIn("6. Tomás - argentino", listing)
+        self.assertIn("43. Lorena - El Salvador", listing)
         self.assertIn("/voz", listing)
 
     async def test_individual_voice_pick(self):
-        texts, voice, _ = await send("/voz 2")
+        texts, voice, _ = await send("/voz 7")
         self.assertEqual(cafe.selected_voice[KEY], "es-AR-ElenaNeural")
         self.assertIn("Elegiste Elena - argentina", texts[0])
         voice.assert_awaited_once()
 
+    async def test_espeak_voice_pick(self):
+        texts, voice, _ = await send("/voz 1")
+        self.assertEqual(cafe.selected_voice[KEY], "espeak-es-419")
+        self.assertIn("Elegiste Voz Lector - estilo NVDA", texts[0])
+        voice.assert_awaited_once()
+
     async def test_invalid_voice_number(self):
         texts, _, _ = await send("/voz 99")
-        self.assertIn("1 al 38", texts[0])
+        self.assertIn("1 al 43", texts[0])
 
     async def test_menu_shows_commands(self):
         texts, _, _ = await send("/menu")
@@ -93,10 +100,10 @@ class GroupSelectionTests(unittest.IsolatedAsyncioTestCase):
     async def test_duo_flow_with_numbered_picks(self):
         texts, _, _ = await send("/duo")
         self.assertIn("0 de 2", texts[0])
-        texts, _, _ = await send("/voz 1")
+        texts, _, _ = await send("/voz 6")
         self.assertIn("voz 1: Tomás", texts[0])
         self.assertIn("2 de 2", texts[0])
-        texts, voice, group_voice = await send("/voz 6")
+        texts, voice, group_voice = await send("/voz 11")
         self.assertEqual(cafe.duo_pairs[KEY], ("es-AR-TomasNeural", "es-CO-SalomeNeural"))
         self.assertTrue(cafe.duo_enabled[KEY])
         combined = texts[0]
@@ -107,19 +114,31 @@ class GroupSelectionTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_duplicate_pick_is_rejected(self):
         await send("/trio")
-        await send("/voz 1")
-        texts, _, _ = await send("/voz 1")
+        await send("/voz 2")
+        texts, _, _ = await send("/voz 2")
         self.assertIn("voces distintas", texts[0])
         self.assertEqual(len(wa.group_selection[KEY]["voices"]), 1)
 
     async def test_story_flow_needs_four_picks(self):
         await send("/historia")
-        for index in (1, 2, 3):
+        for index in (2, 3, 4):
             await send(f"/voz {index}")
         self.assertFalse(cafe.story_enabled[KEY])
-        await send("/voz 4")
+        await send("/voz 5")
         self.assertTrue(cafe.story_enabled[KEY])
         self.assertEqual(len(cafe.story_pairs[KEY]), 4)
+
+    async def test_sextet_flow_needs_six_picks(self):
+        await send("/sexteto")
+        for index in (2, 3, 4, 5, 6):
+            await send(f"/voz {index}")
+        self.assertFalse(cafe.sextet_enabled[KEY])
+        texts, _, group_voice = await send("/voz 7")
+        self.assertTrue(cafe.sextet_enabled[KEY])
+        self.assertEqual(len(cafe.sextet_pairs[KEY]), 6)
+        turns = group_voice.call_args[0][1]
+        self.assertEqual(len(turns), 6)
+        self.assertIn("charlamos entre todos", texts[0])
 
     async def test_menu_cancels_pending_selection(self):
         await send("/duo")
@@ -133,8 +152,8 @@ class GroupSelectionTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_individual_clears_group_modes(self):
         await send("/duo")
-        await send("/voz 1")
-        await send("/voz 6")
+        await send("/voz 2")
+        await send("/voz 7")
         self.assertTrue(cafe.duo_enabled[KEY])
         texts, _, _ = await send("/individual")
         self.assertFalse(cafe.duo_enabled[KEY])
