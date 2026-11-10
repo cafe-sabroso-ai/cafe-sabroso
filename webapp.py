@@ -458,6 +458,12 @@ CATEGORIES = {
     "refranes": "Refranes",
     "países": "Países",
 }
+def _ensure_four_options(bank):
+    """Existing questions already include the correct answer, so 'none' is false."""
+    return [(q, list(opts) + (["Ninguna de las anteriores"] if len(opts) == 3 else []), c)
+            for q, opts, c in bank]
+
+
 MC_BANKS = {
     "deportes": DEPORTES_MC, "fútbol mundial": FUTBOL_MC,
     "películas": PELICULAS_MC, "series": SERIES_MC, "cultura": TRIVIA_MC,
@@ -467,27 +473,21 @@ MC_BANKS = {
     "música": MUSICA_MC, "geografía": GEOGRAFIA_MC, "tecnología": TECNOLOGIA_MC,
     "videojuegos": VIDEOJUEGOS_MC, "refranes": REFRANES_MC, "países": PAISES_MC,
 }
+
+MC_BANKS = {name: _ensure_four_options(bank) for name, bank in MC_BANKS.items()}
+
 MC_USED_KEYS = {cat: "used_" + str(i) for i, cat in enumerate(MC_BANKS)}
 
 WIN_SCORE = 5
 COUNTRIES_TO_WIN = 2
-QUESTIONS_PER_LEVEL = 3
+QUESTIONS_PER_LEVEL = 5
 CATEGORIES_TO_PASS = 3
 TURN_SECONDS = 60
 REMATCH_SECONDS = 10
 NARRATOR_VOICES = ["es-AR-ElenaNeural", "es-AR-TomasNeural", "es-UY-ValentinaNeural"]
-MAX_PLAYERS = 20
+MAX_PLAYERS = 100  # Rocky's cap; spectators join beyond it
 
-GAME_DESCRIPTIONS = {
-    "categorias": "La ruleta de categorías: girás la ruleta, te toca una categoría y "
-                  "respondés una pregunta con tres opciones. Con 3 aciertos en una categoría "
-                  "la pasás de nivel; el primero en pasar 3 categorías gana.",
-    "paises": "La ruleta de países: primero girás la ruleta de países y después respondés "
-              "preguntas por ese país. El primero en ganar 2 países gana la partida.",
-    "ahorcado": "El ahorcado: adivinás la palabra letra por letra, hablando o escribiendo. "
-                "Si la letra está, seguís jugando; si no, pasa el turno. "
-                "El que adivina la palabra sube de nivel; el primero en pasar el nivel 5 gana.",
-}
+GAME_DESCRIPTIONS = {'bomba': 'La bomba: decí una respuesta que cumpla la consigna antes de que se termine la mecha. Si vale, pasás la bomba. Si no vale o se acaba el tiempo, perdés una vida.', 'misterio': 'Resolver el misterio: escuchá el caso y proponé una teoría hablando o escribiendo. Acertar gana el caso. Una teoría lejos de la solución cuesta una vida.', 'categorias': 'Girás la ruleta y seguís en la categoría que salga hasta conseguir cinco respuestas correctas. Empezás con cuatro vidas; cada error cuesta una. Cinco correctas seguidas regalan una vida, sin superar cuatro. Sin vidas volvés al comienzo y girás de nuevo, con cuatro vidas. No quedás eliminado. El primero en pasar tres categorías gana.', 'paises': 'Primero girás la ruleta de países. Girás la ruleta y seguís en la categoría que salga hasta conseguir cinco respuestas correctas. Empezás con cuatro vidas; cada error cuesta una. Cinco correctas seguidas regalan una vida, sin superar cuatro. Sin vidas volvés al comienzo y girás de nuevo, con cuatro vidas. No quedás eliminado. Completá todas las categorías para ganar el país. Dos países ganan la partida.', 'ahorcado': 'El ahorcado: adivinás la palabra letra por letra, hablando o escribiendo. Si la letra está, seguís jugando; si no, pasa el turno. El que adivina la palabra sube de nivel; el primero en pasar el nivel 5 gana.'}
 
 # ---------------------------------------------------------------------------
 # Rooms: everything in memory (party games; a restart ends the sala).
@@ -507,24 +507,62 @@ def connected(room):
     return [p for p in room["players"] if p["ws"] is not None]
 
 
+TEAM_NAMES = ["Rojo", "Azul", "Verde", "Amarillo"]
+
+
+def host_player(room):
+    return next((p for p in room["players"] if not p.get("gone") and not p.get("spectator")), None)
+
+
+def score_owner(room, player):
+    return f"equipo:{player['team']}" if room.get("team_count") and player.get("team") is not None else player["id"]
+
+
+def sync_score(room, player, score):
+    for member in room["players"]:
+        if member is player or (room.get("team_count") and member.get("team") == player.get("team") and not member.get("spectator")):
+            room["scores"][member["id"]] = score
+
+
 def current_player(room):
-    active = [p for p in room["players"] if not p.get("gone")]
+    active = [p for p in room["players"]
+              if not p.get("gone") and not p.get("out") and not p.get("spectator")]
     if not active:
         return None
+    if room.get("team_count"):
+        groups = [[p for p in active if p.get("team") == team] for team in range(room["team_count"])]
+        groups = [g for g in groups if g]
+        if groups:
+            return groups[room["turn"] % len(groups)][(room["turn"] // len(groups)) % len(groups[room["turn"] % len(groups)])]
     return active[room["turn"] % len(active)]
+
+
+def survivor_winner(room, alive):
+    if len(alive) == 1:
+        return alive[0]
+    if room.get("team_count") and alive and len({p.get("team") for p in alive}) == 1:
+        return alive[0]
+    return None
 
 
 def room_state(room) -> dict:
     current = current_player(room)
     return {
         "event": "state",
+        "quiz_lives": room.get("quiz_lives", {}),
+        "quiz_run": room.get("quiz_run"),
+        "team_count": room.get("team_count", 0),
+        "team_names": TEAM_NAMES[:room.get("team_count", 0)],
         "players": [
             {"id": p["id"], "name": p["name"], "score": room["scores"].get(p["id"], 0),
-             "connected": p["ws"] is not None}
+             "connected": p["ws"] is not None, "out": bool(p.get("out")),
+             "spectator": bool(p.get("spectator")), "team": p.get("team")}
             for p in room["players"] if not p.get("gone")
         ],
         "turn": current["id"] if current else None,
         "turn_name": current["name"] if current else None,
+        "turn_number": room["turn"],
+        "case_idx": room.get("misterio", {}).get("case_idx", -1),
         "phase": room["phase"],
         "spinning": room["spinning"],
         "capacity": room["capacity"],
@@ -540,6 +578,19 @@ def room_state(room) -> dict:
             "wrong": sorted(room["ahorcado"]["wrong"]),
             "levels": room["ahorcado"]["levels"],
         } if room["game"] == "ahorcado" and room["ahorcado"]["word"] else None),
+        "bomba": ({
+            "prompt": room["bomba"]["prompt"],
+            "fuse": room["bomba"]["fuse"],
+            "lives": room["bomba"]["lives"],
+            "said": len(room["bomba"]["said"]),
+        } if room["game"] == "bomba" and room["bomba"].get("prompt") else None),
+        "misterio": ({
+            "title": room["misterio"]["case"][0],
+            "case": room["misterio"]["case"][1],
+            "lives": room["misterio"]["lives"],
+            "solved": room["misterio"]["solved"],
+            "to_win": MISTERIO_TO_WIN,
+        } if room["game"] == "misterio" and room["misterio"].get("case") else None),
     }
 
 
@@ -625,7 +676,7 @@ def pick_mc(room, category):
 
 def cancel_timer(room):
     task = room.get("timer_task")
-    if task and not task.done():
+    if task and not task.done() and task is not asyncio.current_task():
         task.cancel()
     room["timer_task"] = None
 
@@ -654,30 +705,57 @@ def chatter_voice(room):
     return CHATTER_VOICES[idx % len(CHATTER_VOICES)]
 
 
+async def turn_chatter(room, player):
+    # Ephemeral prompts: never queue them behind an important announcement.
+    if room["audio_lock"].locked() or room.get("mic_until", 0) > asyncio.get_running_loop().time():
+        return
+    async with room["audio_lock"]:
+        voice = chatter_voice(room)
+        lines = {
+            "es-AR-ElenaNeural": ["Dale, {name}, vos podés.", "Che, {name}, ¡el reloj corre!"],
+            "es-AR-TomasNeural": ["Vamos, {name}, ¡a jugar!", "Dale, {name}, ¡no te duermas!"],
+            "es-UY-ValentinaNeural": ["Bo, {name}, ¡metele!", "Vamos arriba, {name}."],
+            "es-MX-DaliaNeural": ["Órale, {name}, ¡tú puedes!", "Ánimo, {name}, ¡ya casi!"],
+            "es-CO-GonzaloNeural": ["¡Qué más, {name}! Dale con toda.", "Vamos, {name}, ¡tú puedes!"],
+            "es-CL-CatalinaNeural": ["¡Vamos, {name}, al tiro!", "Dale, {name}, ¡qué buena onda!"],
+        }
+        text = random.choice(lines[voice]).format(name=player["name"])
+        from app import synthesize
+        try:
+            data = await ogg_to_mp3(await synthesize(text, voice))
+        except Exception:
+            log.exception("Chatter synthesis failed")
+            return
+        if room.get("mic_until", 0) > asyncio.get_running_loop().time():
+            return
+        await broadcast(room, {"event": "chatter", "text": text,
+                              "audio": f"/amor-con-aroma-a-cafe/audio/{cache_audio(data)}.mp3" if data else None})
+
+
 async def turn_clock(room, player_id):
-    """60s per turn: varied spoken nudges at 30s and 10s, then the turn passes."""
+    """Frequent nudges, independent of synthesis latency; no queued chatter."""
+    chatter_task = None
     try:
-        await asyncio.sleep(TURN_SECONDS - 30)
-        player = next((p for p in room["players"] if p["id"] == player_id), None)
-        if player:
-            await narrate(room, random.choice(CHATTER_30).format(name=player["name"]),
-                          voice=chatter_voice(room))
-        await asyncio.sleep(20)
-        if player:
-            await narrate(room, random.choice(CHATTER_10).format(name=player["name"]),
-                          voice=chatter_voice(room))
-        await asyncio.sleep(10)
-        current = current_player(room)
-        if current and current["id"] == player_id and room["phase"] not in ("lobby", "gameover"):
-            room["turn"] += 1
-            nxt = current_player(room)
-            await narrate(
-                room,
-                f"Se acabó el tiempo. Ahora le toca a {nxt['name']}." if nxt else "Se acabó el tiempo.",
-            )
-            await begin_turn(room)
+        for elapsed in range(6, TURN_SECONDS + 1, 6):
+            await asyncio.sleep(6)
+            current = current_player(room)
+            if not current or current["id"] != player_id or room["phase"] in ("lobby", "gameover", "answering"):
+                return
+            if elapsed < TURN_SECONDS and (chatter_task is None or chatter_task.done()):
+                chatter_task = asyncio.create_task(turn_chatter(room, current))
+        if room["phase"] == "question" and room.get("question") and room["game"] in ("categorias", "paises"):
+            await narrate(room, "Se acabó el tiempo para esta pregunta.")
+            await resolve_answer(room, current, -1)
+            return
+        room["turn"] += 1
+        nxt = current_player(room)
+        await narrate(room, f"Se acabó el tiempo. Ahora le toca a {nxt['name']}." if nxt else "Se acabó el tiempo.")
+        await begin_turn(room)
     except asyncio.CancelledError:
         pass
+    finally:
+        if chatter_task and not chatter_task.done():
+            chatter_task.cancel()
 
 
 async def begin_turn(room):
@@ -685,12 +763,18 @@ async def begin_turn(room):
     cancel_timer(room)
     room["spinning"] = False
     room["question"] = None
+    room["quiz_run"] = None
     player = current_player(room)
     if player is None:
         return
     if room["game"] == "ahorcado":
         await ah_start_turn(room)
         return
+    if room["game"] == "bomba":
+        await bb_next_prompt(room, new_prompt=False)
+        return
+    if room["game"] == "misterio":
+        return  # not turn-based: the floor stays open
     if room["game"] == "paises" and room["country"] is None:
         room["phase"] = "country_spin_ready"
         await broadcast(room, room_state(room))
@@ -705,8 +789,46 @@ async def begin_turn(room):
 async def start_match(room):
     if room["game"] is None:
         return  # a sala waits for the host to pick the game
-    room["scores"] = {p["id"]: 0 for p in room["players"] if not p.get("gone")}
+    room["quiz_lives"] = {p["id"]: 4 for p in room["players"] if not p.get("spectator")}
+    room["quiz_run"] = None
+    if room.get("team_count"):
+        members = [p for p in room["players"] if not p.get("gone") and not p.get("spectator")]
+        if len(members) < 2:
+            await narrate(room, "Para jugar por equipos hacen falta al menos dos jugadores.")
+            return
+        for i, member in enumerate(members):
+            if member.get("team") not in range(room["team_count"]):
+                member["team"] = i % room["team_count"]
+        if len({p["team"] for p in members}) < 2:
+            members[-1]["team"] = (members[0]["team"] + 1) % room["team_count"]
+        for team in range(room["team_count"]):
+            names = [p["name"] for p in members if p["team"] == team]
+            if names:
+                await narrate(room, f"Equipo {TEAM_NAMES[team]}: {', '.join(names)}.")
+    for p in room["players"]:
+        p.pop("out", None)  # a new match un-eliminates everyone
+    room["scores"] = {p["id"]: 0 for p in room["players"]
+                      if not p.get("gone") and not p.get("spectator")}
     room["turn"] = room["starter"]
+    if room["game"] == "bomba":
+        room["bomba"] = {"lives": {p["id"]: BOMBA_LIVES for p in room["players"]
+                                   if not p.get("gone") and not p.get("spectator")},
+                         "prompt": None, "keywords": [], "said": set(),
+                         "used": set(), "fuse": 0}
+        await narrate(room, "¡Arranca La bomba! Digan algo que encaje con la consigna "
+                            f"antes de que se acabe la mecha. {BOMBA_LIVES} vidas cada uno; "
+                            "si les explota tres veces, quedan afuera. ¡El último en pie gana!")
+        await bb_next_prompt(room, new_prompt=True)
+        return
+    if room["game"] == "misterio":
+        room["misterio"] = {"lives": {p["id"]: MISTERIO_LIVES for p in room["players"]
+                                      if not p.get("gone") and not p.get("spectator")},
+                            "solved": {}, "used": set(), "case": None, "case_idx": -1}
+        await narrate(room, "¡Arranca Resolver el misterio! Les cuento un caso y todos "
+                            "tiran su teoría a la vez. El primero en resolver "
+                            f"{MISTERIO_TO_WIN} casos gana. {MISTERIO_LIVES} vidas cada uno.")
+        await mst_next_case(room)
+        return
     if room["game"] == "ahorcado":
         room["ahorcado"] = {"levels": {}, "used": set(), "word": None, "hint": "",
                             "guessed": set(), "wrong": set(), "attempts": 0}
@@ -723,7 +845,7 @@ async def start_match(room):
     if room["game"] == "categorias":
         await narrate(room, f"¡Arranca la partida {room['match']}! El primero en pasar "
                             f"{CATEGORIES_TO_PASS} categorías gana: con {QUESTIONS_PER_LEVEL} "
-                            f"correctas pasás cada categoría. Empieza {player['name']}.")
+                            f"correctas pasás cada categoría. Tenés cuatro vidas. Empieza {player['name']}.")
     else:
         await narrate(room, f"¡Arranca la partida {room['match']}! El primero en llegar a "
                             f"{WIN_SCORE} puntos gana. Empieza {player['name']}.")
@@ -748,17 +870,22 @@ async def end_turn(room):
 
 async def game_over(room, winner):
     room["phase"] = "gameover"
-    others = [p["name"] for p in room["players"] if not p.get("gone") and p["id"] != winner["id"]]
+    if room.get("team_count"):
+        winner_name = "el equipo " + TEAM_NAMES[winner["team"]]
+    else:
+        winner_name = winner["name"]
+    others = [p["name"] for p in room["players"] if not p.get("gone") and not p.get("spectator") and p["id"] != winner["id"]
+              and (not room.get("team_count") or p.get("team") != winner.get("team"))]
     beat = ""
     if len(others) == 1:
         beat = f" Le ganó a {others[0]}."
     elif others:
         beat = " Le ganó a " + ", a ".join(others[:-1]) + " y a " + others[-1] + "."
-    await narrate(room, f"¡Ganó {winner['name']} con {room['scores'][winner['id']]} puntos!{beat} "
+    await narrate(room, f"¡Ganó {winner_name} con {room['scores'].get(winner['id'], 0)} puntos!{beat} "
                         f"En {REMATCH_SECONDS} segundos arranca una partida nueva.")
     await broadcast(room, room_state(room))
     await asyncio.sleep(REMATCH_SECONDS)
-    active = [p for p in room["players"] if not p.get("gone")]
+    active = [p for p in room["players"] if not p.get("gone") and not p.get("spectator")]
     if not active:
         return
     # The starter rotates: the winner never starts twice in a row by default.
@@ -771,9 +898,9 @@ async def do_category_spin(room, player, chosen=None):
     """The wheel lands on a category (random unless the player picked one)."""
     room["spinning"] = True
     if room["game"] == "paises":
-        pool = list(MC_BANKS)
+        pool = [c for c in MC_BANKS if c not in room["country_done"]]
     else:
-        progress = room.get("cat_progress", {}).get(player["id"], {})
+        progress = room.get("cat_progress", {}).get(score_owner(room, player), {})
         pool = [c for c in CATEGORIES
                 if c == "verdad_reto" or progress.get(c, 0) < QUESTIONS_PER_LEVEL]
     cat = chosen or random.choice(pool)
@@ -849,100 +976,148 @@ async def do_spin(room, player):
 
 
 async def ask_question(room, player, category, where=""):
+    cancel_timer(room)
+    run = room.get("quiz_run")
+    if not run or run["player"] != player["id"] or run["category"] != category:
+        run = new_quiz_run(room, player, category)
     pick = pick_mc(room, category)
     question, options, correct = pick
+    options = list(options)
+    correct_text = options[correct]
+    random.shuffle(options)
+    correct = options.index(correct_text)
     room["question"] = {"category": category, "q": question, "options": options, "correct": correct}
     room["phase"] = "question"
-    letters = ["A", "B", "C"]
-    spoken = question + " " + " ".join(f"Opción {letters[i]}: {opt}." for i, opt in enumerate(options))
-    await narrate(room, f"Categoría {CATEGORIES[category]}{where}, para {player['name']}. {spoken}",
+    letters = ["A", "B", "C", "D", "E", "F"]
+    spoken = question + " " + " ".join(f"{opt}." for opt in options)
+    await narrate(room, f"Categoría {CATEGORIES[category]}{where}, para {player['name']}. "
+                  f"Llevás {run['correct']} de 5 correctas. "
+                  f"Tenés {quiz_lives(room, player)} vidas. {spoken}",
                   voice=room["question_voice"])
     await broadcast(room, {
         "event": "question", "category": category, "q": question,
         "options": options, "player": player["id"],
     })
     await broadcast(room, room_state(room))
+    room["timer_task"] = asyncio.create_task(turn_clock(room, player["id"]))
+
+
+QUIZ_START_LIVES = 4
+QUIZ_RUN_LENGTH = 5
+
+
+def quiz_lives(room, player):
+    """Lives are personal, including when category progress belongs to a team."""
+    return room.setdefault("quiz_lives", {}).setdefault(player["id"], QUIZ_START_LIVES)
+
+
+def new_quiz_run(room, player, category):
+    run = {"player": player["id"], "owner": score_owner(room, player),
+           "category": category, "answered": 0, "correct": 0, "mistakes": 0, "streak": 0}
+    room["quiz_run"] = run
+    quiz_lives(room, player)
+    return run
+
+
+def record_quiz_answer(room, player, correct):
+    """Pure bookkeeping; progression/zero-life rules remain with the caller."""
+    run = room["quiz_run"]
+    if run["player"] != player["id"]:
+        raise ValueError("answer does not belong to the active category run")
+    run["answered"] += 1
+    if correct:
+        run["correct"] += 1
+        run["streak"] = run.get("streak", 0) + 1
+    else:
+        run["streak"] = 0
+        run["mistakes"] += 1
+        room["quiz_lives"][player["id"]] = max(0, quiz_lives(room, player) - 1)
+    return run
+
+
+def quiz_bonus(room, player):
+    run = room["quiz_run"]
+    if run.get("streak", 0) >= QUIZ_RUN_LENGTH and not run.get("bonus_given"):
+        room["quiz_lives"][player["id"]] = min(4, quiz_lives(room, player) + 1)
+        run["bonus_given"] = True
+        return True
+    return False
 
 
 async def resolve_answer(room, player, idx):
     question = room.get("question")
-    if not question:
+    if not question or room["phase"] != "question":
         return
-    correct = idx == question["correct"]
-    if room["game"] == "paises":
-        await resolve_answer_paises(room, player, question, correct, idx)
-        return
-    if correct:
-        cat = question["category"]
-        progress = room.setdefault("cat_progress", {}).setdefault(player["id"], {})
-        progress[cat] = progress.get(cat, 0) + 1
-        label = CATEGORIES[cat]
-        if progress[cat] >= QUESTIONS_PER_LEVEL:
-            passed = sum(1 for c, n in progress.items() if n >= QUESTIONS_PER_LEVEL)
-            room["scores"][player["id"]] = passed
-            if passed >= CATEGORIES_TO_PASS:
-                room["phase"] = "question"  # coherent until game_over
-                await game_over(room, player)
-                return
-            await narrate(room, f"¡Correcto! ¡{player['name']} pasó el nivel de {label}! "
-                                f"Con {QUESTIONS_PER_LEVEL} correctas, esa categoría ya es de "
-                                f"{player['name']}. Lleva {passed} "
-                                f"{'categoría pasada' if passed == 1 else 'categorías pasadas'}.")
-        else:
-            await narrate(room, f"¡Correcto, {player['name']}! Lleva {progress[cat]} de "
-                                f"{QUESTIONS_PER_LEVEL} en {label}.")
-    else:
-        letters = ["A", "B", "C"]
-        right = question["options"][question["correct"]]
-        picked = letters[idx] if 0 <= idx < 3 else "?"
-        await narrate(room, f"Te equivocaste, {player['name']}: la {picked} no es la correcta. "
-                            f"Es la {letters[question['correct']]}: {right}.")
-    await end_turn(room)
-
-
-async def resolve_answer_paises(room, player, question, correct, idx):
-    """Países: seguís jugando hasta fallar; completar el país suma un país ganado."""
-    if correct:
-        room["country_done"].add(question["category"])
-        done = len(room["country_done"])
-        total = len(MC_BANKS)
-        if done >= total:
-            room["countries_won"][player["id"]] = room["countries_won"].get(player["id"], 0) + 1
-            won = room["countries_won"][player["id"]]
-            room["scores"][player["id"]] = won
-            country = room["country"]
-            room["country"] = None
-            room["country_done"] = set()
-            if won >= COUNTRIES_TO_WIN:
-                room["phase"] = "question"  # keeps state coherent until game_over
-                await game_over(room, player)
-                return
-            await narrate(room, f"¡{player['name']} completó {country}! "
-                                f"{'País ganado' if won == 1 else f'Ya lleva {won} países'}. "
-                                "¡Va por el próximo país!")
-            await begin_turn(room)  # same player spins for a new country
-            return
-        await narrate(room, f"¡Correcto! {player['name']} ganó la categoría "
-                            f"{CATEGORIES[question['category']]} por {room['country']}. "
-                            f"Pasó al nivel {done + 1}. Seguís, {player['name']}.")
-        await begin_turn(room)  # same player keeps going
-        return
-    letters = ["A", "B", "C"]
-    right = question["options"][question["correct"]]
-    picked = letters[idx] if 0 <= idx < 3 else "?"
-    room["turn"] += 1
-    nxt = current_player(room)
-    await narrate(room, f"Perdió {player['name']}: la {picked} no es la correcta. "
-                        f"Es la {letters[question['correct']]}: {right}. "
-                        + (f"Ahora gira {nxt['name']}." if nxt else ""))
+    # Close this question before awaiting narration, preventing duplicate submissions.
+    room["phase"] = "answering"
     cancel_timer(room)
-    room["question"] = None
-    await begin_turn(room)
+    if not room.get("quiz_run"):
+        new_quiz_run(room, player, question["category"])
+    correct = idx == question["correct"]
+    run = record_quiz_answer(room, player, correct)
+    if correct:
+        await narrate(room, f"¡Correcto, {player['name']}! Llevás {run['correct']} de 5 correctas.")
+    else:
+        letters = ["A", "B", "C", "D"]
+        right = question["options"][question["correct"]]
+        picked = letters[idx] if 0 <= idx < len(letters) else "sin respuesta"
+        lives = quiz_lives(room, player)
+        await narrate(room, f"{player['name']}, la {picked} no es la correcta. "
+                      f"Es la {letters[question['correct']]}: {right}. "
+                      f"Perdiste una vida, te quedan {['cero', 'una', 'dos', 'tres', 'cuatro'][lives]}.")
+        if lives == 0:
+            room["quiz_lives"][player["id"]] = QUIZ_START_LIVES
+            player.pop("out", None)
+            if not room.get("team_count"):
+                room.setdefault("cat_progress", {}).pop(player["id"], None)
+                room["countries_won"].pop(player["id"], None)
+                room["scores"][player["id"]] = 0
+                room["country"] = None
+                room["country_done"] = set()
+            reset_text = ("Tu equipo conserva sus niveles. Vos reiniciás con cuatro vidas. "
+                          if room.get("team_count") else "Volvés al principio, nivel uno, con cuatro vidas. ")
+            await narrate(room, f"{player['name']}, te quedaste sin vidas. " + reset_text + "Girá la ruleta de nuevo.")
+            await begin_turn(room)
+            return
+    if run["correct"] >= 5:
+        if quiz_bonus(room, player):
+            await narrate(room, f"¡Cinco correctas seguidas! Ganaste una vida, te regalamos una. "
+                          f"Tenés {quiz_lives(room, player)}; el máximo es cuatro.")
+        category = run["category"]
+        await narrate(room, f"¡{player['name']} pasó el nivel de {CATEGORIES[category]}!")
+        if room["game"] == "paises":
+            room["country_done"].add(category)
+            if len(room["country_done"]) >= len(MC_BANKS):
+                owner = score_owner(room, player)
+                won = room["countries_won"].get(owner, 0) + 1
+                room["countries_won"][owner] = won
+                sync_score(room, player, won)
+                country = room["country"]
+                room["country"] = None
+                room["country_done"] = set()
+                await narrate(room, f"¡{player['name']} completó {country}!")
+                if won >= COUNTRIES_TO_WIN:
+                    await game_over(room, player)
+                    return
+            else:
+                await narrate(room, f"Pasó al nivel {len(room['country_done']) + 1}. Seguís, {player['name']}.")
+            await begin_turn(room)
+        else:
+            progress = room.setdefault("cat_progress", {}).setdefault(score_owner(room, player), {})
+            progress[category] = QUESTIONS_PER_LEVEL
+            passed = sum(n >= QUESTIONS_PER_LEVEL for n in progress.values())
+            sync_score(room, player, passed)
+            if passed >= CATEGORIES_TO_PASS:
+                await game_over(room, player)
+                return
+            await end_turn(room)
+        return
+    await ask_question(room, player, run["category"], f", por {room['country']}" if room.get("country") else "")
 
 
 async def complete_verdad_reto(room, player, done):
     if done:
-        room["scores"][player["id"]] = room["scores"].get(player["id"], 0) + 1
+        sync_score(room, player, room["scores"].get(player["id"], 0) + 1)
         await narrate(room, f"¡Muy bien, {player['name']}! Un punto. Lleva {room['scores'][player['id']]}.")
     else:
         await narrate(room, f"{player['name']} pasa. Sin punto esta vez.")
@@ -1105,11 +1280,433 @@ async def ah_solved(room, player):
     room["turn"] += 1
     await ah_start_turn(room)
 
+
+# ---------------------------------------------------------------------------
+# La bomba + Resolver el misterio (V3.3)
+# ---------------------------------------------------------------------------
+BOMBA_LIVES = 3
+BOMBA_FUSE_MIN = 8
+BOMBA_FUSE_MAX = 20
+MISTERIO_LIVES = 3
+MISTERIO_TO_WIN = 2
+
+# (prompt, accepted answers). Association game: say one valid item, bomb passes.
+BOMBA_PROMPTS = [
+    ("Cosas que encontrás en una cocina", ["cuchara", "tenedor", "cuchillo", "plato", "olla", "sarten", "heladera", "horno", "microondas", "vaso", "taza", "mantel", "servilleta", "tabla", "colador", "rallador", "batidora", "tostadora", "jarra", "sal", "azucar", "aceite", "pava", "cafetera", "mate"]),
+    ("Animales que viven en el campo", ["vaca", "caballo", "oveja", "cerdo", "gallina", "gallo", "cabrito", "cabra", "burro", "pato", "ganso", "toro", "ternero", "yegua", "potrillo", "perro", "gato", "zorro", "liebre", "ñandu", "hornero"]),
+    ("Cosas que llevás a la playa", ["reposera", "sombrilla", "toalla", "protector", "bronceador", "anteojos", "lentes", "pelota", "paleta", "balde", "pala", "traje de baño", "malla", "ojotas", "heladerita", "agua", "terere", "mate", "gorra", "sombrero", "pareo", "flotador"]),
+    ("Palabras que riman con amor", ["dolor", "calor", "flor", "color", "valor", "temor", "favor", "rumor", "ardor", "candor", "honor", "mejor", "peor", "sol", "corazon", "cancion", "pasión", "ilusion", "beso", "dulce", "sentimiento"]),
+    ("Cosas rojas", ["manzana", "tomate", "fresa", "frutilla", "cereza", "rosa", "sangre", "fuego", "semáforo", "auto", "camioneta", "labial", "pimiento", "morron", "sandia", "corazon", "ladrillo", "camisa", "remera", "bandera", "amapola", "pimiento"]),
+    ("Profesiones", ["maestra", "maestro", "doctor", "doctora", "medico", "enfermera", "enfermero", "policia", "bombero", "cocinero", "panadero", "carpintero", "plomero", "electricista", "abogado", "contador", "ingeniero", "arquitecto", "veterinario", "peluquero", "taxista", "colectivero", "kiosquero", "albañil", "mecanico", "futbolista", "cantante", "actor", "periodista", "mozo", "cajero"]),
+    ("Cosas que hacen ruido", ["timbre", "telefono", "alarma", "bocina", "claxon", "trueno", "perro", "gato", "bebé", "tele", "radio", "licuadora", "taladro", "martillo", "moto", "colectivo", "tren", "avion", "viento", "lluvia", "tormenta", "fuegos artificiales", "cortina", "puerta", "timbre", "sirena", "ambulancia", "grito", "aplauso", "tambor", "guitarra"]),
+    ("Comidas con queso", ["pizza", "empanadas", "milanesa", "napolitana", "hamburguesa", "lasagna", "fideos", "ñoquis", "ravioles", "sorrentinos", "tarta", "tostado", "sandwich", "provoleta", "faina", "quesadilla", "omelette", "tortilla", "chips", "pancho", "canelones"]),
+    ("Cosas del mate", ["yerba", "bombilla", "pava", "termo", "agua", "azucar", "mate", "calabaza", "yerbera", "cebador", "bandeja", "facturas", "yerba mate"]),
+    ("Animales que vuelan", ["pajaro", "paloma", "gaviota", "aguila", "halcon", "buitre", "cóndor", "loro", "cotorra", "lechuza", "buho", "colibri", "golondrina", "hornero", "carpintero", "flamenco", "cigueña", "murcielago", "mariposa", "abeja", "avispa", "mosca", "mosquito", "libelula", "avion", "helicoptero", "papagayo", "tucan"]),
+    ("Cosas que hay en una escuela", ["banco", "pizarron", "tiza", "marcador", "cuaderno", "lapiz", "goma", "regla", "mochila", "libro", "carpeta", "maestra", "alumnos", "patio", "bandera", "campana", "timbre", "silla", "escritorio", "borrador", "sacapuntas", "cartuchera", "aula", "biblioteca", "guardapolvo"]),
+    ("Palabras con la letra Ñ", ["niño", "niña", "mañana", "año", "baño", "araña", "montaña", "caña", "ñandu", "ñu", "ñato", "ñato", "ñoqui", "cabaña", "tacaño", "paño", "sueño", "otoño", "seño", "ñanduti"]),
+    ("Cosas que se hacen de noche", ["dormir", "soñar", "cenar", "ver tele", "salir", "bailar", "asado", "mirar las estrellas", "contar ovejas", "roncar", "darle de comer al perro", "apagar la luz", "leer", "juntada", "previa", "cine", "pasear", "estudiar", "fiesta"]),
+    ("Equipos de fútbol", ["river", "boca", "independiente", "racing", "san lorenzo", "estudiantes", "gimnasia", "velez", "huracan", "argentinos", "lanus", "banfield", "talleres", "belgrano", "newells", "rosario central", "colon", "union", "atletico tucuman", "defensa", "barracas"]),
+    ("Cosas dulces", ["chocolate", "alfajor", "helado", "flan", "dulce de leche", "torta", "facturas", "medialuna", "churros", "budin", "galletitas", "caramelos", "chupetin", "turrón", "mermelada", "miel", "azucar", "pastelitos", "rogel", "lemon pie", "brownie", "panqueque"]),
+    ("Cosas que hay en un auto", ["volante", "ruedas", "asientos", "espejo", "espejos", "cinturon", "freno", "acelerador", "embrague", "palanca", "cambios", "tablero", "radio", "parlantes", "airbag", "baul", "capot", "motor", "limpiaparabrisas", "luces", "patente", "llanta", "auxilio", "puertas", "vidrios"]),
+    ("Cosas del verano", ["calor", "sol", "playa", "pileta", "helado", "terere", "ventilador", "aire acondicionado", "sandia", "melon", "malla", "ojotas", "anteojos", "protector", "vacaciones", "asado", "siesta", "sudor", "chicharra"]),
+    ("Cosas que hay en un cumpleaños", ["torta", "velas", "velitas", "globos", "regalos", "piñata", "cotillon", "cumpleañero", "invitados", "cancion", "feliz cumpleaños", "abrazo", "beso", "souvenir", "gaseosa", "pizza", "empanadas", "sándwich", "fotos", "sombrerito"]),
+    ("Animales de la granja", ["vaca", "caballo", "oveja", "cerdo", "chancho", "gallina", "gallo", "pato", "ganso", "cabra", "burro", "conejo", "perro", "gato", "toro", "ternero", "pollito", "pavo", "mula"]),
+    ("Cosas que se pueden morder", ["manzana", "pan", "carne", "asado", "pizza", "empanada", "galletita", "chicle", "uña", "labio", "lapiz", "helado", "chocolate", "banana", "sandia", "durazno", "pera", "milanesa", "factura", "medialuna", "tostada", "caramelo", "turrón", "hueso"]),
+    ("Cosas que hay en el living", ["sillon", "sofa", "mesa", "tele", "control remoto", "lampara", "cuadro", "alfombra", "cortinas", "ventana", "estufa", "aire", "ventilador", "parlantes", "revistas", "almohadones", "silla", "estante", "plantas", "fotos", "adornos"]),
+    ("Cosas que se hacen con agua", ["tomar", "beber", "mate", "cocinar", "hervir", "lavar", "bañarse", "ducharse", "regar", "nadar", "pescar", "lavar los platos", "limpiar", "fregar", "hielo", "llenar el termo", "sopa", "te", "cafe"]),
+    ("Cosas de madera", ["mesa", "silla", "puerta", "ventana", "ropero", "placard", "estante", "cama", "banco", "lapiz", "paleta", "bocha", "madero", "leño", "tronco", "tabla", "escalera", "piso", "deck", "cajon", "mango"]),
+    ("Palabras que empiezan con M", ["mate", "mesa", "mano", "madre", "mujer", "miedo", "mar", "montaña", "musica", "milanesa", "mono", "moto", "mochila", "martes", "marzo", "mayo", "mermelada", "menta", "melon", "mosca", "mundo", "museo", "mujer", "manta"]),
+    ("Cosas que se compran en el kiosco", ["caramelos", "chicles", "chocolate", "alfajor", "galletitas", "puchos", "cigarrillos", "fosforos", "encendedor", "gaseosa", "agua", "jugo", "diario", "revista", "pilas", "sube", "tarjeta", "papas", "manies", "chupetin", "helado"]),
+    ("Cosas que hay en un casamiento", ["novia", "novio", "iglesia", "anillos", "vestido", "traje", "fiesta", "salon", "torta", "vals", "ramo", "liga", "cotillon", "carnaval carioca", "invitados", "madrina", "padrino", "testigos", "curas", "arroz", "brindis", "champan", "fotografo", "dj", "musica", "baile"]),
+    ("Cosas que se prenden fuego", ["papel", "madera", "leño", "fosforo", "vela", "asado", "carbon", "pasto", "basura", "cigarro", "cortina", "cocina", "aceite", "fuegos artificiales", "espuma", "goma", "plastico", "tela", "paja"]),
+    ("Cosas que huelen rico", ["asado", "cafe", "pan", "facturas", "flores", "jazmin", "rosa", "perfume", "jazmin del pais", "tilo", "lavanda", "lluvia", "pasto cortado", "torta", "chocolate", "vainilla", "canela", "carne", "milanesas", "pizza", "bebe", "ropa limpia", "jabon"]),
+    ("Cosas que se hacen los domingos", ["asado", "dormir hasta tarde", "pastas", "fideos", "ñoquis", "familia", "futbol", "ver la tele", "siesta", "pasear", "iglesia", "mate", "vermut", "picada", "visitas", "descansar", "plaza", "parque", "helado", "preparar la semana"]),
+    ("Cosas que se tiran al agua", ["piedra", "moneda", "botella", "basura", "anzuelo", "red", "salvavidas", "flotador", "pelota", "perro", "bomba", "buzo", "ancla", "pez", "miguitas", "pan"]),
+]
+
+# Pre-written mysteries: (título, caso narrado, solución, claves-acierto, claves-cerca)
+MISTERIOS = [
+    ("El paquete cerrado",
+     "Un hombre aparece muerto en medio de un campo. No hay huellas, no hay armas, no hay nadie cerca. "
+     "Junto al cuerpo hay un paquete cerrado. ¿Qué pasó?",
+     "Es un paracaidista: el paquete es el paracaídas, que no se abrió, y se mató en la caída.",
+     ["paracaidas", "paracaidista", "avion", "se tiro", "salto"],
+     ["cielo", "aire", "cayó", "caída", "volaba", "altura"]),
+    ("El vaso de agua",
+     "Un hombre entra a un bar y pide un vaso de agua. El barman, en vez de servirle, saca una escopeta y le apunta. "
+     "El hombre dice gracias y se va tranquilo. ¿Por qué?",
+     "El hombre tenía hipo. El barman lo entendió y le sacó el hipo con el susto, por eso no necesitó el agua.",
+     ["hipo"],
+     ["susto", "miedo", "asustar", "sacar el hipo"]),
+    ("La música paró",
+     "La música se detuvo y ella murió. ¿Qué pasó?",
+     "Era una equilibrista del circo: caminaba por la cuerda floja guiándose por la música. "
+     "Cuando la música paró antes de tiempo, perdió el equilibrio y se cayó.",
+     ["cuerda floja", "equilibrista", "circo", "trapecista", "funambula", "se cayo"],
+     ["circo", "cuerda", "altura", "cayó", "música", "payaso"]),
+    ("Cincuenta y tres bicicletas",
+     "Encuentran a un hombre muerto en una habitación con cincuenta y tres bicicletas. ¿Qué pasó?",
+     "Las bicicletas son cartas de juego de la marca Bicycle. Estaba jugando a las cartas, "
+     "lo descubrieron haciendo trampa con una carta de más y lo mataron.",
+     ["cartas", "baraja", "trampa", "jugando", "poker", "naipes"],
+     ["juego", "jugadores", "apuesta", "casino"]),
+    ("El ascensor",
+     "Un hombre vive en el décimo piso. Todos los días baja en ascensor hasta la planta baja para ir a trabajar. "
+     "Cuando vuelve, sube en ascensor hasta el séptimo piso y los otros tres pisos sube por la escalera. "
+     "Los días de lluvia, en cambio, sube en ascensor hasta el décimo. ¿Por qué?",
+     "Es una persona muy bajita: en el ascensor solo llega al botón del séptimo piso. "
+     "Los días de lluvia lleva paraguas y con él aprieta el botón del décimo.",
+     ["bajito", "enano", "no llega al boton", "no alcanza", "paraguas"],
+     ["altura", "botón", "botones", "dedos", "lluvia", "escalera"]),
+    ("Antonio y Cleopatra",
+     "Antonio y Cleopatra aparecen muertos en el piso de una casa, entre agua y vidrios rotos. "
+     "No hay heridas en los cuerpos. ¿Qué pasó?",
+     "Antonio y Cleopatra son dos peces: su pecera se cayó al piso y se rompió, y murieron fuera del agua.",
+     ["peces", "pecera", "pez", "se cayo la pecera", "acuario"],
+     ["agua", "vidrio", "acuario", "se rompió", "asfixia"]),
+    ("El faro",
+     "Un hombre vive solo en un faro. Una noche apaga todas las luces y se va a dormir. "
+     "A la mañana siguiente lee el diario y se suicida. ¿Por qué?",
+     "Es el farero: al apagar la luz del faro, un barco se estrelló contra las rocas y murió gente. "
+     "La noticia salió en el diario.",
+     ["faro", "barco", "naufragio", "se estrello", "choco", "encallo"],
+     ["luz", "rocas", "mar", "muertos", "noticia", "culpa"]),
+    ("La caja cerrada",
+     "Un hombre empuja su auto hasta llegar frente a un hotel y dice en voz alta: ¡Me fundí, estoy en bancarrota! ¿Qué pasó?",
+     "Está jugando al Monopoly: el auto es su ficha, el hotel es del contrario y cayó en su casillero, "
+     "así que debe pagar más de lo que tiene.",
+     ["monopoly", "juego", "ficha", "jugando"],
+     ["juego de mesa", "casillero", "tablero", "deuda", "pagó"]),
+]
+
+
+def norm(text: str) -> str:
+    """Lowercase, strip accents and punctuation: for keyword matching."""
+    import re
+    import unicodedata
+    t = unicodedata.normalize("NFD", text.lower())
+    t = "".join(ch for ch in t if unicodedata.category(ch) != "Mn")
+    return re.sub(r" +", " ", re.sub(r"[^a-zñ0-9 ]", " ", t)).strip()
+
+
+def kw_hit(text: str, keywords) -> bool:
+    t = " " + norm(text) + " "
+    return any(" " + norm(k) + " " in t for k in keywords)
+
+
+async def judge_yes_no(system_prompt: str, user_prompt: str, fallback):
+    """Groq LLM judging; on any failure use the keyword fallback.
+
+    Only game text goes to Groq: the prompt, the reference answer and the
+    player's answer. Nothing personal is sent. The model answers SI or NO.
+    """
+    import os
+    import httpx
+    key = os.environ.get("GROQ_API_KEY", "")
+    if not key:
+        return fallback()
+    try:
+        async with httpx.AsyncClient() as client:
+            r = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {key}"},
+                json={
+                    "model": os.environ.get("GROQ_JUDGE_MODEL", "llama-3.1-8b-instant"),
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    "temperature": 0,
+                    "max_tokens": 5,
+                },
+                timeout=15,
+            )
+            if r.status_code < 400:
+                verdict = norm(r.json()["choices"][0]["message"]["content"])
+                if "si" in verdict.split():
+                    return True
+                if "no" in verdict.split():
+                    return False
+            log.warning("Web sala: Groq judge failed: %s", getattr(r, "status_code", "?"))
+    except Exception:
+        log.exception("Web sala: Groq judge error")
+    return fallback()
+
+
+JUDGE_BOMBA_SYSTEM = (
+    "Sos el juez de un juego de asociación de palabras. Te doy una consigna y la respuesta "
+    "de un jugador. Respondé únicamente SI si la respuesta encaja con la consigna (aceptá "
+    "sinónimos y variantes razonables) o NO si no encaja. Nada más que SI o NO."
+)
+JUDGE_MISTERIO_SYSTEM = (
+    "Sos el juez de un juego de misterios. Te doy la solución completa del caso y la "
+    "respuesta de un jugador. Respondé con una sola palabra: ACIERTO si el jugador dio "
+    "con la solución o su idea central, CERCA si va bien encaminado pero le falta una parte, "
+    "o LEJOS si no tiene nada que ver. Nada más que esa palabra."
+)
+
+
+async def judge_bomba(prompt: str, answer: str, keywords):
+    """True = the association is valid."""
+    if kw_hit(answer, keywords):
+        return True  # the local list settles it without spending a Groq call
+    return await judge_yes_no(
+        JUDGE_BOMBA_SYSTEM,
+        f"Consigna: {prompt}\nRespuesta del jugador: {answer}\n¿Encaja?",
+        lambda: False,
+    )
+
+
+async def judge_misterio(solution: str, guess: str, hit_keys, near_keys):
+    """'acierto' | 'cerca' | 'lejos'. Groq first, keyword fallback."""
+    import os
+    import httpx
+    if kw_hit(guess, hit_keys):
+        return "acierto"
+    if kw_hit(guess, near_keys):
+        return "cerca"
+    key = os.environ.get("GROQ_API_KEY", "")
+    if key:
+        try:
+            async with httpx.AsyncClient() as client:
+                r = await client.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {key}"},
+                    json={
+                        "model": os.environ.get("GROQ_JUDGE_MODEL", "llama-3.1-8b-instant"),
+                        "messages": [
+                            {"role": "system", "content": JUDGE_MISTERIO_SYSTEM},
+                            {"role": "user", "content":
+                                f"Solución del caso: {solution}\n"
+                                f"Respuesta del jugador: {guess}\n¿ACIERTO, CERCA o LEJOS?"},
+                        ],
+                        "temperature": 0,
+                        "max_tokens": 5,
+                    },
+                    timeout=15,
+                )
+                if r.status_code < 400:
+                    verdict = norm(r.json()["choices"][0]["message"]["content"])
+                    for word in ("acierto", "cerca", "lejos"):
+                        if word in verdict.split():
+                            return word
+                log.warning("Web sala: Groq misterio judge failed: %s", getattr(r, "status_code", "?"))
+        except Exception:
+            log.exception("Web sala: Groq misterio judge error")
+    return "lejos"
+
+
+
+MISTERIO_CASE_SECONDS = 150
+
+
+async def end_match_nobody(room):
+    """Everyone is out (bomba/misterio, e.g. a solo loss): close and rematch."""
+    room["phase"] = "gameover"
+    await narrate(room, f"¡Se terminó para todos! En {REMATCH_SECONDS} segundos arranca una partida nueva.")
+    await broadcast(room, room_state(room))
+    await asyncio.sleep(REMATCH_SECONDS)
+    active = [p for p in room["players"] if not p.get("gone")]
+    if not active:
+        return
+    room["starter"] = (room["starter"] + 1) % len(active)
+    room["match"] += 1
+    await start_match(room)
+
+
+async def bb_next_prompt(room, new_prompt):
+    """Arm a fresh fuse for the current bomb holder; optionally a fresh prompt."""
+    bb = room["bomba"]
+    cancel_timer(room)
+    holder = current_player(room)
+    if holder is None:
+        return
+    if new_prompt or bb["prompt"] is None:
+        choices = [i for i in range(len(BOMBA_PROMPTS)) if i not in bb["used"]]
+        if not choices:
+            bb["used"] = set()
+            choices = list(range(len(BOMBA_PROMPTS)))
+        idx = random.choice(choices)
+        bb["used"].add(idx)
+        bb["prompt"], bb["keywords"] = BOMBA_PROMPTS[idx]
+        bb["said"] = set()
+        prompt_line = f"La consigna es: {bb['prompt']}."
+    else:
+        prompt_line = f"Sigue la consigna: {bb['prompt']}."
+    bb["fuse"] = random.randint(BOMBA_FUSE_MIN, BOMBA_FUSE_MAX)
+    room["phase"] = "bomba"
+    await narrate(room, f"La bomba la tiene {holder['name']}. {prompt_line} ¡Decí una, rápido!")
+    await broadcast(room, room_state(room))
+    await tell(holder, {"event": "your_turn", "kind": "bomba"})
+    room["timer_task"] = asyncio.create_task(bb_fuse_clock(room, holder["id"]))
+
+
+async def wait_with_chatter(room, seconds):
+    task = None
+    try:
+        remaining = seconds
+        while remaining > 0:
+            step = min(6, remaining)
+            await asyncio.sleep(step)
+            remaining -= step
+            current = current_player(room)
+            if remaining > 0 and current and (task is None or task.done()):
+                task = asyncio.create_task(turn_chatter(room, current))
+    finally:
+        if task and not task.done():
+            task.cancel()
+
+
+async def bb_fuse_clock(room, holder_id):
+    """The fuse: when it burns out with the same holder, the bomb explodes."""
+    try:
+        await wait_with_chatter(room, room["bomba"]["fuse"])
+        if room["phase"] != "bomba":
+            return
+        holder = next((p for p in room["players"] if p["id"] == holder_id), None)
+        if holder is not None and current_player(room) is holder:
+            await bb_explode(room, holder, "¡Se acabó la mecha!")
+    except asyncio.CancelledError:
+        pass
+
+
+async def bb_answer(room, player, text):
+    """The holder's association: valid passes the bomb, invalid explodes it."""
+    bb = room["bomba"]
+    if room["phase"] != "bomba" or current_player(room) is not player:
+        return
+    answer = norm(text).strip()
+    if not answer:
+        return
+    if answer in bb["said"]:
+        await narrate(room, f"Esa ya la dijeron, {player['name']}. ¡Otra!")
+        return
+    if not await judge_bomba(bb["prompt"], text, bb["keywords"]):
+        await bb_explode(room, player, f"¡{text.strip()} no vale!")
+        return
+    bb["said"].add(answer)
+    room["turn"] += 1
+    nxt = current_player(room)
+    await narrate(room, f"¡Sí, vale! {player['name']} se salva." +
+                  (f" ¡{nxt['name']}, la tenés vos!" if nxt else ""))
+    await bb_next_prompt(room, new_prompt=False)
+
+
+async def bb_explode(room, holder, reason):
+    """Life loss; elimination at zero; last one standing wins."""
+    bb = room["bomba"]
+    cancel_timer(room)
+    bb["lives"][holder["id"]] = bb["lives"].get(holder["id"], BOMBA_LIVES) - 1
+    left = bb["lives"][holder["id"]]
+    room["scores"][holder["id"]] = left
+    await broadcast(room, {"event": "boom", "name": holder["name"]})
+    if left > 0:
+        await narrate(room, f"¡BOOM! {reason} {holder['name']} pierde una vida: le "
+                            f"{'queda' if left == 1 else 'quedan'} {left}.")
+    else:
+        holder["out"] = True
+        await narrate(room, f"¡BOOM! {reason} {holder['name']} pierde su última vida. "
+                            f"¡{holder['name']} queda eliminado!")
+    alive = [p for p in room["players"] if not p.get("gone") and not p.get("out")
+             and not p.get("spectator")]
+    if survivor_winner(room, alive):
+        await game_over(room, survivor_winner(room, alive))
+        return
+    if not alive:
+        await end_match_nobody(room)
+        return
+    room["turn"] += 1
+    await bb_next_prompt(room, new_prompt=True)
+
+
+async def mst_next_case(room):
+    """Tell a new mystery and open the floor: everyone guesses at once."""
+    mst = room["misterio"]
+    cancel_timer(room)
+    alive = [p for p in room["players"] if not p.get("gone") and not p.get("out")
+             and not p.get("spectator")]
+    if not alive:
+        return
+    choices = [i for i in range(len(MISTERIOS)) if i not in mst["used"]]
+    if not choices:
+        mst["used"] = set()
+        choices = list(range(len(MISTERIOS)))
+    idx = random.choice(choices)
+    mst["used"].add(idx)
+    mst["case"] = MISTERIOS[idx]
+    mst["case_idx"] = idx
+    title, case, _, _, _ = mst["case"]
+    room["phase"] = "misterio"
+    await narrate(room, f"Misterio nuevo: {title}. {case} "
+                        "Escriban o digan su teoría. El que acierta gana el caso; "
+                        "el que está lejos pierde una vida. Tienen dos minutos y medio.")
+    await broadcast(room, room_state(room))
+    room["timer_task"] = asyncio.create_task(mst_case_clock(room, idx))
+
+
+async def mst_case_clock(room, case_idx):
+    """Unsolved in time: reveal and move to the next case."""
+    try:
+        await wait_with_chatter(room, MISTERIO_CASE_SECONDS)
+        if room["phase"] != "misterio" or room["misterio"]["case_idx"] != case_idx:
+            return
+        _, _, solution, _, _ = room["misterio"]["case"]
+        await narrate(room, f"Se acabó el tiempo. La solución era: {solution}")
+        await mst_next_case(room)
+    except asyncio.CancelledError:
+        pass
+
+
+async def mst_guess(room, player, text):
+    """A theory, judged: acierto wins the case, cerca is a hint, lejos costs a life."""
+    mst = room["misterio"]
+    if room["phase"] != "misterio" or player.get("out") or player.get("spectator") \
+            or mst["case"] is None:
+        return
+    _, _, solution, hit, near = mst["case"]
+    verdict = await judge_misterio(solution, text, hit, near)
+    if verdict == "cerca":
+        await narrate(room, f"{player['name']} está cerca...")
+        return
+    if verdict == "lejos":
+        mst["lives"][player["id"]] = mst["lives"].get(player["id"], MISTERIO_LIVES) - 1
+        left = mst["lives"][player["id"]]
+        if left > 0:
+            await narrate(room, f"No, {player['name']}, lejos. Te "
+                                f"{'queda' if left == 1 else 'quedan'} {left} "
+                                f"{'vida' if left == 1 else 'vidas'}.")
+        else:
+            player["out"] = True
+            await narrate(room, f"No, {player['name']}. Era tu última vida: "
+                                f"¡quedás eliminado del misterio!")
+        await broadcast(room, room_state(room))
+        alive = [p for p in room["players"] if not p.get("gone") and not p.get("out")
+                 and not p.get("spectator")]
+        if survivor_winner(room, alive):
+            await game_over(room, survivor_winner(room, alive))
+        elif not alive:
+            await end_match_nobody(room)
+        return
+    # acierto
+    cancel_timer(room)
+    owner = score_owner(room, player)
+    mst["solved"][owner] = mst["solved"].get(owner, 0) + 1
+    sync_score(room, player, mst["solved"][owner])
+    won = mst["solved"][owner] >= MISTERIO_TO_WIN
+    await narrate(room, f"¡{player['name']} resolvió el misterio! {solution}")
+    if won:
+        await game_over(room, player)
+        return
+    await narrate(room, f"{player['name']} lleva {mst['solved'][owner]} "
+                        f"de {MISTERIO_TO_WIN} casos. ¡Va otro!")
+    await mst_next_case(room)
+
+
 # ---------------------------------------------------------------------------
 # The sala socket.
 # ---------------------------------------------------------------------------
 @router.websocket("/amor-con-aroma-a-cafe/ws/{code}")
-async def sala_ws(websocket: WebSocket, code: str, name: str = ""):
+async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bool = False):
     code = code.upper()
     room = rooms.get(code)
     if room is None:
@@ -1120,31 +1717,35 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = ""):
 
     # A comeback with the same name re-takes its seat; nobody loses points.
     seat = next(
-        (p for p in room["players"] if not p.get("gone") and p["ws"] is None and p["name"] == name),
+        (p for p in room["players"] if not p.get("gone") and p["ws"] is None and p["name"] == name and (not spectator or p.get("spectator"))),
         None,
     ) if name else None
-    active = [p for p in room["players"] if not p.get("gone")]
+    active = [p for p in room["players"] if not p.get("gone") and not p.get("spectator")]
     if seat is None and room["capacity"] and len(active) >= room["capacity"]:
-        await websocket.send_text(json.dumps(
-            {"event": "say", "text": "La sala está llena.", "audio": None}, ensure_ascii=False))
-        await websocket.close(code=4009)
-        return
+        spectator = True
     if seat is not None:
         seat["ws"] = websocket
         player = seat
     else:
         if not name:
             name = f"Jugador {len(active) + 1}"
-        player = {"id": room["next_id"], "name": name, "ws": websocket}
+        player = {"id": room["next_id"], "name": name, "ws": websocket, "spectator": spectator}
         room["next_id"] += 1
         room["players"].append(player)
+        if room.get("team_count") and not spectator:
+            counts = [sum(1 for p in active if p.get("team") == t) for t in range(room["team_count"])]
+            player["team"] = counts.index(min(counts))
         room["scores"][player["id"]] = 0
         room.setdefault("chat_voices", {})[player["id"]] = NARRATOR_VOICES[(player["id"] - 1) % len(NARRATOR_VOICES)]
     log.info("Web sala %s: %s joined (%s players)", code, player["name"], len(active) + (seat is None))
     await tell(player, {"event": "welcome", "name": player["name"], "id": player["id"],
-                        "code": code, "capacity": room["capacity"], "phase": room["phase"]})
-    count = len([p for p in room["players"] if not p.get("gone")])
-    if seat is not None:
+                        "code": code, "capacity": room["capacity"], "phase": room["phase"], "spectator": bool(player.get("spectator"))})
+    if player.get("team") is not None and not player.get("spectator"):
+        await narrate(room, f"{player['name']} está en el equipo {TEAM_NAMES[player['team']]}.")
+    count = len([p for p in room["players"] if not p.get("gone") and not p.get("spectator")])
+    if player.get("spectator"):
+        await narrate(room, f"{player['name']} entró a mirar. Puede escuchar y charlar, sin jugar turnos.")
+    elif seat is not None:
         await narrate(room, f"¡{player['name']} volvió a la mesa!")
     elif count == 1:
         await say(room,
@@ -1156,9 +1757,9 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = ""):
         await narrate(room, f"Se unió {player['name']}. Ahora son {count} en la sala.")
     await broadcast(room, room_state(room))
     # Solo starts at once; a sala starts when full or when the host taps Empezar.
-    if room["phase"] == "lobby" and room["capacity"] == 1:
+    if not player.get("spectator") and room["phase"] == "lobby" and room["capacity"] == 1:
         await start_match(room)
-    elif room["phase"] == "lobby" and room["capacity"] and count >= room["capacity"]:
+    elif not player.get("spectator") and room["phase"] == "lobby" and room["capacity"] and count >= room["capacity"] and not room.get("team_count"):
         await start_match(room)
 
     try:
@@ -1171,17 +1772,46 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = ""):
             action = message.get("action")
             player["ws"] = websocket
             current = current_player(room)
+            if player.get("spectator") and action not in ("descripcion", "chat", "rename"):
+                continue
 
-            if action == "start" and room["phase"] == "lobby" and player == room["players"][0]:
+            if action == "equipos" and room["phase"] == "lobby" and player is host_player(room):
+                try:
+                    count = int(message.get("count", 0))
+                except (TypeError, ValueError):
+                    continue
+                if count not in (0, 2, 3, 4):
+                    continue
+                room["team_count"] = count
+                for i, member in enumerate(p for p in room["players"] if not p.get("spectator")):
+                    member["team"] = i % count if count else None
+                await narrate(room, f"Jugamos con {count} equipos." if count else "Jugamos todos contra todos.")
+                await broadcast(room, room_state(room))
+            elif action == "equipo" and room["phase"] == "lobby" and room.get("team_count"):
+                try:
+                    team = int(message.get("team", -1))
+                except (TypeError, ValueError):
+                    continue
+                if team in range(room["team_count"]):
+                    player["team"] = team
+                    await narrate(room, f"{player['name']} eligió el equipo {TEAM_NAMES[team]}.")
+                    await broadcast(room, room_state(room))
+            elif action == "start" and room["phase"] == "lobby" and player is host_player(room):
                 await start_match(room)
-            elif action == "juego" and room["phase"] == "lobby" and player == room["players"][0]:
+            elif action == "juego" and room["phase"] == "lobby" and player is host_player(room):
                 picked = message.get("game")
-                if room["game"] is None and picked in ("categorias", "paises", "ahorcado"):
+                if room["game"] is None and picked in ("categorias", "paises", "ahorcado",
+                                                       "bomba", "misterio"):
                     room["game"] = picked
                     names = {"categorias": "la ruleta de categorías",
-                             "paises": "la ruleta de países", "ahorcado": "el ahorcado"}
+                             "paises": "la ruleta de países", "ahorcado": "el ahorcado",
+                             "bomba": "la bomba", "misterio": "resolver el misterio"}
                     await narrate(room, f"¡{player['name']} eligió {names[picked]}!")
                     await start_match(room)
+            elif action == "guess" and room["phase"] == "bomba" and current_player(room) is player:
+                await bb_answer(room, player, str(message.get("text") or ""))
+            elif action == "guess" and room["phase"] == "misterio":
+                await mst_guess(room, player, str(message.get("text") or ""))
             elif action == "guess" and room["phase"] == "ahorcado" and current_player(room) is player:
                 _, _, _, _, clean, parse_guess = ah_helpers()
                 guess = parse_guess(str(message.get("text") or ""))
@@ -1230,11 +1860,21 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = ""):
             elif action == "pasar":
                 if room["phase"] == "verdad_reto" and current is player:
                     await complete_verdad_reto(room, player, done=False)
+            elif action == "microfono":
+                if current is player or room["phase"] == "misterio":
+                    room["mic_until"] = asyncio.get_running_loop().time() + (15 if message.get("active") else 0)
             elif action == "voz-texto":
                 text = str(message.get("text") or "").strip()
-                if not text or current is not player:
+                if not text or player.get("out") or player.get("spectator"):
                     continue
-                if room["phase"] == "ahorcado":
+                if room["phase"] == "misterio":
+                    await mst_guess(room, player, text)
+                    continue
+                if current is not player:
+                    continue
+                if room["phase"] == "bomba":
+                    await bb_answer(room, player, text)
+                elif room["phase"] == "ahorcado":
                     _, _, _, _, clean, parse_guess = ah_helpers()
                     guess = parse_guess(text)
                     if guess:
@@ -1245,7 +1885,7 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = ""):
                 elif room["phase"] == "question" and room.get("question"):
                     idx = match_option(text, room["question"]["options"])
                     if idx is None:
-                        await narrate(room, f"No te entendí, {player['name']}. Decí A, B o C, o tocá una opción.",
+                        await narrate(room, f"No te entendí, {player['name']}. Decí A, B, C o D, o tocá una opción.",
                                       to=player)
                     else:
                         await resolve_answer(room, player, idx)
@@ -1260,6 +1900,7 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = ""):
                 new_name = (message.get("name") or "").strip()[:24]
                 if new_name:
                     player["name"] = new_name
+                    await narrate(room, f"Ahora te llamás {new_name}.")
                     await broadcast(room, room_state(room))
     except WebSocketDisconnect:
         pass
@@ -1369,7 +2010,12 @@ async def voice_answer(code: str, request: Request, sender: int = -1):
     if room is None:
         return Response(status_code=404)
     player = next((p for p in room["players"] if p["id"] == sender and not p.get("gone")), None)
-    if player is None or current_player(room) is not player or room["phase"] not in ("question", "ahorcado"):
+    if player is None or player.get("out") or player.get("spectator"):
+        return Response(status_code=409)
+    phase = room["phase"]
+    if phase in ("question", "ahorcado", "bomba") and current_player(room) is not player:
+        return Response(status_code=409)
+    if phase not in ("question", "ahorcado", "bomba", "misterio"):
         return Response(status_code=409)
     body = await request.body()
     if not body or len(body) > 3_000_000:
@@ -1379,6 +2025,12 @@ async def voice_answer(code: str, request: Request, sender: int = -1):
         await narrate(room, f"No te escuché bien, {player['name']}. Probá de nuevo o escribila.",
                       to=player)
         return {"heard": False}
+    if room["phase"] == "bomba":
+        await bb_answer(room, player, text)
+        return {"heard": True, "text": text}
+    if room["phase"] == "misterio":
+        await mst_guess(room, player, text)
+        return {"heard": True, "text": text}
     if room["phase"] == "ahorcado":
         _, _, _, _, _, parse_guess = ah_helpers()
         guess = parse_guess(text)
@@ -1390,7 +2042,7 @@ async def voice_answer(code: str, request: Request, sender: int = -1):
     question = room.get("question")
     idx = match_option(text, question["options"]) if question else None
     if idx is None:
-        await narrate(room, f"{player['name']}, no entendí tu respuesta. Decí A, B o C.")
+        await narrate(room, f"{player['name']}, no entendí tu respuesta. Decí A, B, C o D.")
         return {"heard": False, "text": text}
     await resolve_answer(room, player, idx)
     return {"heard": True, "text": text, "idx": idx}
@@ -1428,10 +2080,12 @@ def match_option(text, options):
     t = text.lower().strip()
     if not t:
         return None
-    m = re.search(r"(?:opci[oó]n|la|letra)\s+([abc])\b", t)
+    if t in "abcd" and len(t) == 1:
+        return "abcd".index(t) if "abcd".index(t) < len(options) else None
+    m = re.search(r"(?:opci[oó]n|la|letra)\s+([abcd])\b", t)
     if m:
-        return "abc".index(m.group(1))
-    for i, word in enumerate(("primera", "segunda", "tercera")):
+        return "abcd".index(m.group(1))
+    for i, word in enumerate(("primera", "segunda", "tercera", "cuarta")):
         if word in t:
             return i
     best, best_score = None, 0
@@ -1452,7 +2106,8 @@ async def crear_sala(request: Request):
     try:
         data = await request.json()
         if data.get("mode") in ("solo", "sala", "solo_paises", "paises",
-                                "solo_ahorcado", "ahorcado"):
+                                "solo_ahorcado", "ahorcado",
+                                "solo_bomba", "bomba", "solo_misterio", "misterio"):
             mode = data["mode"]
         capacity = int(data.get("capacity") or 0) or None
     except Exception:
@@ -1462,9 +2117,13 @@ async def crear_sala(request: Request):
         game = "paises"
     elif mode in ("solo_ahorcado", "ahorcado"):
         game = "ahorcado"
+    elif mode in ("solo_bomba", "bomba"):
+        game = "bomba"
+    elif mode in ("solo_misterio", "misterio"):
+        game = "misterio"
     elif mode == "sala":
         game = None  # the host picks the game in the lobby
-    if mode in ("solo", "solo_paises", "solo_ahorcado"):
+    if mode in ("solo", "solo_paises", "solo_ahorcado", "solo_bomba", "solo_misterio"):
         capacity = 1
     elif capacity is not None:
         capacity = max(2, min(MAX_PLAYERS, capacity))
@@ -1497,6 +2156,11 @@ async def crear_sala(request: Request):
                      "guessed": set(), "wrong": set(), "attempts": 0},
         "cat_progress": {},
         "chat_voices": {},
+        "bomba": {"lives": {}, "prompt": None, "keywords": [], "said": set(),
+                  "used": set(), "fuse": 0},
+        "misterio": {"lives": {}, "solved": {}, "used": set(), "case": None,
+                     "case_idx": -1},
+        "teams": None,
     }
     return {"code": code}
 
@@ -1549,10 +2213,16 @@ PAGE = """<!DOCTYPE html>
   #pregunta .opcion[data-idx="0"] { background: #f9a825; color: #000; font-weight: bold; }
   #pregunta .opcion[data-idx="1"] { background: #00c853; color: #000; font-weight: bold; }
   #pregunta .opcion[data-idx="2"] { background: #29b6f6; color: #000; font-weight: bold; }
+  #pregunta .opcion[data-idx="3"] { background: #ce93d8; color: #000; font-weight: bold; }
   #pregunta .opcion:disabled { background: #555; color: #ddd; }
   .ahorcado-btn { background: #6a1b9a; }
   .info-btn { font-size: 1.1rem; min-width: 10rem; min-height: 2.8rem; padding: 0.5rem 1rem; }
   .info-titulo { color: #fdd835; font-weight: bold; margin-bottom: 0.2rem; }
+  .bomba-btn { background: #e64a19; }
+  .misterio-btn { background: #00838f; }
+  #bb-consigna, #mst-titulo { font-size: 1.6rem; font-weight: bold; color: #fdd835; }
+  #mst-caso { font-size: 1.3rem; }
+  #bb-quien, #bb-vidas, #mst-vidas { font-size: 1.2rem; }
   #ahorcado { max-width: 34rem; }
   #ah-pista { font-size: 1.4rem; color: #ffe082; }
   #ah-tablero {
@@ -1567,7 +2237,8 @@ PAGE = """<!DOCTYPE html>
   #chat-log { list-style: none; padding: 0; text-align: left; font-size: 1rem; color: #cfd8dc; }
   #chat-log li { margin: 0.3rem 0; }
   #chat-texto { font-size: 1.2rem; padding: 0.6rem; border-radius: 0.6rem; width: 100%; }
-  #nombre-input { font-size: 1.3rem; padding: 0.7rem; border-radius: 0.6rem; width: 16rem; }
+  select { font-size: 1.2rem; min-height: 2.8rem; padding: 0.35rem; }
+  #nombre-input, #inicio-nombre, #editar-nombre { font-size: 1.3rem; padding: 0.7rem; border-radius: 0.6rem; width: 16rem; }
   #cupos-select { font-size: 1.4rem; padding: 0.7rem; border-radius: 0.6rem; min-width: 8rem; }
   #chat-para { font-size: 1.1rem; padding: 0.5rem; border-radius: 0.6rem; }
   .visually-hidden {
@@ -1590,6 +2261,8 @@ PAGE = """<!DOCTYPE html>
     <p id="estado" role="status" tabindex="-1">Bienvenido a la mesa.</p>
 
     <section id="pantalla-inicio" aria-label="Pantalla de inicio">
+      <label for="inicio-nombre">Tu nombre o apodo (podés cambiarlo cada día):</label>
+      <input id="inicio-nombre" type="text" maxlength="24" autocomplete="nickname">
       <button id="btn-solo" aria-label="Jugar solo, sin amigos">Jugar solo</button>
       <button id="btn-sala" class="secondary" aria-label="Sala de juegos, para jugar con amigos">Sala de juegos (con amigos)</button>
       <button id="btn-paises" class="secondary" aria-label="Ruleta de Países, para jugar con amigos">Ruleta de Países</button>
@@ -1599,6 +2272,8 @@ PAGE = """<!DOCTYPE html>
       <button id="btn-modo-cat" aria-label="Ruleta de todas las categorías">Ruleta de categorías</button>
       <button id="btn-modo-paises" class="secondary" aria-label="Ruleta de países">Ruleta de países</button>
       <button id="btn-modo-ahorcado" class="ahorcado-btn" aria-label="El ahorcado, adivinar la palabra">El ahorcado</button>
+      <button id="btn-modo-bomba" class="bomba-btn" aria-label="La bomba, decí algo de la consigna antes de que explote">La bomba</button>
+      <button id="btn-modo-misterio" class="misterio-btn" aria-label="Resolver el misterio, adivinar qué pasó">Resolver el misterio</button>
     </section>
 
     <section id="pantalla-cupos" hidden aria-label="Cuántos jugadores">
@@ -1609,30 +2284,50 @@ PAGE = """<!DOCTYPE html>
     </section>
 
     <section id="pantalla-unirse" hidden aria-label="Unirse a la sala">
-      <label for="nombre-input" id="nombre-label">Tu nombre (si no escribís nada, sos Jugador N):</label><br>
+      <label for="nombre-input" id="nombre-label">Tu nombre o apodo (si lo dejás vacío, sos Jugador N):</label><br>
       <input id="nombre-input" type="text" autocomplete="off" aria-labelledby="nombre-label"><br>
       <button id="btn-entrar" aria-label="Entrar a jugar">Entrar a jugar</button>
+      <button id="btn-mirar" class="secondary">Entrar a mirar</button>
     </section>
 
     <section id="sala" hidden aria-label="Sala de juego">
       <button id="btn-musica" class="secondary info-btn" aria-pressed="false" aria-label="Prender o apagar la musiquita de fondo">🎵 Musiquita: apagada</button>
+      <label for="editar-nombre">Cambiar tu nombre o apodo:</label>
+      <input id="editar-nombre" type="text" maxlength="24" autocomplete="nickname">
+      <button id="btn-nombre" class="secondary">Guardar mi nombre</button>
       <div id="compartir" hidden>
         Pasá este link a tus amigos:<br><strong id="link"></strong><br>
         <button id="btn-copiar" class="secondary" aria-label="Copiar el link para invitar a tus amigos"><span aria-hidden="true">📤 </span>Copiar el link</button>
+      </div>
+      <div id="equipos-panel" hidden>
+        <div id="equipos-host">
+          <label for="equipos-count">Modo de equipos:</label>
+          <select id="equipos-count"><option value="0">Todos contra todos</option><option value="2">Dos equipos</option><option value="3">Tres equipos</option><option value="4">Cuatro equipos</option></select>
+          <button id="btn-equipos" class="secondary">Guardar modo de equipos</button>
+        </div>
+        <div id="equipo-propio" hidden>
+          <label for="equipo-select">Tu equipo:</label><select id="equipo-select"></select>
+          <button id="btn-equipo" class="secondary">Elegir mi equipo</button>
+        </div>
       </div>
       <div id="elegir-juego" hidden>
         <h2>¿A qué jugamos?</h2>
         <button id="btn-juego-cat" aria-label="Jugar a la ruleta de categorías">Ruleta de categorías</button>
         <button id="btn-juego-paises" class="secondary" aria-label="Jugar a la ruleta de países">Ruleta de países</button>
         <button id="btn-juego-ahorcado" class="ahorcado-btn" aria-label="Jugar al ahorcado">El ahorcado</button>
-        <button id="btn-info" class="secondary info-btn" aria-label="De qué se trata el juego elegido">¿De qué se trata?</button>
+        <button id="btn-juego-bomba" class="bomba-btn" aria-label="Jugar a la bomba">La bomba</button>
+        <button id="btn-juego-misterio" class="misterio-btn" aria-label="Jugar a resolver el misterio">Resolver el misterio</button>
       </div>
       <div id="elegir-info" hidden>
         <p class="info-titulo">¿De qué se trata cada juego?</p>
+        <button id="btn-info-bomba" class="secondary info-btn">De qué se trata la bomba</button>
+        <button id="btn-info-misterio" class="secondary info-btn">De qué se trata resolver el misterio</button>
         <button id="btn-info-cat" class="secondary info-btn" aria-label="De qué se trata la ruleta de categorías">Ruleta de categorías</button>
         <button id="btn-info-paises" class="secondary info-btn" aria-label="De qué se trata la ruleta de países">Ruleta de países</button>
         <button id="btn-info-ahorcado" class="secondary info-btn" aria-label="De qué se trata el ahorcado">El ahorcado</button>
+
       </div>
+        <button id="btn-info" class="secondary info-btn" aria-label="De qué se trata el juego elegido">¿De qué se trata?</button>
       <button id="btn-empezar" hidden aria-label="Empezar la partida ya">Empezar la partida</button>
       <p id="temporizador" role="timer" aria-hidden="true"></p>
       <canvas id="wheel" width="640" height="640" aria-hidden="true"></canvas>
@@ -1646,12 +2341,14 @@ PAGE = """<!DOCTYPE html>
 
       <button id="btn-girar" hidden disabled><span aria-hidden="true">🎡 </span><span id="btn-girar-text">Girar la ruleta</span></button>
 
+      <p id="quiz-progreso" role="status"></p>
       <div id="pregunta" hidden>
         <p id="pregunta-texto" role="status"></p>
         <button class="opcion secondary" data-idx="0"></button>
         <button class="opcion secondary" data-idx="1"></button>
         <button class="opcion secondary" data-idx="2"></button>
-        <button id="btn-voz-resp" aria-label="Responder por voz: decí A, B o C">Responder por voz</button>
+        <button class="opcion secondary" data-idx="3"></button>
+        <button id="btn-voz-resp" aria-label="Responder por voz: decí A, B, C o D">Responder por voz</button>
       </div>
 
       <div id="ahorcado" hidden>
@@ -1663,6 +2360,26 @@ PAGE = """<!DOCTYPE html>
         <input id="ah-input" type="text" autocomplete="off" aria-labelledby="ah-label">
         <button id="btn-ah-mandar" aria-label="Mandar la letra o palabra escrita">Mandar</button>
         <button id="btn-ah-voz" class="secondary" aria-label="Decir una letra o la palabra por voz">Decirla por voz</button>
+      </div>
+
+      <div id="bomba" hidden>
+        <p id="bb-consigna" role="status"></p>
+        <p id="bb-quien"></p>
+        <p id="bb-vidas"></p>
+        <label for="bb-input" id="bb-label">Escribí algo que encaje con la consigna:</label><br>
+        <input id="bb-input" type="text" autocomplete="off" aria-labelledby="bb-label">
+        <button id="btn-bb-mandar" aria-label="Mandar la respuesta de la bomba">Mandar</button>
+        <button id="btn-bb-voz" class="secondary" aria-label="Decir la respuesta por voz">Decirla por voz</button>
+      </div>
+
+      <div id="misterio" hidden>
+        <p id="mst-titulo" role="status"></p>
+        <p id="mst-caso"></p>
+        <p id="mst-vidas"></p>
+        <label for="mst-input" id="mst-label">Escribí tu teoría:</label><br>
+        <input id="mst-input" type="text" autocomplete="off" aria-labelledby="mst-label">
+        <button id="btn-mst-mandar" aria-label="Mandar la teoría">Mandar teoría</button>
+        <button id="btn-mst-voz" class="secondary" aria-label="Decir la teoría por voz">Decirla por voz</button>
       </div>
 
       <div id="reto-verdad" hidden>
@@ -1694,7 +2411,72 @@ const estado = $("estado"), voz = $("voz"), player = $("player");
 let ws = null, audioUnlocked = false;
 let myId = null, myName = localStorage.getItem("cafe_nombre") || "";
 let salaCode = null, lastState = null, lastQuestion = null, lastHint = null;
+let watching = false;
+$("btn-mirar").addEventListener("click", () => {
+  unlockAudio(); watching = true;
+  myName = $("nombre-input").value.trim().slice(0,24);
+  localStorage.setItem("cafe_nombre", myName);
+  enterSala(inviteCode, myName);
+});
 let turnStartedAt = 0, timerInterval = null;
+$("inicio-nombre").value = myName;
+$("editar-nombre").value = myName;
+function saveStartName() {
+  myName = $("inicio-nombre").value.trim().slice(0, 24);
+  localStorage.setItem("cafe_nombre", myName);
+  $("editar-nombre").value = myName;
+}
+$("btn-nombre").addEventListener("click", () => {
+  const name = $("editar-nombre").value.trim().slice(0,24);
+  if (!name || !ws || ws.readyState !== 1) return;
+  myName = name;
+  localStorage.setItem("cafe_nombre", name);
+  ws.send(JSON.stringify({action:"rename", name}));
+});
+let micActive = false;
+function setMic(active) {
+  micActive = active;
+  updateMusicLevel();
+  if (active) { player.pause(); playing = false; audioQueue.length = 0; }
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify({action:"microfono", active}));
+  if (!active) pumpAudio();
+}
+
+
+// Soft original ambient music, off by default and muted during capture.
+let musicOn = localStorage.getItem("cafe_musica") === "1";
+let musicCtx = null, musicGain = null;
+function updateMusicLevel() {
+  if (musicCtx && musicGain) musicGain.gain.setTargetAtTime(
+    micActive ? 0 : (!player.paused ? 0.006 : 0.025), musicCtx.currentTime, 0.15);
+}
+function startMusic() {
+  if (!musicOn) return;
+  if (!musicCtx) {
+    musicCtx = new (window.AudioContext || window.webkitAudioContext)();
+    musicGain = musicCtx.createGain();
+    musicGain.connect(musicCtx.destination);
+    [196, 246.94, 293.66].forEach((freq) => {
+      const osc = musicCtx.createOscillator(), gain = musicCtx.createGain();
+      osc.type = "sine"; osc.frequency.value = freq; gain.gain.value = 0.25;
+      osc.connect(gain).connect(musicGain); osc.start();
+    });
+  }
+  musicCtx.resume(); updateMusicLevel();
+}
+function renderMusic() {
+  $("btn-musica").textContent = musicOn ? "Musiquita: prendida" : "Musiquita: apagada";
+  $("btn-musica").setAttribute("aria-pressed", String(musicOn));
+}
+$("btn-musica").addEventListener("click", () => {
+  musicOn = !musicOn;
+  localStorage.setItem("cafe_musica", musicOn ? "1" : "0");
+  if (musicOn) startMusic();
+  else if (musicCtx) { musicCtx.close(); musicCtx = null; musicGain = null; }
+  renderMusic();
+});
+["play", "pause", "ended"].forEach((event) => player.addEventListener(event, updateMusicLevel));
+renderMusic();
 
 // --- One queue for every sound: nothing talks over anything else. ---
 const audioQueue = [];
@@ -1705,7 +2487,7 @@ function queueAudio(url) {
   pumpAudio();
 }
 function pumpAudio() {
-  if (playing || !audioQueue.length || !audioUnlocked) return;
+  if (playing || micActive || !audioQueue.length || !audioUnlocked) return;
   playing = true;
   const url = audioQueue.shift();
   player.src = url;
@@ -1726,6 +2508,7 @@ function announce(text) {
 
 const SILENT_MP3 = "data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//NwwAAAAAAAAAAAAEluZm8AAAAPAAAADgAABm0ALCwsLCwsLDw8PDw8PDxNTU1NTU1NXV1dXV1dXW1tbW1tbW19fX19fX19jo6Ojo6Ojp6enp6enp6erq6urq6urr6+vr6+vr7Pz8/Pz8/P39/f39/f3+/v7+/v7+//////////AAAAAExhdmM1OC4xMwAAAAAAAAAAAAAAACQDaQAAAAAAAAZtL+joNQAAAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NCxKMAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NAxKQAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80LEowAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80DEpAAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsSjAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NCxKMAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NAxKQAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80LEowAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80DEpAAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsSjAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==";
 function unlockAudio() {
+  startMusic();
   // Runs on every tap: create/resume the WebAudio context (ticking, spin
   // sound) and prime the audio element with a real soundless mp3 so
   // autoplay policies count the gesture and later queued clips can play.
@@ -1757,7 +2540,7 @@ function ac() {
   return audioCtx;
 }
 function click(freq, dur, gain) {
-  if (!audioUnlocked) return;
+  if (!audioUnlocked || micActive) return;
   try {
     const ctx = ac(), osc = ctx.createOscillator(), g = ctx.createGain();
     osc.type = "square"; osc.frequency.value = freq;
@@ -1773,17 +2556,19 @@ function spinSound() {
     setTimeout(() => click(600 + (i % 2) * 200, 0.06, 0.08), i * (120 + i * 12));
   }
 }
-function startTicking() {
+function startTicking(duration = 60) {
   stopTicking();
+  let pulse = 0;
   clockTimer = setInterval(() => {
-    const left = 60 - Math.floor((Date.now() - turnStartedAt) / 1000);
+    const left = duration - (Date.now() - turnStartedAt) / 1000;
     if (left <= 0) { stopTicking(); return; }
-    click(left <= 10 ? 1200 : 800, 0.05, left <= 10 ? 0.12 : 0.07);
-    if (left <= 10) setTimeout(() => click(1200, 0.05, 0.12), 250);
-    if (left <= 10) setTimeout(() => click(1200, 0.05, 0.12), 500);
-    if (left <= 10) setTimeout(() => click(1200, 0.05, 0.12), 750);
-  }, 1000);
+    pulse++;
+    const fast = lastState && lastState.game === "bomba";
+    const rate = fast ? (left <= 2 ? 1 : left <= 5 ? 2 : 4) : (left <= 10 ? 1 : 4);
+    if (pulse % rate === 0) click(fast ? 900 + 300 * (1 - left / duration) : 800, 0.035, 0.045);
+  }, 250);
 }
+
 function stopTicking() { if (clockTimer) { clearInterval(clockTimer); clockTimer = null; } }
 
 // --- La ruleta (canvas decorativo; el control real es el botón) ---
@@ -1832,11 +2617,11 @@ function spinAnimation(finalAngle) {
 }
 
 // --- El reloj del turno (visible; los avisos hablados los manda el server) ---
-function startClock() {
+function startClock(duration = 60) {
   turnStartedAt = Date.now();
   clearInterval(timerInterval);
   timerInterval = setInterval(() => {
-    const left = Math.max(0, 60 - Math.floor((Date.now() - turnStartedAt) / 1000));
+    const left = Math.max(0, duration - Math.floor((Date.now() - turnStartedAt) / 1000));
     $("temporizador").textContent = left > 0 ? ("Quedan " + left + " segundos") : "";
   }, 1000);
 }
@@ -1906,6 +2691,7 @@ if (inviteCode) {
 let pendingMode = "sala";
 
 async function crearYEntrar(mode) {
+  saveStartName();
   announce("Creando tu mesa...");
   const res = await fetch("/amor-con-aroma-a-cafe/api/salas", {
     method: "POST", headers: {"Content-Type": "application/json"},
@@ -1954,6 +2740,7 @@ $("btn-volver").addEventListener("click", () => {
 });
 
 $("btn-crear").addEventListener("click", async () => {
+  saveStartName();
   unlockAudio();
   announce("Creando la sala...");
   const res = await fetch("/amor-con-aroma-a-cafe/api/salas", {
@@ -1981,6 +2768,8 @@ $("btn-copiar").addEventListener("click", async () => {
   }
 });
 
+$("btn-equipos").addEventListener("click", () => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({action:"equipos",count:Number($("equipos-count").value)})); });
+$("btn-equipo").addEventListener("click", () => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({action:"equipo",team:Number($("equipo-select").value)})); });
 $("btn-empezar").addEventListener("click", () => {
   if (ws && ws.readyState === 1) ws.send(JSON.stringify({action: "start"}));
 });
@@ -1996,19 +2785,27 @@ function enterSala(code, name) {
 function connect(code, name) {
   ws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://")
     + location.host + "/amor-con-aroma-a-cafe/ws/" + code
-    + (name ? "?name=" + encodeURIComponent(name) : ""));
+    + "?name=" + encodeURIComponent(name || "") + "&spectator=" + (watching ? "true" : "false"));
   ws.onmessage = (ev) => {
     const msg = JSON.parse(ev.data);
     if (msg.event === "welcome") {
       myId = msg.id; myName = msg.name;
+      watching = !!msg.spectator;
+      $("editar-nombre").value = myName;
       localStorage.setItem("cafe_nombre", myName);
       const codeSpelled = code.split("").join(" ");
+      if (watching) announce("Entraste a mirar. Podés escuchar y usar el chat, sin turnos.");
       announce("Estás en la mesa " + codeSpelled + " como " + myName + ".");
     } else if (msg.event === "state") {
       onState(msg);
+    } else if (msg.event === "boom") {
+      boomSound();
+      if (navigator.vibrate) navigator.vibrate([300, 120, 300]);
+      announce("¡BOOM! Le explotó la bomba a " + msg.name + ".");
     } else if (msg.event === "your_turn") {
       if (msg.kind === "country") announce("Es tu turno. Tocá el botón Girar la ruleta de países.");
       else if (msg.kind === "ahorcado") announce("Es tu turno. Decí una letra con el botón Decirla por voz, o escribila y tocá Mandar.");
+      else if (msg.kind === "bomba") announce("¡Tenés la bomba! Decí o escribí algo de la consigna antes de que explote.");
       else announce("Es tu turno. Tocá el botón Girar la ruleta, o elegí la categoría y tocá Jugar esta categoría.");
     } else if (msg.event === "spin_start") {
       if (msg.labels) { LABELS = msg.labels; COLORS = PALETTE; }
@@ -2019,6 +2816,10 @@ function connect(code, name) {
       $("carta-texto").textContent = msg.label + ": " + msg.card;
     } else if (msg.event === "question") {
       onQuestion(msg);
+    } else if (msg.event === "chatter") {
+      if (!micActive && !playing && !audioQueue.length) {
+        queueAudio(msg.audio);
+      }
     } else if (msg.event === "say") {
       announce(msg.text);
       queueAudio(msg.audio);
@@ -2043,16 +2844,19 @@ function connect(code, name) {
 
 function onState(msg) {
   const prev = lastState;
-  const newTurn = !prev || prev.turn !== msg.turn || prev.phase === "lobby" || prev.phase === "gameover";
+  const newTurn = !prev || prev.turn !== msg.turn || prev.turn_number !== msg.turn_number || prev.case_idx !== msg.case_idx || prev.phase === "lobby" || prev.phase === "gameover";
   lastState = msg;
   refreshChatTargets();
   const ul = $("jugadores");
   ul.innerHTML = "";
   for (const p of msg.players) {
     const li = document.createElement("li");
-    li.textContent = p.name + ": " + p.score + " puntos" + (p.connected ? "" : " (se fue)");
+    li.textContent = p.name + (p.spectator ? " (mirando)" : (msg.team_count && p.team != null ? " (equipo " + msg.team_names[p.team] + ")" : "") + ": " + p.score + " puntos") + (p.connected ? "" : " (se fue)");
     ul.appendChild(li);
   }
+  const run = msg.quiz_run;
+  const lives = msg.quiz_lives && msg.quiz_lives[myId];
+  $("quiz-progreso").textContent = [lives != null ? "Tus vidas: " + lives + " de 4" : "", run ? "Categoría: " + run.correct + " de 5 correctas, " + run.answered + " respuestas" : ""].filter(Boolean).join(". ");
   const mine = msg.turn === myId;
   const spinPhases = ["spin_ready", "country_spin_ready", "verdad_reto_ready"];
   $("categorias").hidden = !(mine && msg.phase === "spin_ready");
@@ -2063,11 +2867,22 @@ function onState(msg) {
   $("btn-girar-text").textContent = msg.spinning ? "Girando..." : (mine ? girarText : "Esperando a " + (msg.turn_name || "alguien"));
   $("reto-verdad").hidden = !(mine && msg.phase === "verdad_reto");
   if (msg.phase !== "question") { $("pregunta").hidden = true; }
-  $("btn-empezar").hidden = !(msg.phase === "lobby" && msg.game && msg.players.length && msg.players[0].id === myId && msg.capacity !== 1);
-  const imHost = msg.players.length && msg.players[0].id === myId;
+  $("btn-empezar").hidden = !(msg.phase === "lobby" && msg.game && msg.players.some(p => !p.spectator && p.id === myId && msg.players.find(x => !x.spectator).id === myId) && msg.capacity !== 1);
+  const host = msg.players.find(p => !p.spectator);
+  const imHost = !!host && host.id === myId;
+  $("equipos-panel").hidden = msg.phase !== "lobby" || watching;
+  $("equipos-host").hidden = !imHost;
+  $("equipos-count").value = String(msg.team_count || 0);
+  $("equipo-propio").hidden = !msg.team_count;
+  const me = msg.players.find(p => p.id === myId);
+  $("equipo-select").innerHTML = "";
+  (msg.team_names || []).forEach((name, i) => {
+    const option = document.createElement("option");option.value = i;option.textContent = name;
+    option.selected = !!me && me.team === i;$("equipo-select").appendChild(option);
+  });
   $("elegir-juego").hidden = !(msg.phase === "lobby" && !msg.game && imHost);
   $("elegir-info").hidden = !(msg.phase === "lobby" && !msg.game && imHost);
-  $("btn-info").hidden = !(msg.phase === "lobby" && msg.game && imHost);
+  $("btn-info").hidden = !msg.game;
   const ah = msg.ahorcado;
   $("ahorcado").hidden = !(msg.game === "ahorcado" && ah);
   if (msg.game === "ahorcado" && ah) {
@@ -2083,15 +2898,40 @@ function onState(msg) {
     $("btn-ah-voz").disabled = !mine;
     $("ah-input").disabled = !mine;
   }
-  if (newTurn && msg.phase !== "lobby" && msg.phase !== "gameover") { startClock(); startTicking(); }
+  const bb = msg.bomba;
+  $("bomba").hidden = !(msg.game === "bomba" && bb);
+  if (msg.game === "bomba" && bb) {
+    $("bb-consigna").textContent = "Consigna: " + bb.prompt;
+    $("bb-quien").textContent = "La bomba la tiene " + (msg.turn_name || "") + ". La mecha: " + bb.fuse + " segundos.";
+    const myLives = bb.lives && myId != null ? bb.lives[myId] : null;
+    $("bb-vidas").textContent = myLives != null ? ("Tus vidas: " + myLives) : "";
+    $("btn-bb-mandar").disabled = !mine;
+    $("btn-bb-voz").disabled = !mine;
+    $("bb-input").disabled = !mine;
+  }
+  const mst = msg.misterio;
+  $("misterio").hidden = !(msg.game === "misterio" && mst);
+  if (msg.game === "misterio" && mst) {
+    $("mst-titulo").textContent = "Misterio: " + mst.title;
+    $("mst-caso").textContent = mst.case;
+    const myLives = mst.lives && myId != null ? mst.lives[myId] : null;
+    const owner = msg.team_count && me ? "equipo:" + me.team : myId;
+    const mySolved = mst.solved && owner != null ? (mst.solved[owner] || 0) : 0;
+    ["btn-mst-mandar", "btn-mst-voz", "mst-input"].forEach(id => $(id).disabled = watching || !!(me && me.out));
+    $("mst-vidas").textContent = (myLives != null ? "Tus vidas: " + myLives + ". " : "") +
+      "Casos tuyos: " + mySolved + " de " + mst.to_win + ".";
+  }
+  if (newTurn && msg.phase !== "lobby" && msg.phase !== "gameover") { startClock(msg.game === "bomba" && bb ? bb.fuse : msg.game === "misterio" ? 150 : 60); startTicking(msg.game === "bomba" && bb ? bb.fuse : msg.game === "misterio" ? 150 : 60); }
   if (msg.phase === "lobby" || msg.phase === "gameover") { stopTicking(); lastHint = null; }
   if (msg.phase === "gameover") { clearInterval(timerInterval); $("temporizador").textContent = ""; }
 }
 
 function onQuestion(msg) {
+  startClock(60);
+  startTicking(60);
   lastQuestion = msg;
   $("pregunta").hidden = false;
-  const letters = ["A", "B", "C"];
+  const letters = ["A", "B", "C", "D"];
   $("pregunta-texto").textContent = msg.q;
   const mine = msg.player === myId;
   document.querySelectorAll("#pregunta .opcion").forEach((btn, i) => {
@@ -2129,15 +2969,14 @@ $("btn-juego-paises").addEventListener("click", () => {
 $("btn-juego-ahorcado").addEventListener("click", () => {
   if (ws && ws.readyState === 1) ws.send(JSON.stringify({action: "juego", game: "ahorcado"}));
 });
-const LOCAL_DESCRIPTIONS = {
-  categorias: "La ruleta de categorías: girás la ruleta, te toca una categoría y respondés una pregunta con tres opciones. Con 3 aciertos en una categoría la pasás de nivel; el primero en pasar 3 categorías gana.",
-  paises: "La ruleta de países: primero girás la ruleta de países y después respondés preguntas por ese país. El primero en ganar 2 países gana la partida.",
-  ahorcado: "El ahorcado: adivinás la palabra letra por letra, hablando o escribiendo. Si la letra está, seguís jugando; si no, pasa el turno. El que adivina la palabra sube de nivel; el primero en pasar el nivel 5 gana.",
-};
+const LOCAL_DESCRIPTIONS = {"bomba": "La bomba: decí una respuesta que cumpla la consigna antes de que se termine la mecha. Si vale, pasás la bomba. Si no vale o se acaba el tiempo, perdés una vida.", "misterio": "Resolver el misterio: escuchá el caso y proponé una teoría hablando o escribiendo. Acertar gana el caso. Una teoría lejos de la solución cuesta una vida.", "categorias": "Girás la ruleta y seguís en la categoría que salga hasta conseguir cinco respuestas correctas. Empezás con cuatro vidas; cada error cuesta una. Cinco correctas seguidas regalan una vida, sin superar cuatro. Sin vidas volvés al comienzo y girás de nuevo, con cuatro vidas. No quedás eliminado. El primero en pasar tres categorías gana.", "paises": "Primero girás la ruleta de países. Girás la ruleta y seguís en la categoría que salga hasta conseguir cinco respuestas correctas. Empezás con cuatro vidas; cada error cuesta una. Cinco correctas seguidas regalan una vida, sin superar cuatro. Sin vidas volvés al comienzo y girás de nuevo, con cuatro vidas. No quedás eliminado. Completá todas las categorías para ganar el país. Dos países ganan la partida.", "ahorcado": "El ahorcado: adivinás la palabra letra por letra, hablando o escribiendo. Si la letra está, seguís jugando; si no, pasa el turno. El que adivina la palabra sube de nivel; el primero en pasar el nivel 5 gana."};
+
 function askDescription(game) {
   if (salaCode && ws && ws.readyState === 1) ws.send(JSON.stringify({action: "descripcion", game: game}));
   announce(LOCAL_DESCRIPTIONS[game]);
 }
+$("btn-info-bomba").addEventListener("click", () => askDescription("bomba"));
+$("btn-info-misterio").addEventListener("click", () => askDescription("misterio"));
 $("btn-info-cat").addEventListener("click", () => askDescription("categorias"));
 $("btn-info-paises").addEventListener("click", () => askDescription("paises"));
 $("btn-info-ahorcado").addEventListener("click", () => askDescription("ahorcado"));
@@ -2152,36 +2991,14 @@ function sendGuess() {
 $("btn-ah-mandar").addEventListener("click", sendGuess);
 $("ah-input").addEventListener("keydown", (e) => { if (e.key === "Enter") sendGuess(); });
 
-let ahRecorder = null, ahChunks = [];
-$("btn-ah-voz").addEventListener("click", async () => {
-  if (ahRecorder && ahRecorder.state === "recording") { ahRecorder.stop(); return; }
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({audio: true});
-    ahChunks = [];
-    ahRecorder = new MediaRecorder(stream);
-    ahRecorder.ondataavailable = (e) => { if (e.data.size) ahChunks.push(e.data); };
-    ahRecorder.onstop = async () => {
-      stream.getTracks().forEach((t) => t.stop());
-      $("btn-ah-voz").textContent = "Decirla por voz";
-      const blob = new Blob(ahChunks, {type: ahRecorder.mimeType || "audio/webm"});
-      announce("Escuchando tu letra...");
-      try {
-        const res = await fetch("/amor-con-aroma-a-cafe/api/voz-respuesta/" + salaCode + "?sender=" + myId, {method: "POST", body: blob});
-        if (!res.ok) announce("No te entendí. Escribila o probá de nuevo.");
-      } catch (err) { announce("No pude mandar tu voz. Escribila mejor."); }
-    };
-    ahRecorder.start();
-    $("btn-ah-voz").textContent = "Parar y mandar";
-    announce("Grabando. Decí una letra o la palabra, y tocá el botón de nuevo.");
-  } catch (err) { announce("No pude usar el micrófono. Escribila mejor."); }
-});
-
 function sendVoiceText(text) {
   if (salaCode && ws && ws.readyState === 1) ws.send(JSON.stringify({action: "voz-texto", text: text}));
 }
 function oneTapVoice(id) {
   $(id).addEventListener("click", async () => {
+    if (micActive) return;
     unlockAudio();
+    setMic(true);
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SR) {
       try {
@@ -2193,12 +3010,13 @@ function oneTapVoice(id) {
         announce("Te escucho. Hablá tranquilo: se manda sola.");
         rec.onresult = (e) => {
           got = true;
+          setMic(false);
           const text = e.results[0][0].transcript;
           announce("Dijiste: " + text);
           sendVoiceText(text);
         };
-        rec.onerror = () => { if (!got) announce("No te escuché. Probá de nuevo o escribila."); };
-        rec.onend = () => { if (!got) announce("No te escuché. Probá de nuevo o escribila."); };
+        rec.onerror = () => { setMic(false); if (!got) announce("No te escuché. Probá de nuevo o escribila."); };
+        rec.onend = () => { setMic(false); if (!got) announce("No te escuché. Probá de nuevo o escribila."); };
         rec.start();
         return;
       } catch (err) { /* fall through to the audio-upload path */ }
@@ -2229,6 +3047,7 @@ function oneTapVoice(id) {
       await stopped;
       stream.getTracks().forEach((t) => t.stop());
       mic.close();
+      setMic(false);
       if (!heard) { announce("No escuché nada. Tocá el botón y hablá más cerca del micrófono."); return; }
       const blob = new Blob(chunks, {type: recorder.mimeType || "audio/webm"});
       announce("Mandando lo que dijiste...");
@@ -2236,12 +3055,63 @@ function oneTapVoice(id) {
         const res = await fetch("/amor-con-aroma-a-cafe/api/voz-respuesta/" + salaCode + "?sender=" + myId, {method: "POST", body: blob});
         if (!res.ok) announce("No te entendí. Probá de nuevo o escribila.");
       } catch (err) { announce("No pude mandar tu voz. Escribila mejor."); }
-    } catch (err) { announce("No pude usar el micrófono. Escribila mejor."); }
+    } catch (err) { setMic(false); announce("No pude usar el micrófono. Escribila mejor."); }
   });
 }
 oneTapVoice("btn-voz-resp");
 oneTapVoice("btn-ah-voz");
-oneTapVoice("btn-ah-voz-dup");
+oneTapVoice("btn-bb-voz");
+oneTapVoice("btn-mst-voz");
+
+function boomSound() {
+  try {
+    if (!audioCtx) return;
+    const dur = 0.9, sr = audioCtx.sampleRate;
+    const buf = audioCtx.createBuffer(1, dur * sr, sr);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 2);
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.9, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    src.connect(gain).connect(audioCtx.destination);
+    src.start();
+  } catch (err) {}
+}
+
+$("btn-modo-bomba").addEventListener("click", () => {
+  crearYEntrar(pendingMode === "solo" ? "solo_bomba" : "bomba");
+});
+$("btn-modo-misterio").addEventListener("click", () => {
+  crearYEntrar(pendingMode === "solo" ? "solo_misterio" : "misterio");
+});
+$("btn-juego-bomba").addEventListener("click", () => {
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify({action: "juego", game: "bomba"}));
+});
+$("btn-juego-misterio").addEventListener("click", () => {
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify({action: "juego", game: "misterio"}));
+});
+
+function sendBomba() {
+  const t = $("bb-input").value.trim();
+  if (!t || !ws || ws.readyState !== 1) return;
+  ws.send(JSON.stringify({action: "guess", text: t}));
+  $("bb-input").value = "";
+}
+$("btn-bb-mandar").addEventListener("click", sendBomba);
+$("bb-input").addEventListener("keydown", (e) => { if (e.key === "Enter") sendBomba(); });
+
+function sendMisterio() {
+  const t = $("mst-input").value.trim();
+  if (!t || !ws || ws.readyState !== 1) return;
+  ws.send(JSON.stringify({action: "guess", text: t}));
+  $("mst-input").value = "";
+}
+$("btn-mst-mandar").addEventListener("click", sendMisterio);
+$("mst-input").addEventListener("keydown", (e) => { if (e.key === "Enter") sendMisterio(); });
+
+
 
 $("btn-listo").addEventListener("click", () => {
   if (ws && ws.readyState === 1) ws.send(JSON.stringify({action: "listo"}));
