@@ -98,7 +98,7 @@ class EspeakVoiceTests(unittest.IsolatedAsyncioTestCase):
 
     def test_screen_reader_voice_is_listed_first_with_name(self):
         self.assertEqual(app.VOICE_ITEMS[0][0] if hasattr(app, "VOICE_ITEMS") else list(app.VOICES)[0], "espeak-es-419")
-        self.assertEqual(app.voice_name("espeak-es-419"), "Voz Lector")
+        self.assertEqual(app.voice_name("espeak-es-419"), "Voz Lector 1")
 
     def test_all_screen_reader_variants_are_listed_first(self):
         expected = ["espeak-es-419", "espeak-es-419-m1", "espeak-es-419-m3", "espeak-es-419-f1", "espeak-es-419-f2"]
