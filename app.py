@@ -615,7 +615,10 @@ async def answer_dialogue(chat_id: int, user_text: str, voices):
         + f" En esta conversación participan {len(voices)} voces: {labels}."
         + address_line
         + " Respondé al pedido como una conversación entre ellas: cada una habla exactamente "
-        f"una vez, en ese orden. {names[0]} responde al pedido y se dirige a {names[1]} "
+        f"una vez, en ese orden. Si la persona nombró a una voz en particular, {names[0]} "
+        "le pasa la palabra a esa voz y esa voz le responde directamente a la persona en "
+        "su turno, llamándola por su nombre. Si no nombró a ninguna, "
+        f"{names[0]} responde al pedido y se dirige a {names[1]} "
         "por su nombre, comentándole algo o haciéndole una pregunta. Cada una de las "
         "siguientes le contesta a la voz que la nombró o se dirige a otra, siempre "
         "llamándola por su nombre, y aporta algo nuevo sin repetir. La última cierra la idea. "
@@ -662,10 +665,13 @@ async def answer_dialogue_sequential(chat_id: int, user_text: str, voices):
         if user_name:
             address_line = (
                 f" Hablan con {user_name}: dirigite a esa persona por su nombre y "
-                "respondé a lo que dice."
+                "respondé a lo que dice. Si te nombró a vos, contestale directamente."
             )
         else:
-            address_line = " Dirigite también a la persona que escribe y respondé a lo que dice."
+            address_line = (
+                " Dirigite también a la persona que escribe y respondé a lo que dice. "
+                "Si te nombró a vos, contestale directamente."
+            )
         prompt = (
             SYSTEM_PROMPT
             + f" En esta conversación de {len(voices)} voces ({', '.join(names)}) sos {speaker}.{address_line} {role} "
