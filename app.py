@@ -30,7 +30,14 @@ DATABASE_PATH = os.getenv("DATABASE_PATH", "data/cafe_sabroso.db")
 TELEGRAM_API = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}"
 TELEGRAM_FILE = f"https://api.telegram.org/file/bot{TELEGRAM_TOKEN}"
 
+# Screen-reader style voices synthesized locally with eSpeak-NG (the NVDA
+# default and the free stand-in for the proprietary Eloquence voice in JAWS),
+# keyed apart from the Edge TTS IDs so synthesize can route them.
+ESPEAK_VOICES = {
+    "espeak-es-419": {"espeak_voice": "es-419", "rate": 175},
+}
 VOICES = {
+    "espeak-es-419": "Voz Lector - estilo NVDA",
     "es-AR-TomasNeural": "Tomás - argentino",
     "es-AR-ElenaNeural": "Elena - argentina",
     "es-MX-JorgeNeural": "Jorge - México",
@@ -95,10 +102,33 @@ trio_enabled = defaultdict(lambda: False)
 trio_pairs = {}
 quartet_enabled = defaultdict(lambda: False)
 quartet_pairs = {}
+quintet_enabled = defaultdict(lambda: False)
+quintet_pairs = {}
+sextet_enabled = defaultdict(lambda: False)
+sextet_pairs = {}
 story_enabled = defaultdict(lambda: False)
 story_pairs = {}
-GROUP_MODE_SIZES = {"duo": 2, "trio": 3, "quartet": 4, "story": 4}
-GROUP_MODE_LABELS = {"duo": "dúo", "trio": "trío", "quartet": "cuarteto", "story": "historia"}
+GROUP_MODE_SIZES = {"duo": 2, "trio": 3, "quartet": 4, "quintet": 5, "sextet": 6, "story": 4}
+GROUP_MODE_LABELS = {
+    "duo": "dúo", "trio": "trío", "quartet": "cuarteto",
+    "quintet": "quinteto", "sextet": "sexteto", "story": "historia",
+}
+GROUP_MODE_FLAGS = {
+    "duo": (duo_enabled, duo_pairs),
+    "trio": (trio_enabled, trio_pairs),
+    "quartet": (quartet_enabled, quartet_pairs),
+    "quintet": (quintet_enabled, quintet_pairs),
+    "sextet": (sextet_enabled, sextet_pairs),
+    "story": (story_enabled, story_pairs),
+}
+# Conversation modes where the voices address each other by name; story is a
+# narration with its own prompt.
+DIALOGUE_KINDS = ("duo", "trio", "quartet", "quintet", "sextet")
+
+
+def clear_group_modes(chat_id: int):
+    for flags, _ in GROUP_MODE_FLAGS.values():
+        flags[chat_id] = False
 group_selection = {}
 pending_weather_query = {}
 pending_sports_query = {}
@@ -113,6 +143,8 @@ BOT_COMMANDS = [
     {"command": "duo", "description": "Conversar con dos voces"},
     {"command": "trio", "description": "Conversar con tres voces"},
     {"command": "cuarteto", "description": "Conversar con cuatro voces"},
+    {"command": "quinteto", "description": "Conversar con cinco voces"},
+    {"command": "sexteto", "description": "Conversar con seis voces"},
     {"command": "historia", "description": "Crear una historia con cuatro personajes"},
     {"command": "musica", "description": "Buscar un artista o una canción"},
     {"command": "nombre", "description": "Cambiar cómo te llama el bot"},
@@ -169,11 +201,23 @@ def speech_text(text: str) -> str:
 
 async def synthesize(text: str, voice: str) -> bytes:
     with tempfile.TemporaryDirectory() as directory:
-        mp3 = Path(directory) / "reply.mp3"
+        source = Path(directory) / "reply.src"
         ogg = Path(directory) / "reply.ogg"
-        await edge_tts.Communicate(speech_text(text), voice).save(str(mp3))
+        if voice in ESPEAK_VOICES:
+            config = ESPEAK_VOICES[voice]
+            process = await asyncio.create_subprocess_exec(
+                "espeak-ng", "-v", config["espeak_voice"], "-s", str(config["rate"]),
+                "--stdin", "-w", str(source),
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+            )
+            _, stderr = await process.communicate(speech_text(text).encode())
+            if process.returncode:
+                raise RuntimeError(f"espeak-ng failed: {stderr.decode()[:300]}")
+        else:
+            await edge_tts.Communicate(speech_text(text), voice).save(str(source))
         process = await asyncio.create_subprocess_exec(
-            "ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", str(mp3),
+            "ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", str(source),
             "-c:a", "libopus", "-b:a", "48k", "-ac", "1", str(ogg),
             stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
         )
@@ -459,30 +503,32 @@ async def answer_group(chat_id: int, user_text: str, voices):
     return replies
 
 
-async def answer_duo(chat_id: int, user_text: str):
-    """Two voices in a real dialogue: they address each other by name."""
-    voices = duo_pairs[chat_id]
+async def answer_dialogue(chat_id: int, user_text: str, voices):
+    """Group conversation: every voice speaks once and addresses another by name."""
     history = histories[chat_id]
     names = [voice_name(voice) for voice in voices]
+    labels = ", ".join(names)
+    word_limit = 60 if len(voices) <= 2 else 45
     prompt = (
         SYSTEM_PROMPT
-        + f" En esta conversación participan dos voces: {names[0]} y {names[1]}. "
-        "Respondé al pedido como un diálogo entre las dos: cada una habla exactamente "
+        + f" En esta conversación participan {len(voices)} voces: {labels}. "
+        "Respondé al pedido como una conversación entre ellas: cada una habla exactamente "
         f"una vez, en ese orden. {names[0]} responde al pedido y se dirige a {names[1]} "
-        "por su nombre, comentándole algo o haciéndole una pregunta. "
-        f"{names[1]} le contesta a {names[0]}, también llamándola por su nombre, "
-        "y cierra la idea. Escribí cada turno en una línea que empiece con el nombre "
-        "de la voz y dos puntos, por ejemplo 'Nombre: texto'. Usá un máximo de 60 "
-        "palabras por turno. No agregues ningún otro rótulo. No anuncies que son IA. "
-        "No incluyas presentaciones salvo que la persona las pida; en ese caso, cada "
-        "voz se presenta con su nombre y una descripción breve."
+        "por su nombre, comentándole algo o haciéndole una pregunta. Cada una de las "
+        "siguientes le contesta a la voz que la nombró o se dirige a otra, siempre "
+        "llamándola por su nombre, y aporta algo nuevo sin repetir. La última cierra la idea. "
+        "Escribí cada turno en una línea que empiece con el nombre de la voz y dos puntos, "
+        f"por ejemplo 'Nombre: texto'. Usá un máximo de {word_limit} palabras por turno. "
+        "No agregues ningún otro rótulo. No anuncies que son IA. No incluyas presentaciones "
+        "salvo que la persona las pida; en ese caso, cada voz se presenta con su nombre "
+        "y una descripción breve."
     )
     messages = [{"role": "system", "content": prompt}]
     messages.extend(history)
     messages.append({"role": "user", "content": user_text})
     replies = parse_group_turns(await complete(messages), names)
     if replies is None:
-        return await answer_duo_sequential(chat_id, user_text, voices)
+        return await answer_dialogue_sequential(chat_id, user_text, voices)
     history.append({"role": "user", "content": user_text})
     history.append({
         "role": "assistant",
@@ -491,27 +537,29 @@ async def answer_duo(chat_id: int, user_text: str):
     return replies
 
 
-async def answer_duo_sequential(chat_id: int, user_text: str, voices):
+async def answer_dialogue_sequential(chat_id: int, user_text: str, voices):
     """Compatibility fallback when a model does not follow the dialogue format."""
     history = histories[chat_id]
     names = [voice_name(voice) for voice in voices]
     replies = []
     for index, speaker in enumerate(names):
-        other = names[1 - index]
         if index == 0:
             role = (
-                f"Respondé primero al pedido y dirigite a {other} por su nombre: "
+                f"Respondé primero al pedido y dirigite a {names[1]} por su nombre: "
                 "comentale algo o hacéle una pregunta."
             )
         else:
             role = (
-                f"{names[0]} ya habló y te nombró. Respondéle a {names[0]} por su "
-                "nombre, contestando lo que te dijo, y cerrá la idea."
+                f"Ya hablaron {', '.join(names[:index])}. Si alguna te nombró, respondéle "
+                "a esa voz llamándola por su nombre; si no, dirigite a una de ellas por "
+                "su nombre. Aportá una idea nueva sin repetir."
             )
+            if index == len(names) - 1:
+                role += " Cerrá la conversación con una idea final breve."
         prompt = (
             SYSTEM_PROMPT
-            + f" En esta conversación de dos voces sos {speaker} y la otra voz es {other}. {role} "
-            "Podés reaccionar naturalmente al comentario anterior. Escribí únicamente "
+            + f" En esta conversación de {len(voices)} voces ({', '.join(names)}) sos {speaker}. {role} "
+            "Podés reaccionar naturalmente a los comentarios anteriores. Escribí únicamente "
             "el texto final hablado de tu turno, sin análisis ni rótulos. Usá un máximo "
             "de 60 palabras. No anuncies que sos una IA. No te presentes salvo que la "
             "persona pida presentaciones; en ese caso, presentate con tu nombre y una "
@@ -538,12 +586,24 @@ async def answer_duo_sequential(chat_id: int, user_text: str, voices):
     return replies
 
 
+async def answer_duo(chat_id: int, user_text: str):
+    return await answer_dialogue(chat_id, user_text, duo_pairs[chat_id])
+
+
 async def answer_trio(chat_id: int, user_text: str):
-    return await answer_group(chat_id, user_text, trio_pairs[chat_id])
+    return await answer_dialogue(chat_id, user_text, trio_pairs[chat_id])
 
 
 async def answer_quartet(chat_id: int, user_text: str):
-    return await answer_group(chat_id, user_text, quartet_pairs[chat_id])
+    return await answer_dialogue(chat_id, user_text, quartet_pairs[chat_id])
+
+
+async def answer_quintet(chat_id: int, user_text: str):
+    return await answer_dialogue(chat_id, user_text, quintet_pairs[chat_id])
+
+
+async def answer_sextet(chat_id: int, user_text: str):
+    return await answer_dialogue(chat_id, user_text, sextet_pairs[chat_id])
 
 
 async def answer_story(chat_id: int, theme: str):
@@ -1157,30 +1217,19 @@ async def ask_preferred_name(chat_id: int, action="mode"):
     )
 
 
-async def start_duo(chat_id: int):
-    group_selection[chat_id] = {"kind": "duo", "voices": []}
-    await send_text(
-        chat_id,
-        "Modo dúo: elige la primera voz. Después elegirás la segunda y responderán por turnos en un solo audio.",
-        reply_markup={"inline_keyboard": voice_keyboard(chat_id, "gsel:duo")},
-    )
-
-
-async def start_trio(chat_id: int):
-    group_selection[chat_id] = {"kind": "trio", "voices": []}
-    await send_text(
-        chat_id,
-        "Modo trío: elige la primera de tres voces. Después elegirás la segunda y la tercera; responderán por turnos en un solo audio.",
-        reply_markup={"inline_keyboard": voice_keyboard(chat_id, "gsel:trio")},
-    )
-
-
-async def start_four_mode(chat_id: int, kind: str):
+async def start_group_mode(chat_id: int, kind: str):
     group_selection[chat_id] = {"kind": kind, "voices": []}
-    if kind == "quartet":
-        text = "Modo cuarteto: elige la primera de cuatro voces distintas. Responderán por turnos en un solo audio."
-    else:
+    size = GROUP_MODE_SIZES[kind]
+    numbers = {2: "dos", 3: "tres", 4: "cuatro", 5: "cinco", 6: "seis"}
+    if kind == "story":
         text = "Modo historia: elige la primera de cuatro voces distintas. Serán cuatro personajes que continúan una misma escena."
+    elif kind == "duo":
+        text = "Modo dúo: elige la primera voz. Después elegirás la segunda y conversarán entre ellas en un solo audio."
+    else:
+        text = (
+            f"Modo {GROUP_MODE_LABELS[kind]}: elige la primera de {numbers[size]} voces distintas. "
+            "Conversarán entre ellas en un solo audio."
+        )
     await send_text(
         chat_id, text,
         reply_markup={"inline_keyboard": voice_keyboard(chat_id, f"gsel:{kind}")},
@@ -1194,7 +1243,8 @@ async def welcome(chat_id: int, fallback_name=None):
     name = get_preferred_name(chat_id) or fallback_name or "amigo"
     text = (
         f"📋 MENÚ PRINCIPAL\nHola, {name}. Pulsa uno de estos botones para empezar. "
-        "En los modos dúo, trío y cuarteto, varias voces responden por turnos en un mismo audio. "
+        "En los modos dúo, trío, cuarteto, quinteto y sexteto, las voces conversan entre ellas "
+        "y se llaman por su nombre en un mismo audio. "
         "Después de elegir el modo, pulsa las voces en los botones que aparecen.\n\n"
         "También puedes escribirme o enviarme una nota de voz. Para volver a ver estos botones, "
         "pulsa el botón Menú de Telegram junto al campo de mensaje o escribe /menu."
@@ -1202,11 +1252,12 @@ async def welcome(chat_id: int, fallback_name=None):
     keyboard = [
         [{"text": "🎙️ Individual: elegir una voz", "callback_data": "mode:single"}],
         [{"text": "👥 Dúo: 2 voces", "callback_data": "mode:duo"}, {"text": "👥 Trío: 3 voces", "callback_data": "mode:trio"}],
-        [{"text": "👥 Cuarteto: 4 voces", "callback_data": "mode:quartet"}, {"text": "📖 Historia: 4 personajes", "callback_data": "mode:story"}],
+        [{"text": "👥 Cuarteto: 4 voces", "callback_data": "mode:quartet"}, {"text": "👥 Quinteto: 5 voces", "callback_data": "mode:quintet"}],
+        [{"text": "👥 Sexteto: 6 voces", "callback_data": "mode:sextet"}, {"text": "📖 Historia: 4 personajes", "callback_data": "mode:story"}],
         [{"text": "🎵 Buscar música", "callback_data": "mode:music"}],
     ]
     await send_text(chat_id, text, reply_markup={"inline_keyboard": keyboard})
-    await send_voice(chat_id, f"Hola, {name}. Ya estoy listo. Elige hasta cuatro voces o una historia para empezar.")
+    await send_voice(chat_id, f"Hola, {name}. Ya estoy listo. Elige hasta seis voces o una historia para empezar.")
 
 
 async def handle_message(message: dict):
@@ -1229,12 +1280,8 @@ async def handle_message(message: dict):
             awaiting_name[chat_id] = False
             action = pending_action.pop(chat_id, "mode")
             await send_text(chat_id, f"Gracias, {name}. Voy a llamarte así.")
-            if action == "duo":
-                await start_duo(chat_id)
-            elif action == "trio":
-                await start_trio(chat_id)
-            elif action in ("quartet", "story"):
-                await start_four_mode(chat_id, action)
+            if action in GROUP_MODE_SIZES:
+                await start_group_mode(chat_id, action)
             else:
                 await welcome(chat_id, name)
             return
@@ -1245,23 +1292,26 @@ async def handle_message(message: dict):
             await ask_preferred_name(chat_id)
             return
         if text.startswith("/duo"):
-            await start_duo(chat_id)
+            await start_group_mode(chat_id, "duo")
             return
         if text.startswith("/trio"):
-            await start_trio(chat_id)
+            await start_group_mode(chat_id, "trio")
             return
         if text.startswith("/cuarteto"):
-            await start_four_mode(chat_id, "quartet")
+            await start_group_mode(chat_id, "quartet")
+            return
+        if text.startswith("/quinteto"):
+            await start_group_mode(chat_id, "quintet")
+            return
+        if text.startswith("/sexteto"):
+            await start_group_mode(chat_id, "sextet")
             return
         if text.startswith("/historia"):
-            await start_four_mode(chat_id, "story")
+            await start_group_mode(chat_id, "story")
             return
         if text.startswith("/individual"):
             group_selection.pop(chat_id, None)
-            duo_enabled[chat_id] = False
-            trio_enabled[chat_id] = False
-            quartet_enabled[chat_id] = False
-            story_enabled[chat_id] = False
+            clear_group_modes(chat_id)
             await send_text(chat_id, f"Modo individual activado. Tu voz actual es {VOICES[selected_voice[chat_id]]}. Elige otra abajo si quieres cambiarla.")
             await send_voice(chat_id, "Modo individual activado. Seguimos con una sola voz.")
             await show_voices(chat_id)
@@ -1328,33 +1378,17 @@ async def handle_message(message: dict):
             await send_text(chat_id, combined + source_text)
             await send_group_voice(chat_id, list(zip(voices, replies)))
             return
-        if quartet_enabled[chat_id]:
-            voices = quartet_pairs[chat_id]
-            replies = await answer_quartet(chat_id, user_text)
-            combined = "\n\n".join(
-                f"{voice_name(voice)}: {reply}" for voice, reply in zip(voices, replies)
-            )
-            await send_text(chat_id, combined + source_text)
-            await send_group_voice(chat_id, list(zip(voices, replies)))
-            return
-        if trio_enabled[chat_id]:
-            voices = trio_pairs[chat_id]
-            replies = await answer_trio(chat_id, user_text)
-            combined = "\n\n".join(
-                f"{voice_name(voice)}: {reply}" for voice, reply in zip(voices, replies)
-            )
-            await send_text(chat_id, combined + source_text)
-            await send_group_voice(chat_id, list(zip(voices, replies)))
-            return
-        if duo_enabled[chat_id]:
-            voices = duo_pairs[chat_id]
-            replies = await answer_duo(chat_id, user_text)
-            combined = "\n\n".join(
-                f"{voice_name(voice)}: {reply}" for voice, reply in zip(voices, replies)
-            )
-            await send_text(chat_id, combined + source_text)
-            await send_group_voice(chat_id, list(zip(voices, replies)))
-            return
+        for kind in DIALOGUE_KINDS:
+            enabled, pairs = GROUP_MODE_FLAGS[kind]
+            if enabled[chat_id]:
+                voices = pairs[chat_id]
+                replies = await answer_dialogue(chat_id, user_text, voices)
+                combined = "\n\n".join(
+                    f"{voice_name(voice)}: {reply}" for voice, reply in zip(voices, replies)
+                )
+                await send_text(chat_id, combined + source_text)
+                await send_group_voice(chat_id, list(zip(voices, replies)))
+                return
         result = await answer(chat_id, user_text)
         await send_text(chat_id, result + source_text)
         await send_voice(chat_id, result)
@@ -1412,45 +1446,36 @@ async def advance_group_selection(chat_id: int, callback: dict, kind: str, voice
     await complete_group_selection(chat_id, callback, kind, list(voices))
 
 
-async def complete_group_selection(chat_id: int, callback: dict, kind: str, voices):
-    voices = tuple(voices)
-    duo_enabled[chat_id] = kind == "duo"
-    trio_enabled[chat_id] = kind == "trio"
-    quartet_enabled[chat_id] = kind == "quartet"
-    story_enabled[chat_id] = kind == "story"
-    selected_voice[chat_id] = voices[0]
-    voice_enabled[chat_id] = True
-    names = [voice_name(item) for item in voices]
-    name = get_preferred_name(chat_id) or callback.get("from", {}).get("first_name") or "amigo"
-    if kind == "duo":
-        duo_pairs[chat_id] = voices
-        samples = [
-            f"Hola, {name}. Soy {names[0]}. {names[1]}, ¿arrancamos charlando con {name}?",
-            f"¡Vamos, {names[0]}! {name}, yo soy {names[1]}. Mandanos un mensaje o un audio y charlamos entre los dos.",
-        ]
-    elif kind == "trio":
-        trio_pairs[chat_id] = voices
-        samples = [
-            f"Hola, {name}. Soy {names[0]} y vamos a conversar entre los tres.",
-            f"{name}, yo soy {names[1]}. Voy a sumar otra mirada después de {names[0]}.",
-            f"Y yo soy {names[2]}, {name}. Cierro el turno con una idea práctica. Mandanos tu pregunta.",
-        ]
-    elif kind == "quartet":
-        quartet_pairs[chat_id] = voices
-        samples = [
-            f"Hola, {name}. Soy {names[0]} y empiezo el cuarteto.",
-            f"{name}, yo soy {names[1]} y sigo después de {names[0]}.",
-            f"Soy {names[2]}, {name}. Voy a aportar otra mirada.",
-            f"Y yo soy {names[3]}, {name}. Cierro con una recomendación. Mandanos tu pregunta.",
-        ]
-    else:
-        story_pairs[chat_id] = voices
-        samples = [
+def group_samples(kind: str, names, name: str):
+    """Intro lines for a completed selection; dialogue modes show the voices naming each other."""
+    if kind == "story":
+        return [
             f"{name}, soy {names[0]}, el primer personaje de nuestra historia.",
             f"Yo soy {names[1]}, {name}, y continuaré lo que empiece {names[0]}.",
             f"Soy {names[2]}, {name}. Mi personaje traerá un giro a la escena.",
             f"Y yo soy {names[3]}, {name}. Mi personaje cerrará la escena. Decinos el tema de la historia.",
         ]
+    samples = [f"Hola, {name}. Soy {names[0]}. {names[1]}, ¿arrancamos charlando con {name}?"]
+    for index in range(1, len(names) - 1):
+        samples.append(f"¡Vamos, {names[index - 1]}! {name}, yo soy {names[index]} y sumo otra mirada.")
+    samples.append(
+        f"¡Vamos, {names[-2]}! Y yo soy {names[-1]}, {name}. "
+        "Mandanos un mensaje o un audio y charlamos entre todos."
+    )
+    return samples
+
+
+async def complete_group_selection(chat_id: int, callback: dict, kind: str, voices):
+    voices = tuple(voices)
+    clear_group_modes(chat_id)
+    flags, pairs = GROUP_MODE_FLAGS[kind]
+    flags[chat_id] = True
+    pairs[chat_id] = voices
+    selected_voice[chat_id] = voices[0]
+    voice_enabled[chat_id] = True
+    names = [voice_name(item) for item in voices]
+    name = get_preferred_name(chat_id) or callback.get("from", {}).get("first_name") or "amigo"
+    samples = group_samples(kind, names, name)
     message = callback.get("message") or {}
     if message.get("message_id"):
         try:
@@ -1480,25 +1505,22 @@ async def handle_callback(callback: dict):
         return
     if data == "mode:single":
         group_selection.pop(chat_id, None)
-        duo_enabled[chat_id] = False
-        trio_enabled[chat_id] = False
-        quartet_enabled[chat_id] = False
-        story_enabled[chat_id] = False
+        clear_group_modes(chat_id)
         await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Modo de una voz")
         await show_voices(chat_id)
         return
-    if data == "mode:duo":
-        await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Modo dúo")
-        await start_duo(chat_id)
-        return
-    if data == "mode:trio":
-        await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Modo trío")
-        await start_trio(chat_id)
-        return
-    if data in ("mode:quartet", "mode:story"):
-        kind = "quartet" if data == "mode:quartet" else "story"
-        await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Cuarteto" if kind == "quartet" else "Historia")
-        await start_four_mode(chat_id, kind)
+    mode_kinds = {
+        "mode:duo": ("duo", "Modo dúo"),
+        "mode:trio": ("trio", "Modo trío"),
+        "mode:quartet": ("quartet", "Modo cuarteto"),
+        "mode:quintet": ("quintet", "Modo quinteto"),
+        "mode:sextet": ("sextet", "Modo sexteto"),
+        "mode:story": ("story", "Historia"),
+    }
+    if data in mode_kinds:
+        kind, label = mode_kinds[data]
+        await telegram("answerCallbackQuery", callback_query_id=callback_id, text=label)
+        await start_group_mode(chat_id, kind)
         return
     if data == "mode:music":
         await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Búsqueda de música")
@@ -1532,10 +1554,7 @@ async def handle_callback(callback: dict):
         await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Esa voz no está disponible.")
         return
     group_selection.pop(chat_id, None)
-    duo_enabled[chat_id] = False
-    trio_enabled[chat_id] = False
-    quartet_enabled[chat_id] = False
-    story_enabled[chat_id] = False
+    clear_group_modes(chat_id)
     selected_voice[chat_id] = voice
     voice_enabled[chat_id] = True
     await telegram("answerCallbackQuery", callback_query_id=callback_id, text=f"Elegiste {VOICES[voice]}")
