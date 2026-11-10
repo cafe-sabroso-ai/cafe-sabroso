@@ -5,3 +5,4 @@ edge-tts==7.3.1
 piper-tts==1.8.0
 faster-whisper==1.2.1
 av==17.1.0
+pillow==11.3.0
