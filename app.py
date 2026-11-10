@@ -1,4 +1,5 @@
 import asyncio
+import gc
 import logging
 import os
 import re
@@ -129,12 +130,24 @@ quintet_enabled = defaultdict(lambda: False)
 quintet_pairs = {}
 sextet_enabled = defaultdict(lambda: False)
 sextet_pairs = {}
+septet_enabled = defaultdict(lambda: False)
+septet_pairs = {}
+octet_enabled = defaultdict(lambda: False)
+octet_pairs = {}
+nonet_enabled = defaultdict(lambda: False)
+nonet_pairs = {}
+decet_enabled = defaultdict(lambda: False)
+decet_pairs = {}
 story_enabled = defaultdict(lambda: False)
 story_pairs = {}
-GROUP_MODE_SIZES = {"duo": 2, "trio": 3, "quartet": 4, "quintet": 5, "sextet": 6, "story": 4}
+GROUP_MODE_SIZES = {
+    "duo": 2, "trio": 3, "quartet": 4, "quintet": 5, "sextet": 6,
+    "septet": 7, "octet": 8, "nonet": 9, "decet": 10, "story": 4,
+}
 GROUP_MODE_LABELS = {
     "duo": "dúo", "trio": "trío", "quartet": "cuarteto",
-    "quintet": "quinteto", "sextet": "sexteto", "story": "historia",
+    "quintet": "quinteto", "sextet": "sexteto", "septet": "sépteto",
+    "octet": "octeto", "nonet": "noneto", "decet": "deceto", "story": "historia",
 }
 GROUP_MODE_FLAGS = {
     "duo": (duo_enabled, duo_pairs),
@@ -142,11 +155,18 @@ GROUP_MODE_FLAGS = {
     "quartet": (quartet_enabled, quartet_pairs),
     "quintet": (quintet_enabled, quintet_pairs),
     "sextet": (sextet_enabled, sextet_pairs),
+    "septet": (septet_enabled, septet_pairs),
+    "octet": (octet_enabled, octet_pairs),
+    "nonet": (nonet_enabled, nonet_pairs),
+    "decet": (decet_enabled, decet_pairs),
     "story": (story_enabled, story_pairs),
 }
 # Conversation modes where the voices address each other by name; story is a
 # narration with its own prompt.
-DIALOGUE_KINDS = ("duo", "trio", "quartet", "quintet", "sextet")
+DIALOGUE_KINDS = (
+    "duo", "trio", "quartet", "quintet", "sextet",
+    "septet", "octet", "nonet", "decet",
+)
 
 
 def clear_group_modes(chat_id: int):
@@ -168,6 +188,10 @@ BOT_COMMANDS = [
     {"command": "cuarteto", "description": "Conversar con cuatro voces"},
     {"command": "quinteto", "description": "Conversar con cinco voces"},
     {"command": "sexteto", "description": "Conversar con seis voces"},
+    {"command": "septeto", "description": "Conversar con siete voces"},
+    {"command": "octeto", "description": "Conversar con ocho voces"},
+    {"command": "noneto", "description": "Conversar con nueve voces"},
+    {"command": "deceto", "description": "Conversar con diez voces"},
     {"command": "historia", "description": "Crear una historia con cuatro personajes"},
     {"command": "musica", "description": "Buscar un artista o una canción"},
     {"command": "nombre", "description": "Cambiar cómo te llama el bot"},
@@ -177,6 +201,9 @@ BOT_COMMANDS = [
 ]
 whisper_model = None
 whisper_lock = asyncio.Lock()
+# Local piper models use a few hundred MB of RAM; run them one at a time so a
+# group conversation cannot OOM the 512 MB free plan.
+piper_lock = asyncio.Semaphore(1)
 
 Path(DATABASE_PATH).parent.mkdir(parents=True, exist_ok=True)
 with sqlite3.connect(DATABASE_PATH) as database:
@@ -238,16 +265,24 @@ async def synthesize(text: str, voice: str) -> bytes:
             if process.returncode:
                 raise RuntimeError(f"espeak-ng failed: {stderr.decode()[:300]}")
         elif voice in PIPER_VOICES:
+            # Free the cached whisper model first: Render's free 512 MB plan
+            # cannot hold whisper and a local piper model at the same time.
+            global whisper_model
+            if whisper_model is not None:
+                whisper_model = None
+                gc.collect()
+                log.info("Unloaded whisper model to free memory for piper")
             model = PIPER_VOICES[voice]["model"]
-            process = await asyncio.create_subprocess_exec(
-                "python3", "-m", "piper",
-                "--model", str(PIPER_DIR / f"{model}.onnx"),
-                "--config", str(PIPER_DIR / f"{model}.onnx.json"),
-                "--output_file", str(source),
-                stdin=asyncio.subprocess.PIPE,
-                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
-            )
-            _, stderr = await process.communicate(speech_text(text).encode())
+            async with piper_lock:
+                process = await asyncio.create_subprocess_exec(
+                    "python3", "-m", "piper",
+                    "--model", str(PIPER_DIR / f"{model}.onnx"),
+                    "--config", str(PIPER_DIR / f"{model}.onnx.json"),
+                    "--output_file", str(source),
+                    stdin=asyncio.subprocess.PIPE,
+                    stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+                )
+                _, stderr = await process.communicate(speech_text(text).encode())
             if process.returncode:
                 raise RuntimeError(f"piper failed: {stderr.decode()[:300]}")
         else:
@@ -544,11 +579,23 @@ async def answer_dialogue(chat_id: int, user_text: str, voices):
     history = histories[chat_id]
     names = [voice_name(voice) for voice in voices]
     labels = ", ".join(names)
-    word_limit = 60 if len(voices) <= 2 else 45
+    word_limit = 60 if len(voices) <= 2 else (45 if len(voices) <= 6 else 30)
+    user_name = get_preferred_name(chat_id)
+    if user_name:
+        address_line = (
+            f" Hablan con {user_name}: dirigite a esa persona por su nombre, respondé "
+            "a lo que dice e invitala a seguir participando."
+        )
+    else:
+        address_line = (
+            " Dirigite también a la persona que escribe: respondé a lo que dice e "
+            "invitala a seguir participando."
+        )
     prompt = (
         SYSTEM_PROMPT
-        + f" En esta conversación participan {len(voices)} voces: {labels}. "
-        "Respondé al pedido como una conversación entre ellas: cada una habla exactamente "
+        + f" En esta conversación participan {len(voices)} voces: {labels}."
+        + address_line
+        + " Respondé al pedido como una conversación entre ellas: cada una habla exactamente "
         f"una vez, en ese orden. {names[0]} responde al pedido y se dirige a {names[1]} "
         "por su nombre, comentándole algo o haciéndole una pregunta. Cada una de las "
         "siguientes le contesta a la voz que la nombró o se dirige a otra, siempre "
@@ -592,9 +639,17 @@ async def answer_dialogue_sequential(chat_id: int, user_text: str, voices):
             )
             if index == len(names) - 1:
                 role += " Cerrá la conversación con una idea final breve."
+        user_name = get_preferred_name(chat_id)
+        if user_name:
+            address_line = (
+                f" Hablan con {user_name}: dirigite a esa persona por su nombre y "
+                "respondé a lo que dice."
+            )
+        else:
+            address_line = " Dirigite también a la persona que escribe y respondé a lo que dice."
         prompt = (
             SYSTEM_PROMPT
-            + f" En esta conversación de {len(voices)} voces ({', '.join(names)}) sos {speaker}. {role} "
+            + f" En esta conversación de {len(voices)} voces ({', '.join(names)}) sos {speaker}.{address_line} {role} "
             "Podés reaccionar naturalmente a los comentarios anteriores. Escribí únicamente "
             "el texto final hablado de tu turno, sin análisis ni rótulos. Usá un máximo "
             "de 60 palabras. No anuncies que sos una IA. No te presentes salvo que la "
@@ -1277,7 +1332,10 @@ async def pick_group_voices(chat_id: int, kind: str, include_self: bool):
             session["voices"].insert(0, own)
     voices = session["voices"]
     size = GROUP_MODE_SIZES[kind]
-    numbers = {2: "dos", 3: "tres", 4: "cuatro", 5: "cinco", 6: "seis"}
+    numbers = {
+        2: "dos", 3: "tres", 4: "cuatro", 5: "cinco", 6: "seis",
+        7: "siete", 8: "ocho", 9: "nueve", 10: "diez",
+    }
     if kind == "story":
         text = "Modo historia: elige la primera de cuatro voces distintas. Serán cuatro personajes que continúan una misma escena."
     elif kind == "duo":
@@ -1305,8 +1363,8 @@ async def welcome(chat_id: int, fallback_name=None):
     name = get_preferred_name(chat_id) or fallback_name or "amigo"
     text = (
         f"📋 MENÚ PRINCIPAL\nHola, {name}. Pulsa uno de estos botones para empezar. "
-        "En los modos dúo, trío, cuarteto, quinteto y sexteto, las voces conversan entre ellas "
-        "y se llaman por su nombre en un mismo audio. "
+        "En los modos de dúo a deceto (de 2 a 10 voces), las voces conversan entre ellas "
+        "y contigo, y se llaman por su nombre en un mismo audio. "
         "Después de elegir el modo, pulsa las voces en los botones que aparecen.\n\n"
         "También puedes escribirme o enviarme una nota de voz. Para volver a ver estos botones, "
         "pulsa el botón Menú de Telegram junto al campo de mensaje o escribe /menu."
@@ -1315,11 +1373,13 @@ async def welcome(chat_id: int, fallback_name=None):
         [{"text": "🎙️ Individual: elegir una voz", "callback_data": "mode:single"}],
         [{"text": "👥 Dúo: 2 voces", "callback_data": "mode:duo"}, {"text": "👥 Trío: 3 voces", "callback_data": "mode:trio"}],
         [{"text": "👥 Cuarteto: 4 voces", "callback_data": "mode:quartet"}, {"text": "👥 Quinteto: 5 voces", "callback_data": "mode:quintet"}],
-        [{"text": "👥 Sexteto: 6 voces", "callback_data": "mode:sextet"}, {"text": "📖 Historia: 4 personajes", "callback_data": "mode:story"}],
+        [{"text": "👥 Sexteto: 6 voces", "callback_data": "mode:sextet"}, {"text": "👥 Sépteto: 7 voces", "callback_data": "mode:septet"}],
+        [{"text": "👥 Octeto: 8 voces", "callback_data": "mode:octet"}, {"text": "👥 Noneto: 9 voces", "callback_data": "mode:nonet"}],
+        [{"text": "👥 Deceto: 10 voces", "callback_data": "mode:decet"}, {"text": "📖 Historia: 4 personajes", "callback_data": "mode:story"}],
         [{"text": "🎵 Buscar música", "callback_data": "mode:music"}],
     ]
     await send_text(chat_id, text, reply_markup={"inline_keyboard": keyboard})
-    await send_voice(chat_id, f"Hola, {name}. Ya estoy listo. Elige hasta seis voces o una historia para empezar.")
+    await send_voice(chat_id, f"Hola, {name}. Ya estoy listo. Elige hasta diez voces o una historia para empezar.")
 
 
 async def handle_message(message: dict):
@@ -1367,6 +1427,18 @@ async def handle_message(message: dict):
             return
         if text.startswith("/sexteto"):
             await start_group_mode(chat_id, "sextet")
+            return
+        if text.startswith("/septeto"):
+            await start_group_mode(chat_id, "septet")
+            return
+        if text.startswith("/octeto"):
+            await start_group_mode(chat_id, "octet")
+            return
+        if text.startswith("/noneto"):
+            await start_group_mode(chat_id, "nonet")
+            return
+        if text.startswith("/deceto"):
+            await start_group_mode(chat_id, "decet")
             return
         if text.startswith("/historia"):
             await start_group_mode(chat_id, "story")
@@ -1577,6 +1649,10 @@ async def handle_callback(callback: dict):
         "mode:quartet": ("quartet", "Modo cuarteto"),
         "mode:quintet": ("quintet", "Modo quinteto"),
         "mode:sextet": ("sextet", "Modo sexteto"),
+        "mode:septet": ("septet", "Modo sépteto"),
+        "mode:octet": ("octet", "Modo octeto"),
+        "mode:nonet": ("nonet", "Modo noneto"),
+        "mode:decet": ("decet", "Modo deceto"),
         "mode:story": ("story", "Historia"),
     }
     if data in mode_kinds:
