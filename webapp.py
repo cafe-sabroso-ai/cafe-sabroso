@@ -1230,6 +1230,25 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = ""):
             elif action == "pasar":
                 if room["phase"] == "verdad_reto" and current is player:
                     await complete_verdad_reto(room, player, done=False)
+            elif action == "voz-texto":
+                text = str(message.get("text") or "").strip()
+                if not text or current is not player:
+                    continue
+                if room["phase"] == "ahorcado":
+                    _, _, _, _, clean, parse_guess = ah_helpers()
+                    guess = parse_guess(text)
+                    if guess:
+                        await ah_guess(room, player, guess)
+                    else:
+                        await narrate(room, f"No te entendí, {player['name']}. Decí una letra o la palabra.",
+                                      to=player)
+                elif room["phase"] == "question" and room.get("question"):
+                    idx = match_option(text, room["question"]["options"])
+                    if idx is None:
+                        await narrate(room, f"No te entendí, {player['name']}. Decí A, B o C, o tocá una opción.",
+                                      to=player)
+                    else:
+                        await resolve_answer(room, player, idx)
             elif action == "descripcion":
                 game_key = message.get("game") or room["game"]
                 text = GAME_DESCRIPTIONS.get(game_key)
@@ -2157,10 +2176,34 @@ $("btn-ah-voz").addEventListener("click", async () => {
   } catch (err) { announce("No pude usar el micrófono. Escribila mejor."); }
 });
 
+function sendVoiceText(text) {
+  if (salaCode && ws && ws.readyState === 1) ws.send(JSON.stringify({action: "voz-texto", text: text}));
+}
 function oneTapVoice(id) {
   $(id).addEventListener("click", async () => {
+    unlockAudio();
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SR) {
+      try {
+        const rec = new SR();
+        rec.lang = "es-AR";
+        rec.interimResults = false;
+        rec.maxAlternatives = 1;
+        let got = false;
+        announce("Te escucho. Hablá tranquilo: se manda sola.");
+        rec.onresult = (e) => {
+          got = true;
+          const text = e.results[0][0].transcript;
+          announce("Dijiste: " + text);
+          sendVoiceText(text);
+        };
+        rec.onerror = () => { if (!got) announce("No te escuché. Probá de nuevo o escribila."); };
+        rec.onend = () => { if (!got) announce("No te escuché. Probá de nuevo o escribila."); };
+        rec.start();
+        return;
+      } catch (err) { /* fall through to the audio-upload path */ }
+    }
     try {
-      unlockAudio();
       const stream = await navigator.mediaDevices.getUserMedia({audio: true});
       const chunks = [];
       const recorder = new MediaRecorder(stream);
