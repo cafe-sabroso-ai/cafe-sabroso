@@ -2,6 +2,7 @@ import asyncio
 import gc
 import logging
 import os
+import random
 import re
 import sqlite3
 import tempfile
@@ -151,11 +152,13 @@ story_pairs = {}
 GROUP_MODE_SIZES = {
     "duo": 2, "trio": 3, "quartet": 4, "quintet": 5, "sextet": 6,
     "septet": 7, "octet": 8, "nonet": 9, "decet": 10, "story": 4,
+    "trivia": 3,
 }
 GROUP_MODE_LABELS = {
     "duo": "dúo", "trio": "trío", "quartet": "cuarteto",
     "quintet": "quinteto", "sextet": "sexteto", "septet": "sépteto",
     "octet": "octeto", "nonet": "noneto", "decet": "deceto", "story": "historia",
+    "trivia": "ruleta",
 }
 GROUP_MODE_FLAGS = {
     "duo": (duo_enabled, duo_pairs),
@@ -201,6 +204,7 @@ BOT_COMMANDS = [
     {"command": "noneto", "description": "Conversar con nueve voces"},
     {"command": "deceto", "description": "Conversar con diez voces"},
     {"command": "historia", "description": "Crear una historia con cuatro personajes"},
+    {"command": "ruleta", "description": "Jugar a la ruleta de preguntas"},
     {"command": "musica", "description": "Buscar un artista o una canción"},
     {"command": "nombre", "description": "Cambiar cómo te llama el bot"},
     {"command": "solo_texto", "description": "Desactivar las respuestas de audio"},
@@ -1337,6 +1341,7 @@ async def ask_preferred_name(chat_id: int, action="mode"):
 
 
 async def start_group_mode(chat_id: int, kind: str):
+    trivia_games.pop(chat_id, None)
     group_selection[chat_id] = {"kind": kind, "voices": []}
     own = selected_voice[chat_id]
     await send_text(
@@ -1364,7 +1369,12 @@ async def pick_group_voices(chat_id: int, kind: str, include_self: bool):
         2: "dos", 3: "tres", 4: "cuatro", 5: "cinco", 6: "seis",
         7: "siete", 8: "ocho", 9: "nueve", 10: "diez",
     }
-    if kind == "story":
+    if kind == "trivia":
+        text = (
+            "Ruleta: elige la primera de tres voces distintas para el juego. "
+            "La primera presenta la ruleta, la segunda lee las preguntas y la tercera reacciona."
+        )
+    elif kind == "story":
         text = "Modo historia: elige la primera de cuatro voces distintas. Serán cuatro personajes que continúan una misma escena."
     elif kind == "duo":
         text = "Modo dúo: elige la primera voz. Después elegirás la segunda y conversarán entre ellas en un solo audio."
@@ -1381,6 +1391,604 @@ async def pick_group_voices(chat_id: int, kind: str, include_self: bool):
     await send_text(
         chat_id, text,
         reply_markup={"inline_keyboard": voice_keyboard(chat_id, f"gsel:{kind}", exclude=voices)},
+    )
+
+
+# --- La Ruleta: voice trivia game (Preguntados-style) ---
+# Single-player voice trivia: a colorful spinning-wheel GIF, one voice
+# announcing the category, a different voice reading the question, and a
+# third reacting (congratulating or playfully mocking). Three lives per game;
+# five correct answers win a category and take it out of the wheel. Questions
+# are LLM-generated with a no-repeat exclusion list. All state is in memory
+# and degrades gracefully on the free-plan spin-down, like the group modes.
+TRIVIA_CATEGORIES = [
+    "deportes", "fútbol mundial", "películas", "series", "cultura",
+    "historia", "ciencia", "arte", "comida", "países",
+    "nombres y apellidos", "marcas", "animales", "política", "religión",
+    "música", "geografía", "tecnología", "videojuegos", "refranes",
+]
+TRIVIA_COUNTRIES = [
+    # Argentina first (his weighting), then the rest of the Americas.
+    "Argentina", "Brasil", "Chile", "Uruguay", "Paraguay", "Bolivia",
+    "Perú", "Ecuador", "Colombia", "Venezuela", "México",
+    "Estados Unidos", "Canadá", "Cuba", "República Dominicana",
+    "Puerto Rico", "Jamaica", "Costa Rica", "Panamá", "Guatemala",
+    "Honduras", "El Salvador", "Nicaragua", "Haití", "Trinidad y Tobago",
+    # Main Europe.
+    "España", "Francia", "Italia", "Alemania", "Reino Unido",
+    "Portugal", "Países Bajos", "Bélgica", "Suiza", "Suecia",
+    "Noruega", "Polonia", "Grecia",
+    # Asia and Africa.
+    "China", "Japón", "India", "Corea del Sur", "Turquía",
+    "Arabia Saudita", "Egipto", "Sudáfrica", "Nigeria", "Marruecos",
+    "Kenia",
+]
+TRIVIA_CATEGORY_HINTS = {
+    "deportes": (
+        "Incluí cualquier deporte del mundo MENOS fútbol (esa es otra "
+        "categoría): rugby, tenis, básquet, hockey, billar, bochas, carreras "
+        "de caballos, polo, boxeo, atletismo, natación, etc. "
+    ),
+    "fútbol mundial": (
+        "Sobre fútbol de todo el mundo: selecciones, mundiales, Champions "
+        "League, ligas de Europa y América, jugadores de todas las épocas. "
+        "No te centres solo en Argentina. "
+    ),
+    "refranes": "Sobre refranes y dichos populares: su significado o cómo terminan. ",
+    "nombres y apellidos": (
+        "Sobre el origen o significado de nombres y apellidos, o famosos que "
+        "los llevan. "
+    ),
+}
+TRIVIA_CONGRATS = [
+    "¡Correcto, {name}! Sos un fenómeno.",
+    "¡Exacto, {name}! Estás imparable.",
+    "¡Muy bien, {name}! Respuesta perfecta.",
+    "¡Correcto, {name}! Se nota que sabés.",
+]
+TRIVIA_CANNED_MOCKS = [
+    "Ay {name}... esa la sabía hasta mi abuela.",
+    "No, {name}, ¿en qué estabas pensando?",
+    "Uy, {name}, esa estuvo lejísimos.",
+    "{name}, che, ¿jugás en serio o me hacés reír?",
+]
+TRIVIA_LIVES = 3
+TRIVIA_CATEGORY_GOAL = 5
+trivia_games = {}
+trivia_lineups = {}
+trivia_media = {}
+
+
+def trivia_round_voices(chat_id: int):
+    """Announcer, reader, reactor: the picked lineup or three distinct random voices."""
+    lineup = trivia_lineups.get(chat_id)
+    if lineup and len(lineup) >= 3:
+        return lineup[0], lineup[1], lineup[2]
+    return tuple(random.sample(list(VOICES.keys()), 3))
+
+
+def build_spin_gif() -> bytes:
+    """One short looping roulette-wheel GIF, reused for every spin (light for the 512 MB plan)."""
+    import io
+    from PIL import Image, ImageDraw
+    size, center, radius = 240, 120, 106
+    colors = [
+        "#e53935", "#fb8c00", "#fdd835", "#43a047", "#1e88e5",
+        "#8e24aa", "#d81b60", "#00acc1", "#7cb342", "#f4511e",
+    ]
+    frames = []
+    for frame in range(36):
+        angle = frame * 10.0
+        image = Image.new("RGB", (size, size), "#101418")
+        draw = ImageDraw.Draw(image)
+        start = angle
+        for color in colors:
+            draw.pieslice(
+                [center - radius, center - radius, center + radius, center + radius],
+                start=start, end=start + 36.2, fill=color, outline="#101418",
+            )
+            start += 36.0
+        draw.ellipse(
+            [center - 26, center - 26, center + 26, center + 26],
+            fill="#ffffff", outline="#101418", width=3,
+        )
+        draw.polygon(
+            [(center - 13, 4), (center + 13, 4), (center, 32)],
+            fill="#ffffff", outline="#101418",
+        )
+        frames.append(image.convert("P", palette=Image.ADAPTIVE, colors=64))
+    buffer = io.BytesIO()
+    frames[0].save(
+        buffer, format="GIF", save_all=True, append_images=frames[1:],
+        duration=55, loop=0, optimize=True, disposal=1,
+    )
+    return buffer.getvalue()
+
+
+def build_spin_sfx() -> bytes:
+    """WAV: fast clicking that speeds up, then a final ding (the wheel sound)."""
+    import io
+    import math
+    import struct
+    import wave
+    rate = 22050
+    total = int(rate * 2.2)
+    data = [0.0] * total
+    times = []
+    moment = 0.0
+    interval = 0.16
+    while moment < 1.5:
+        times.append(moment)
+        moment += interval
+        interval = max(0.055, interval * 0.9)
+    for start in times:
+        offset = int(rate * start)
+        length = int(rate * 0.03)
+        for i in range(length):
+            if offset + i < total:
+                envelope = 1.0 - i / length
+                data[offset + i] += 0.7 * envelope * math.sin(2 * math.pi * 1900 * i / rate)
+    ding = int(rate * 1.55)
+    for i in range(int(rate * 0.5)):
+        if ding + i < total:
+            envelope = math.exp(-i / (rate * 0.12))
+            data[ding + i] += 0.6 * envelope * (
+                math.sin(2 * math.pi * 880 * i / rate)
+                + 0.5 * math.sin(2 * math.pi * 1318 * i / rate)
+            )
+    buffer = io.BytesIO()
+    with wave.open(buffer, "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)
+        wav.setframerate(rate)
+        wav.writeframes(
+            b"".join(struct.pack("<h", int(max(-1.0, min(1.0, s)) * 32767)) for s in data)
+        )
+    return buffer.getvalue()
+
+
+async def wav_to_ogg(wav_bytes: bytes) -> bytes:
+    with tempfile.TemporaryDirectory() as directory:
+        source = Path(directory) / "spin.wav"
+        ogg = Path(directory) / "spin.ogg"
+        source.write_bytes(wav_bytes)
+        process = await asyncio.create_subprocess_exec(
+            "ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", str(source),
+            "-c:a", "libopus", "-b:a", "48k", "-ac", "1", str(ogg),
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+        )
+        _, stderr = await process.communicate()
+        if process.returncode:
+            raise RuntimeError(f"ffmpeg wav->ogg failed: {stderr.decode()[:300]}")
+        return ogg.read_bytes()
+
+
+async def join_ogg(blobs) -> bytes:
+    """Concatenate ready ogg/opus blobs into one voice-note file."""
+    with tempfile.TemporaryDirectory() as directory:
+        paths = []
+        for index, blob in enumerate(blobs):
+            path = Path(directory) / f"part-{index}.ogg"
+            path.write_bytes(blob)
+            paths.append(path)
+        concat_file = Path(directory) / "join.txt"
+        concat_file.write_text("".join(f"file '{path}'\n" for path in paths))
+        joined = Path(directory) / "joined.ogg"
+        process = await asyncio.create_subprocess_exec(
+            "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+            "-f", "concat", "-safe", "0", "-i", str(concat_file),
+            "-c:a", "libopus", "-b:a", "48k", "-ac", "1", str(joined),
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+        )
+        _, stderr = await process.communicate()
+        if process.returncode:
+            raise RuntimeError(f"ffmpeg ogg join failed: {stderr.decode()[:300]}")
+        return joined.read_bytes()
+
+
+async def trivia_sfx_ogg() -> bytes:
+    if "sfx_ogg" not in trivia_media:
+        wav = await asyncio.to_thread(build_spin_sfx)
+        trivia_media["sfx_ogg"] = await wav_to_ogg(wav)
+    return trivia_media["sfx_ogg"]
+
+
+async def send_voice_audio(chat_id: int, audio: bytes, filename="ruleta.ogg"):
+    """Raw voice-note sender for pre-built audio (send_voice uses the selected voice)."""
+    if not voice_enabled[chat_id]:
+        return
+    try:
+        await telegram("sendChatAction", chat_id=chat_id, action="upload_voice")
+        response = await http.post(
+            f"{TELEGRAM_API}/sendVoice",
+            data={"chat_id": str(chat_id)},
+            files={"voice": (filename, audio, "audio/ogg")},
+        )
+        if response.status_code >= 400:
+            log.error("Telegram sendVoice failed: %s %s", response.status_code, response.text[:500])
+        response.raise_for_status()
+    except Exception:
+        log.exception("Could not send trivia voice note")
+
+
+async def send_spin_animation(chat_id: int):
+    file_id = trivia_media.get("gif_file_id")
+    if file_id:
+        try:
+            await telegram(
+                "sendAnimation", chat_id=chat_id, animation=file_id,
+                caption="🎡 Girando la ruleta...",
+            )
+            return
+        except Exception:
+            trivia_media.pop("gif_file_id", None)
+    gif = trivia_media.get("gif_bytes")
+    if gif is None:
+        gif = await asyncio.to_thread(build_spin_gif)
+        trivia_media["gif_bytes"] = gif
+    response = await http.post(
+        f"{TELEGRAM_API}/sendAnimation",
+        data={"chat_id": str(chat_id), "caption": "🎡 Girando la ruleta..."},
+        files={"animation": ("ruleta.gif", gif, "image/gif")},
+    )
+    if response.status_code >= 400:
+        log.error("Telegram sendAnimation failed: %s %s", response.status_code, response.text[:500])
+    response.raise_for_status()
+    result = response.json().get("result") or {}
+    animation = result.get("animation") or result.get("document") or {}
+    if animation.get("file_id"):
+        trivia_media["gif_file_id"] = animation["file_id"]
+
+
+def parse_trivia_question(text: str):
+    question = re.search(r"PREGUNTA:\s*(.+)", text)
+    options = re.findall(r"OPCION\s*\d\s*:\s*(.+)", text)
+    correct = re.search(r"CORRECTA:\s*([1-4])", text)
+    if not question or len(options) != 4 or not correct:
+        return None
+    return {
+        "question": question.group(1).strip(),
+        "options": [option.strip() for option in options],
+        "correct": int(correct.group(1)) - 1,
+    }
+
+
+async def trivia_generate_question(category: str, country, asked):
+    country_clause = f" ambientada o referida a {country}" if country else ""
+    hint = TRIVIA_CATEGORY_HINTS.get(category, "")
+    recent = list(asked)[-8:] or ["(todavía ninguna)"]
+    prompt = (
+        "Sos el generador de un juego de trivia argentino estilo Preguntados. "
+        f"Generá UNA pregunta de dificultad media sobre la categoría \"{category}\"{country_clause}. "
+        "Tiene que tener una sola respuesta correcta inequívoca y cuatro opciones plausibles. "
+        + hint +
+        "No repitas ninguna de estas preguntas ya usadas: "
+        + " | ".join(recent) + ". "
+        "Respondé con este formato exacto, seis líneas, sin texto extra:\n"
+        "PREGUNTA: <el texto de la pregunta>\n"
+        "OPCION 1: <una opción>\n"
+        "OPCION 2: <una opción>\n"
+        "OPCION 3: <una opción>\n"
+        "OPCION 4: <una opción>\n"
+        "CORRECTA: <el número de la opción correcta, 1 a 4>"
+    )
+    for _ in range(2):
+        try:
+            result = await complete([{"role": "user", "content": prompt}])
+            parsed = parse_trivia_question(result)
+            if parsed:
+                return parsed
+            log.warning("Trivia question parse failed: %s", result[:200])
+        except Exception:
+            log.exception("Trivia question generation failed")
+    return None
+
+
+def trivia_match_answer(user_text: str, options):
+    """Map a spoken/written answer to an option index, or None when unclear."""
+    text = normalized(user_text).strip()
+    match = re.search(r"\b([1-4])\b", text)
+    if match:
+        return int(match.group(1)) - 1
+    match = re.match(r"^(?:la\s+)?([abcd])$", text)
+    if match:
+        return "abcd".index(match.group(1))
+    number_words = {"uno": 0, "dos": 1, "tres": 2, "cuatro": 3}
+    match = re.search(r"\b(uno|dos|tres|cuatro)\b", text)
+    if match:
+        return number_words[match.group(1)]
+    ordinals = {
+        "primer": 0, "segunda": 1, "segundo": 1,
+        "tercer": 2, "cuarta": 3, "cuarto": 3,
+        "ultima": 3, "ultimo": 3,
+    }
+    for word, index in ordinals.items():
+        if word in text:
+            return index
+    for index, option in enumerate(options):
+        opt = normalized(option).strip(" .,")
+        if len(opt) >= 4 and (opt in text or (len(text) >= 4 and text in opt)):
+            return index
+    return None
+
+
+async def trivia_menu(chat_id: int):
+    await send_text(
+        chat_id,
+        "🎡 LA RULETA SABROSA\n"
+        f"Tenés {TRIVIA_LIVES} vidas por partida: cada error te saca una. "
+        f"{TRIVIA_CATEGORY_GOAL} aciertos ganan una categoría y esa no vuelve a salir. "
+        "Respondés con los botones, o hablado: decí el número o el nombre de la opción. "
+        "Las voces cambian en cada ronda: una presenta, otra lee la pregunta y otra reacciona.\n\n"
+        "Elegí cómo jugar:",
+        reply_markup={"inline_keyboard": [
+            [{"text": "🎡 Ruleta clásica (categorías)", "callback_data": "trivia:start:classic"}],
+            [{"text": "🌍 Ruleta de países (país + categoría)", "callback_data": "trivia:start:countries"}],
+            [{"text": "🎭 Elegir mis 3 voces del juego", "callback_data": "trivia:lineup"}],
+            [{"text": "⬅️ Volver al menú principal", "callback_data": "mode:menu"}],
+        ]},
+    )
+
+
+async def trivia_begin(chat_id: int, countries_mode: bool):
+    clear_group_modes(chat_id)
+    trivia_games[chat_id] = {
+        "phase": "ready",
+        "countries": countries_mode,
+        "lives": TRIVIA_LIVES,
+        "score": {},
+        "won": [],
+        "asked": deque(maxlen=80),
+        "current": None,
+    }
+    mode_line = "con países y categorías cruzados" if countries_mode else "con las categorías"
+    name = get_preferred_name(chat_id) or "campeón"
+    await send_text(
+        chat_id,
+        f"🎡 Arranca la ruleta {mode_line}. Tenés {TRIVIA_LIVES} vidas. "
+        "Girá con el botón de abajo o decime 'girá'.",
+        reply_markup={"inline_keyboard": [
+            [{"text": "🎡 Girar la ruleta", "callback_data": "trivia:spin"}],
+            [{"text": "🚪 Salir de la ruleta", "callback_data": "trivia:quit"}],
+        ]},
+    )
+    await send_voice(
+        chat_id,
+        f"{name}, arranca la ruleta {mode_line}. Tenés {TRIVIA_LIVES} vidas. "
+        "Decime girá cuando quieras.",
+    )
+
+
+async def trivia_end(chat_id: int):
+    trivia_games.pop(chat_id, None)
+    await send_text(
+        chat_id,
+        "Se terminó la ruleta. Escribí /ruleta o pulsá el botón del menú para jugar de nuevo.",
+    )
+
+
+async def trivia_spin(chat_id: int):
+    game = trivia_games.get(chat_id)
+    if not game:
+        await send_text(chat_id, "La ruleta no está en marcha. Escribí /ruleta para empezar.")
+        return
+    available = [c for c in TRIVIA_CATEGORIES if c not in game["won"]]
+    if not available:
+        await send_text(
+            chat_id,
+            "🏆 ¡Ganaste todas las categorías! Sos el campeón absoluto de la ruleta. "
+            "Escribí /ruleta para jugar de nuevo.",
+        )
+        trivia_games.pop(chat_id, None)
+        return
+    game["phase"] = "spinning"
+    category = random.choice(available)
+    country = random.choice(TRIVIA_COUNTRIES) if game["countries"] else None
+    announcer, reader, reactor = trivia_round_voices(chat_id)
+    try:
+        await send_spin_animation(chat_id)
+    except Exception:
+        log.exception("Could not send the spin animation; continuing without it")
+    if country:
+        announce = f"Te tocó... ¡{country}! Y la categoría es... ¡{category}!"
+    else:
+        announce = f"Te salió... ¡{category}!"
+    try:
+        sfx = await trivia_sfx_ogg()
+        voice_part = await synthesize(announce, announcer)
+        await send_voice_audio(chat_id, await join_ogg([sfx, voice_part]))
+    except Exception:
+        log.exception("Could not send the spin announcement")
+    question = await trivia_generate_question(category, country, game["asked"])
+    if not question:
+        game["phase"] = "ready"
+        await send_text(
+            chat_id,
+            "No me salió armar la pregunta. Girá de nuevo con el botón o decime 'girá'.",
+            reply_markup={"inline_keyboard": [
+                [{"text": "🎡 Girar la ruleta", "callback_data": "trivia:spin"}],
+            ]},
+        )
+        return
+    game["asked"].append(question["question"])
+    game["phase"] = "question"
+    game["current"] = {
+        "category": category,
+        "country": country,
+        "question": question["question"],
+        "options": question["options"],
+        "correct": question["correct"],
+        "voices": (announcer, reader, reactor),
+        "message_id": None,
+    }
+    where = f" de {country}" if country else ""
+    option_lines = "\n".join(
+        f"{index + 1}. {option}" for index, option in enumerate(question["options"])
+    )
+    keyboard = [
+        [{"text": f"{index + 1}. {option[:45]}", "callback_data": f"tans:{index}"}]
+        for index, option in enumerate(question["options"])
+    ]
+    result = await telegram(
+        "sendMessage",
+        chat_id=chat_id,
+        text=(
+            f"🎯 {category.upper()}{where}\n\n{question['question']}\n\n{option_lines}"
+        ),
+        reply_markup={"inline_keyboard": keyboard},
+    )
+    game["current"]["message_id"] = result.get("message_id")
+    numbers = ["uno", "dos", "tres", "cuatro"]
+    read_text = (
+        f"Pregunta: {question['question']} "
+        + " ".join(
+            f"Opción {numbers[index]}: {option}."
+            for index, option in enumerate(question["options"])
+        )
+        + " Decí el número o el nombre de la opción."
+    )
+    try:
+        await send_voice_audio(chat_id, await synthesize(read_text, reader), "pregunta.ogg")
+    except Exception:
+        log.exception("Could not send the question voice note")
+
+
+async def trivia_mock(name: str, current) -> str:
+    wrong = current["options"][current["picked"]]
+    right = current["options"][current["correct"]]
+    try:
+        return await complete([
+            {"role": "system", "content": (
+                "Sos una voz de un juego de trivia argentino. Te burlás con buena "
+                "onda de una respuesta equivocada: UNA frase corta, rioplatense, "
+                "cargada pero cariñosa, sin maldiciones ni malas palabras."
+            )},
+            {"role": "user", "content": (
+                f"{name} respondió '{wrong}' y la correcta era '{right}' "
+                f"en la categoría {current['category']}. Burlate en una frase."
+            )},
+        ])
+    except Exception:
+        return random.choice(TRIVIA_CANNED_MOCKS).format(name=name)
+
+
+async def trivia_handle_answer(chat_id: int, index: int, callback=None):
+    game = trivia_games.get(chat_id)
+    if not game or game.get("phase") != "question" or not game.get("current"):
+        await send_text(chat_id, "Esa pregunta ya pasó. Girá de nuevo con el botón o escribí /ruleta.")
+        return
+    current = game["current"]
+    current["picked"] = index
+    game["phase"] = "ready"
+    correct = current["correct"]
+    category = current["category"]
+    name = get_preferred_name(chat_id) or "campeón"
+    marked_lines = []
+    for position, option in enumerate(current["options"]):
+        if position == correct:
+            marked_lines.append(f"🟢 {option}")
+        elif position == index:
+            marked_lines.append(f"❌ {option}")
+        else:
+            marked_lines.append(f"⚪ {option}")
+    if current.get("message_id"):
+        try:
+            await telegram(
+                "editMessageText", chat_id=chat_id, message_id=current["message_id"],
+                text=(
+                    f"🎯 {category.upper()}\n\n{current['question']}\n\n"
+                    + "\n".join(marked_lines)
+                ),
+                reply_markup={"inline_keyboard": []},
+            )
+        except Exception:
+            log.exception("Could not mark the trivia answer in place")
+    _, _, reactor = current["voices"]
+    if index == correct:
+        wins = game["score"].get(category, 0) + 1
+        game["score"][category] = wins
+        if wins >= TRIVIA_CATEGORY_GOAL and category not in game["won"]:
+            game["won"].append(category)
+            feedback = (
+                f"¡Correcto, {name}! ¡Y con esta ganaste la categoría {category}! "
+                "No sale más en la ruleta. Sos un crack."
+            )
+        else:
+            feedback = (
+                random.choice(TRIVIA_CONGRATS).format(name=name)
+                + f" Llevás {wins} de {TRIVIA_CATEGORY_GOAL} en {category}."
+            )
+        game_over = False
+    else:
+        game["lives"] -= 1
+        mock = await trivia_mock(name, current)
+        lives_word = "vida" if game["lives"] == 1 else "vidas"
+        feedback = (
+            f"{mock} La correcta era {current['options'][correct]}. "
+            f"Te quedan {game['lives']} {lives_word}."
+        )
+        game_over = game["lives"] <= 0
+    await send_text(chat_id, feedback)
+    try:
+        await send_voice_audio(chat_id, await synthesize(feedback, reactor), "reaccion.ogg")
+    except Exception:
+        log.exception("Could not send the feedback voice note")
+    if game_over:
+        won_line = (
+            "Categorías ganadas: " + ", ".join(game["won"]) + "."
+            if game["won"] else "No ganaste ninguna categoría esta vez."
+        )
+        await send_text(
+            chat_id,
+            f"💀 Fin de la partida, {name}. {won_line} ¿Revancha?",
+            reply_markup={"inline_keyboard": [
+                [{"text": "🎡 Jugar de nuevo", "callback_data": "trivia:menu"}],
+                [{"text": "⬅️ Menú principal", "callback_data": "mode:menu"}],
+            ]},
+        )
+        trivia_games.pop(chat_id, None)
+        return
+    await send_text(
+        chat_id,
+        "¿Seguimos? Girá con el botón o decime 'girá'.",
+        reply_markup={"inline_keyboard": [
+            [{"text": "🎡 Girar de nuevo", "callback_data": "trivia:spin"}],
+            [{"text": "🚪 Salir de la ruleta", "callback_data": "trivia:quit"}],
+        ]},
+    )
+
+
+async def start_trivia_lineup(chat_id: int):
+    group_selection[chat_id] = {"kind": "trivia", "voices": []}
+    await pick_group_voices(chat_id, "trivia", include_self=False)
+
+
+async def complete_trivia_lineup(chat_id: int, callback: dict, voices):
+    lineup = list(voices)[:3]
+    trivia_lineups[chat_id] = lineup
+    names = [voice_name(voice) for voice in lineup]
+    message = callback.get("message") or {}
+    if message.get("message_id"):
+        try:
+            await telegram(
+                "editMessageReplyMarkup", chat_id=chat_id,
+                message_id=message["message_id"],
+                reply_markup={"inline_keyboard": []},
+            )
+        except Exception:
+            log.exception("Could not clear the trivia lineup keyboard")
+    await telegram(
+        "answerCallbackQuery", callback_query_id=callback["id"],
+        text=f"Voces de la ruleta: {', '.join(names)}",
+    )
+    await send_text(
+        chat_id,
+        f"🎭 Tus voces de la ruleta: {names[0]} presenta, {names[1]} lee las "
+        f"preguntas y {names[2]} reacciona. Ya podés girar.",
+        reply_markup={"inline_keyboard": [
+            [{"text": "🎡 Ruleta clásica", "callback_data": "trivia:start:classic"}],
+            [{"text": "🌍 Ruleta de países", "callback_data": "trivia:start:countries"}],
+        ]},
     )
 
 
@@ -1405,6 +2013,7 @@ async def welcome(chat_id: int, fallback_name=None):
         [{"text": "👥 Octeto: 8 voces", "callback_data": "mode:octet"}, {"text": "👥 Noneto: 9 voces", "callback_data": "mode:nonet"}],
         [{"text": "👥 Deceto: 10 voces", "callback_data": "mode:decet"}, {"text": "📖 Historia: 4 personajes", "callback_data": "mode:story"}],
         [{"text": "🎵 Buscar música", "callback_data": "mode:music"}],
+        [{"text": "🎡 La Ruleta: preguntas y respuestas", "callback_data": "mode:trivia"}],
     ]
     await send_text(chat_id, text, reply_markup={"inline_keyboard": keyboard})
     await send_voice(chat_id, f"Hola, {name}. Ya estoy listo. Elige hasta diez voces o una historia para empezar.")
@@ -1471,6 +2080,10 @@ async def handle_message(message: dict):
         if text.startswith("/historia"):
             await start_group_mode(chat_id, "story")
             return
+        if text.startswith("/ruleta"):
+            group_selection.pop(chat_id, None)
+            await trivia_menu(chat_id)
+            return
         if text.startswith("/individual"):
             group_selection.pop(chat_id, None)
             clear_group_modes(chat_id)
@@ -1494,6 +2107,7 @@ async def handle_message(message: dict):
             histories[chat_id].clear()
             pending_music_query.pop(chat_id, None)
             group_selection.pop(chat_id, None)
+            trivia_games.pop(chat_id, None)
             await send_text(chat_id, "Conversación reiniciada.")
             return
         if text.startswith("/musica") or text.startswith("/music"):
@@ -1511,6 +2125,32 @@ async def handle_message(message: dict):
             user_text = text
         if chat_id in pending_music_query:
             await search_music(chat_id, user_text)
+            return
+        game = trivia_games.get(chat_id)
+        if game and game.get("phase") == "question":
+            if re.search(r"\b(salir|basta|cancelar|terminar)\b", normalized(user_text)):
+                await trivia_end(chat_id)
+                return
+            matched = trivia_match_answer(user_text, game["current"]["options"])
+            if matched is None:
+                await send_text(
+                    chat_id,
+                    "No entendí la respuesta. Decí el número o el nombre de la "
+                    "opción, o 'salir' para terminar la ruleta.",
+                )
+                return
+            await trivia_handle_answer(chat_id, matched)
+            return
+        if game and chat_id not in group_selection and re.search(
+            r"\b(gira|girar|giralo|girala|ruleta|dale|otra|siguiente|de nuevo)\b",
+            normalized(user_text),
+        ):
+            await trivia_spin(chat_id)
+            return
+        if not game and chat_id not in group_selection and re.search(
+            r"\bruleta\b|preguntados", normalized(user_text)
+        ):
+            await trivia_menu(chat_id)
             return
         music_query = music_query_from_text(user_text)
         if music_query is not None:
@@ -1628,6 +2268,9 @@ def group_samples(kind: str, names, name: str):
 
 
 async def complete_group_selection(chat_id: int, callback: dict, kind: str, voices):
+    if kind == "trivia":
+        await complete_trivia_lineup(chat_id, callback, voices)
+        return
     voices = tuple(voices)
     clear_group_modes(chat_id)
     flags, pairs = GROUP_MODE_FLAGS[kind]
@@ -1703,6 +2346,55 @@ async def handle_callback(callback: dict):
     if data == "mode:music":
         await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Búsqueda de música")
         await search_music(chat_id, "")
+        return
+    if data == "mode:trivia":
+        await telegram("answerCallbackQuery", callback_query_id=callback_id, text="La Ruleta")
+        group_selection.pop(chat_id, None)
+        await trivia_menu(chat_id)
+        return
+    if data.startswith("tans:"):
+        try:
+            index = int(data.split(":", 1)[1])
+        except ValueError:
+            index = -1
+        game = trivia_games.get(chat_id)
+        if not game or game.get("phase") != "question" or not (0 <= index <= 3):
+            await telegram(
+                "answerCallbackQuery", callback_query_id=callback_id,
+                text="Esa pregunta ya pasó. Escribí /ruleta para jugar de nuevo.",
+            )
+            return
+        await telegram("answerCallbackQuery", callback_query_id=callback_id)
+        await trivia_handle_answer(chat_id, index, callback)
+        return
+    if data.startswith("trivia:"):
+        action = data.split(":", 1)[1]
+        if action == "start:classic":
+            await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Ruleta clásica")
+            await trivia_begin(chat_id, False)
+        elif action == "start:countries":
+            await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Ruleta de países")
+            await trivia_begin(chat_id, True)
+        elif action == "lineup":
+            await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Elegir las voces del juego")
+            await start_trivia_lineup(chat_id)
+        elif action == "spin":
+            if not trivia_games.get(chat_id):
+                await telegram(
+                    "answerCallbackQuery", callback_query_id=callback_id,
+                    text="La ruleta se reinició. Escribí /ruleta para jugar de nuevo.",
+                )
+                return
+            await telegram("answerCallbackQuery", callback_query_id=callback_id, text="🎡 Girando...")
+            await trivia_spin(chat_id)
+        elif action == "menu":
+            await telegram("answerCallbackQuery", callback_query_id=callback_id, text="La Ruleta")
+            await trivia_menu(chat_id)
+        elif action == "quit":
+            await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Fin de la ruleta")
+            await trivia_end(chat_id)
+        else:
+            await telegram("answerCallbackQuery", callback_query_id=callback_id)
         return
     legacy_step, _, legacy_voice = data.partition(":")
     if legacy_step in ("duo1", "duo2", "trio1", "trio2", "trio3"):
