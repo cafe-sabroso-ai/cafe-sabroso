@@ -229,7 +229,15 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = ""):
     await websocket.send_text(json.dumps(
         {"event": "welcome", "name": name}, ensure_ascii=False
     ))
-    await narrate(room, f"¡{name} se sumó a la mesa! Ya son {len(room['players'])}.")
+    if len(room["players"]) == 1:
+        await narrate(
+            room,
+            f"¡Listo, {name}! Ya estás en la mesa. No hace falta escribir nada. "
+            "Pasales el link a tus amigos con el botón Copiar el link. "
+            "Cuando te toque, se activa el botón Girar la ruleta.",
+        )
+    else:
+        await narrate(room, f"¡{name} se sumó a la mesa! Ya son {len(room['players'])}.")
     await broadcast(room, room_state(room))
     try:
         while True:
@@ -344,21 +352,27 @@ PAGE = """<!DOCTYPE html>
   </header>
 
   <main>
-    <p id="estado" role="status">Bienvenido a la mesa.</p>
+    <p class="visually-hidden">
+      Juego de la ruleta de retos y verdades para jugar con amigos.
+      No hace falta escribir nada: todo se hace con botones
+      y cada jugada se anuncia en voz alta.
+    </p>
+    <p id="estado" role="status" tabindex="-1">Bienvenido a la mesa.</p>
 
     <div id="entrada">
-      <button id="btn-crear">☕ Crear una mesa nueva</button>
-      <button id="btn-entrar" class="secondary" hidden>💗 Entrar a jugar</button>
+      <button id="btn-crear"><span aria-hidden="true">☕ </span>Crear una mesa nueva</button>
+      <button id="btn-entrar" class="secondary" hidden><span aria-hidden="true">💗 </span>Entrar a jugar</button>
     </div>
 
     <div id="sala" hidden>
       <div id="compartir" hidden>
-        Pasá este link a tus amigos:<br><strong id="link"></strong>
+        Pasá este link a tus amigos:<br><strong id="link"></strong><br>
+        <button id="btn-copiar" class="secondary"><span aria-hidden="true">📤 </span>Copiar el link</button>
       </div>
       <canvas id="wheel" width="640" height="640" role="img"
               aria-label="La ruleta de la mesa"></canvas>
       <p id="jugadores" role="status"></p>
-      <button id="btn-girar" disabled>🎡 Girar la ruleta</button>
+      <button id="btn-girar" disabled><span aria-hidden="true">🎡 </span><span id="btn-girar-text">Girar la ruleta</span></button>
       <p id="resultado" role="status" aria-live="polite"></p>
     </div>
 
@@ -440,24 +454,57 @@ function spinAnimation(finalAngle, done) {
 
 // --- Entrada ---
 const parts = location.pathname.split("/");
-const codeInPath = parts[2] === "sala" ? (parts[3] || "").toUpperCase() : null;
+const salaCode = parts[2] === "sala" ? (parts[3] || "").toUpperCase() : null;
+const btnCrear = $("btn-crear"), btnEntrar = $("btn-entrar");
+let announcedTurn = false;
 
-$("btn-crear").addEventListener("click", async () => {
-  unlockAudio();
-  const res = await fetch("/amor-con-aroma-a-cafe/api/salas", {method: "POST"});
-  const data = await res.json();
-  location.href = "/amor-con-aroma-a-cafe/sala/" + data.code;
-});
+function setGirar(text) { $("btn-girar-text").textContent = text; }
 
-if (codeInPath) $("btn-entrar").hidden = false;
-
-$("btn-entrar").addEventListener("click", () => {
-  unlockAudio();  // EL ÚNICO TOQUE: desde acá las voces suenan solas.
+function enterSala(code) {
   entrada.hidden = true;
   salaDiv.hidden = false;
   $("compartir").hidden = false;
-  $("link").textContent = location.origin + "/amor-con-aroma-a-cafe/sala/" + codeInPath;
-  connect(codeInPath);
+  $("link").textContent = location.origin + "/amor-con-aroma-a-cafe/sala/" + code;
+  estado.focus();
+  connect(code);
+}
+
+if (salaCode) {
+  btnEntrar.hidden = false;
+  announce("Te invitaron a una mesa. Tocá el botón Entrar a jugar. No hace falta escribir nada.");
+} else {
+  announce("Bienvenido. Tocá el botón Crear una mesa nueva para empezar. No hace falta escribir nada.");
+}
+
+btnCrear.addEventListener("click", async () => {
+  unlockAudio();  // EL ÚNICO TOQUE: desde acá las voces suenan solas.
+  btnCrear.disabled = true;
+  announce("Creando la mesa...");
+  try {
+    const res = await fetch("/amor-con-aroma-a-cafe/api/salas", {method: "POST"});
+    const data = await res.json();
+    // Sin recargar la página: la recarga puede robar el foco y abrir el teclado.
+    history.pushState(null, "", "/amor-con-aroma-a-cafe/sala/" + data.code);
+    enterSala(data.code);
+  } catch (err) {
+    btnCrear.disabled = false;
+    announce("No pude crear la mesa. Tocá el botón Crear una mesa nueva otra vez.");
+  }
+});
+
+btnEntrar.addEventListener("click", () => {
+  unlockAudio();  // EL ÚNICO TOQUE: desde acá las voces suenan solas.
+  enterSala(salaCode);
+});
+
+$("btn-copiar").addEventListener("click", async () => {
+  const link = $("link").textContent;
+  try {
+    await navigator.clipboard.writeText(link);
+    announce("Link copiado. Pegalo en un mensaje para invitar a tus amigos.");
+  } catch (err) {
+    announce("No pude copiarlo. El link está escrito arriba.");
+  }
 });
 
 function connect(code) {
@@ -467,19 +514,25 @@ function connect(code) {
     const msg = JSON.parse(ev.data);
     if (msg.event === "welcome") {
       myName = msg.name;
-      announce("Estás en la mesa como " + myName + ".");
+      announce("Estás en la mesa como " + myName + ". Cuando te toque, se activa el botón Girar la ruleta.");
     } else if (msg.event === "state") {
       $("jugadores").textContent =
         "En la mesa: " + msg.players.join(", ")
         + (msg.turn ? ". Le toca a " + msg.turn + "." : "");
       const mine = msg.turn && msg.turn === myName;
       btnGirar.disabled = msg.spinning || !mine;
-      btnGirar.textContent = msg.spinning
-        ? "🎡 Girando..."
-        : (mine ? "🎡 Girar la ruleta" : "🎡 Esperando el turno de " + (msg.turn || "alguien"));
+      setGirar(msg.spinning
+        ? "Girando..."
+        : (mine ? "Girar la ruleta" : "Esperando el turno de " + (msg.turn || "alguien")));
+      if (mine && !msg.spinning && !announcedTurn) {
+        announcedTurn = true;
+        announce("Es tu turno. Tocá el botón Girar la ruleta.");
+      } else if (!mine) {
+        announcedTurn = false;
+      }
     } else if (msg.event === "spin_start") {
       btnGirar.disabled = true;
-      btnGirar.textContent = "🎡 Girando...";
+      setGirar("Girando...");
       announce("Gira la ruleta de " + msg.player + "...");
       spinAnimation(msg.angle, () => {});
     } else if (msg.event === "say") {
