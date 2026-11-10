@@ -1228,3 +1228,29 @@ class SpokenOptionTests(unittest.IsolatedAsyncioTestCase):
             self.assertNotIn("Opción "+letter+":",text)
         self.assertNotIn("de 10",text)
         self.assertIn("4 vidas",text)
+
+class VoiceDeadlineTests(unittest.IsolatedAsyncioTestCase):
+    async def test_remote_timeout_uses_local_spanish(self):
+        async def timeout_voice(*args):
+            raise asyncio.TimeoutError()
+        with patch('app.synthesize', side_effect=timeout_voice), \
+             patch('app.synthesize_once', new=AsyncMock(return_value=b'ogg')) as local, \
+             patch.object(webapp, 'ogg_to_mp3', new=AsyncMock(return_value=b'mp3')):
+            self.assertEqual(await webapp.bounded_voice_mp3('Hola', 'es-AR-ElenaNeural'), b'mp3')
+            local.assert_awaited_once_with('Hola', 'espeak-es-419')
+
+    async def test_double_failure_still_sends_text(self):
+        room = make_room('Ana')
+        with patch.object(webapp, 'bounded_voice_mp3', new=AsyncMock(side_effect=RuntimeError('voice unavailable'))), \
+             patch.object(webapp, 'broadcast', new=AsyncMock()) as broadcast:
+            await webapp.narrate(room, 'Tu turno, Ana')
+            self.assertFalse(room['audio_lock'].locked())
+            self.assertEqual(broadcast.call_args.args[1], {'event':'say','text':'Tu turno, Ana','audio':None})
+
+    async def test_failed_chatter_releases_lock_without_queue(self):
+        room = make_room('Ana')
+        with patch('app.synthesize', new=AsyncMock(side_effect=asyncio.TimeoutError())), \
+             patch.object(webapp, 'broadcast', new=AsyncMock()) as broadcast:
+            await webapp.turn_chatter(room, room['players'][0])
+            self.assertFalse(room['audio_lock'].locked())
+            broadcast.assert_not_awaited()
