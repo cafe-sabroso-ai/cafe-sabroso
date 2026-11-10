@@ -1464,7 +1464,18 @@ TRIVIA_CATEGORY_HINTS = {
         "League, ligas de Europa y América, jugadores de todas las épocas. "
         "No te centres solo en Argentina. "
     ),
-    "refranes": "Sobre refranes y dichos populares: su significado o cómo terminan. ",
+    "refranes": (
+        "Sobre refranes y dichos populares REALES y conocidos, de todo el "
+        "mundo pero sobre todo de Argentina, Latinoamérica y España. Variá "
+        "entre tres formatos: (1) '¿Cómo termina este refrán?' con el "
+        "comienzo del refrán en la pregunta y terminaciones plausibles como "
+        "opciones; (2) '¿Qué significa este refrán?'; (3) '¿De qué país o "
+        "zona es este refrán?'. Cuando puedas, nombrá en la pregunta el país "
+        "o la zona de origen (ej. 'Refrán de México: ...'). Si el origen es "
+        "incierto o compartido, usá la zona amplia ('toda Latinoamérica', "
+        "'España y Latinoamérica') en vez de inventar un país. Nunca "
+        "inventes refranes: usá solo dichos que la gente dice de verdad. "
+    ),
     "nombres y apellidos": (
         "Sobre el origen o significado de nombres y apellidos, o famosos que "
         "los llevan. "
@@ -1546,6 +1557,9 @@ trivia_lineups = {}
 trivia_media = {}
 # chat_id -> message_id of the one live ruleta keyboard (tidy-chat rule).
 trivia_last_keyboard = {}
+# chat_id -> message_id of the ruleta menu message, so a started game can
+# delete it with the rest of its flow on exit.
+trivia_pending_menu = {}
 
 
 async def trivia_clear_keyboard(chat_id: int):
@@ -1910,7 +1924,7 @@ def trivia_match_answer(user_text: str, options):
 
 
 async def trivia_menu(chat_id: int):
-    await trivia_send_keyboard(
+    mid = await trivia_send_keyboard(
         chat_id,
         "🎡 LA RULETA SABROSA\n"
         f"Tenés {TRIVIA_LIVES} vidas por partida: cada error te saca una, "
@@ -1930,6 +1944,8 @@ async def trivia_menu(chat_id: int):
             [{"text": "⬅️ Volver al menú principal", "callback_data": "mode:menu"}],
         ],
     )
+    if isinstance(mid, int):
+        trivia_pending_menu[chat_id] = mid
 
 
 async def trivia_begin(chat_id: int, countries_mode: bool):
@@ -1953,6 +1969,9 @@ async def trivia_begin(chat_id: int, countries_mode: bool):
     }
     mode_line = "con países y categorías cruzados" if countries_mode else "con las categorías"
     name = get_preferred_name(chat_id) or "campeón"
+    menu_mid = trivia_pending_menu.pop(chat_id, None)
+    if isinstance(menu_mid, int):
+        trivia_track(trivia_games.get(chat_id), menu_mid)
     mid = await trivia_send_keyboard(
         chat_id,
         f"🎡 EMPIEZA LA RULETA\nArranca la ruleta {mode_line}. Tenés "
