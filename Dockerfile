@@ -34,8 +34,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN mkdir -p /app/piper-voices \
     && base="https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/es" \
     && for spec in \
-         "es_AR/daniela/high/es_AR-daniela-high" \
-         "es_MX/claude/high/es_MX-claude-high" \
          "es_MX/ald/medium/es_MX-ald-medium" \
          "es_ES/davefx/medium/es_ES-davefx-medium" \
          "es_ES/sharvard/medium/es_ES-sharvard-medium"; do \
