@@ -100,6 +100,45 @@ class EspeakVoiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(app.VOICE_ITEMS[0][0] if hasattr(app, "VOICE_ITEMS") else list(app.VOICES)[0], "espeak-es-419")
         self.assertEqual(app.voice_name("espeak-es-419"), "Voz Lector 1")
 
+    async def test_piper_voice_routes_to_local_piper(self):
+        """The Piper voices synthesize locally with piper, not Edge TTS."""
+        from pathlib import Path
+        calls = []
+
+        class FakeProcess:
+            def __init__(self, args):
+                self.args = list(args)
+                self.returncode = 0
+
+            async def communicate(self, input=None):
+                if "-m" in self.args and "piper" in self.args:
+                    Path(self.args[self.args.index("--output_file") + 1]).write_bytes(b"RIFF")
+                else:
+                    Path(self.args[-1]).write_bytes(b"RIFF")
+                return (b"", b"")
+
+        async def fake_exec(*args, **kwargs):
+            calls.append(args)
+            return FakeProcess(args)
+
+        with patch.object(app.asyncio, "create_subprocess_exec", fake_exec), \
+             patch.object(app.edge_tts, "Communicate", side_effect=AssertionError("must not use Edge TTS")):
+            audio = await app.synthesize("Hola, soy Daniela.", "piper-es-ar-daniela")
+        self.assertEqual(calls[0][1], "-m")
+        self.assertIn("piper", calls[0])
+        self.assertIn("es_AR-daniela-high.onnx", calls[0][calls[0].index("--model") + 1])
+        self.assertEqual(calls[1][0], "ffmpeg")
+        self.assertEqual(audio, b"RIFF")
+
+    def test_piper_voices_are_listed_after_the_screen_reader_voices(self):
+        piper_keys = ["piper-es-ar-daniela", "piper-es-mx-claude", "piper-es-mx-ald",
+                      "piper-es-es-davefx", "piper-es-es-sharvard"]
+        self.assertEqual(list(app.VOICES)[5:10], piper_keys)
+        for key in piper_keys:
+            self.assertIn(key, app.PIPER_VOICES)
+        self.assertEqual(app.voice_name("piper-es-ar-daniela"), "Daniela")
+        self.assertEqual(len(app.VOICES), 48)
+
     def test_all_screen_reader_variants_are_listed_first(self):
         expected = ["espeak-es-419", "espeak-es-419-m1", "espeak-es-419-m3", "espeak-es-419-f1", "espeak-es-419-f2"]
         self.assertEqual(list(app.VOICES)[:5], expected)
