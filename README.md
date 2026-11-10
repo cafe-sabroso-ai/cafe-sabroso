@@ -18,7 +18,8 @@ A Spanish-speaking Telegram bot that answers text and voice messages with both t
 - `/cuarteto` - choose four different voices for a group conversation, joined into one voice note.
 - `/quinteto` - choose five different voices for a group conversation, joined into one voice note.
 - `/sexteto` - choose six different voices for a group conversation, joined into one voice note.
-- Group modes first ask whether to add your current individual voice as one of the talkers ("Sí, sumar" / "No" on Telegram; reply SUMAR or NO on WhatsApp); with it included, the remaining picks complete the group.
+- `/septeto` - seven voices; `/octeto` - eight voices; `/noneto` - nine voices; `/deceto` - ten voices. Bigger groups take longer to generate and render, and each turn is shorter so the joined voice note stays listenable.
+- Group modes first ask whether to add your current individual voice as one of the talkers ("Sí, sumar" / "No" on Telegram; reply SUMAR or NO on WhatsApp); with it included, the remaining picks complete the group. The voices address you by your saved name, respond to what you say and invite you to keep talking.
 - `/historia` - choose four different voices as four named characters, then supply a story theme. Each character speaks its own dialogue and continues the same scene in one joined voice note.
 - `/musica <artist or song>` - search for music without leaving the selected voice mode. Natural Spanish requests such as `buscá música de Mercedes Sosa`, `quiero escuchar Alfonsina y el mar` and `buscá canciones de Soda Stereo` also work.
 - `/individual` - leave duo, trio, quartet or story mode and return to the selected single voice.
