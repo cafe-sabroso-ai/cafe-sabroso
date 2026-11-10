@@ -56,16 +56,16 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         fresh_state()
 
-    async def test_voices_lists_all_48_numbered(self):
+    async def test_voices_lists_all_50_numbered(self):
         texts, _, _ = await send("/voces")
         listing = "\n".join(texts)
         self.assertIn("1. Voz Lector 1 - estilo NVDA", listing)
-        self.assertIn("12. Tomás - argentino", listing)
-        self.assertIn("49. Lorena - El Salvador", listing)
+        self.assertIn("10. Tomás - argentino", listing)
+        self.assertIn("47. Lorena - El Salvador", listing)
         self.assertIn("/voz", listing)
 
     async def test_individual_voice_pick(self):
-        texts, voice, _ = await send("/voz 13")
+        texts, voice, _ = await send("/voz 11")
         self.assertEqual(cafe.selected_voice[KEY], "es-AR-ElenaNeural")
         self.assertIn("Elegiste Elena - argentina", texts[0])
         voice.assert_awaited_once()
@@ -78,7 +78,7 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_invalid_voice_number(self):
         texts, _, _ = await send("/voz 99")
-        self.assertIn("1 al 52", texts[0])
+        self.assertIn("1 al 50", texts[0])
 
     async def test_menu_shows_commands(self):
         texts, _, _ = await send("/menu")
@@ -102,10 +102,10 @@ class GroupSelectionTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("SUMAR o NO", texts[0])
         texts, _, _ = await send("no")
         self.assertIn("elegís todas las voces", texts[0])
-        texts, _, _ = await send("/voz 12")
+        texts, _, _ = await send("/voz 10")
         self.assertIn("voz 1: Tomás", texts[0])
         self.assertIn("2 de 2", texts[0])
-        texts, voice, group_voice = await send("/voz 17")
+        texts, voice, group_voice = await send("/voz 15")
         self.assertEqual(cafe.duo_pairs[KEY], ("es-AR-TomasNeural", "es-CO-SalomeNeural"))
         self.assertTrue(cafe.duo_enabled[KEY])
         combined = texts[0]
@@ -119,7 +119,7 @@ class GroupSelectionTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("SUMAR o NO", texts[0])
         texts, _, _ = await send("sumar")
         self.assertIn("ya participa (1 de 2)", texts[0])
-        texts, _, group_voice = await send("/voz 17")
+        texts, _, group_voice = await send("/voz 15")
         self.assertEqual(cafe.duo_pairs[KEY], ("es-AR-TomasNeural", "es-CO-SalomeNeural"))
         turns = group_voice.call_args[0][1]
         self.assertEqual([v for v, _ in turns], ["es-AR-TomasNeural", "es-CO-SalomeNeural"])
