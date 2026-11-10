@@ -961,9 +961,12 @@ async def do_country_spin(room, player):
     await narrate(room, f"¡Gira la ruleta de países! Gira, gira... ¡paró! ¡{country}! "
                         f"Para ganar {country} hay que completar todas las categorías. "
                         f"Arranca {player['name']}.")
-    room["phase"] = "spin_ready"
+    # The first category follows the country automatically. No hidden second step.
+    room["phase"] = "category_spinning"
     await broadcast(room, room_state(room))
-    await tell(player, {"event": "your_turn", "kind": "category"})
+    await narrate(room, f"{player['name']}, ahora giramos automáticamente la primera categoría de {country}. "
+                  "No tenés que tocar otro botón. Después escuchás la pregunta y sus cuatro opciones.")
+    await do_category_spin(room, player)
 
 
 async def do_spin(room, player):
@@ -1799,7 +1802,7 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bo
         room.setdefault("chat_voices", {})[player["id"]] = NARRATOR_VOICES[(player["id"] - 1) % len(NARRATOR_VOICES)]
     log.info("Web sala %s: %s joined (%s players)", code, player["name"], len(active) + (seat is None))
     await tell(player, {"event": "welcome", "name": player["name"], "id": player["id"],
-                        "code": code, "capacity": room["capacity"], "phase": room["phase"], "spectator": bool(player.get("spectator"))})
+                        "code": code, "capacity": room["capacity"], "phase": room["phase"], "spectator": bool(player.get("spectator")), "build": CLIENT_BUILD})
     if player.get("team") is not None and not player.get("spectator"):
         await narrate(room, f"{player['name']} está en el equipo {TEAM_NAMES[player['team']]}.")
     count = len([p for p in room["players"] if not p.get("gone") and not p.get("spectator")])
@@ -2274,6 +2277,7 @@ PAGE = """<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>💕 Amor con aroma a café 💕</title>
 <style>
+  [hidden] { display: none !important; }
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
   body {
@@ -2289,6 +2293,8 @@ PAGE = """<!DOCTYPE html>
     background: #d81b60; color: #fff; cursor: pointer; margin: 0.5rem;
     min-width: 14rem; min-height: 3.5rem; display: block;
   }
+  #btn-actualizar { position: sticky; top: 0.4rem; z-index: 20; align-self: stretch; width: 100%; margin: 0 0 0.5rem; min-width: 8rem; font-size: 1.1rem; padding: 0.65rem 1rem; }
+  #pregunta, #pregunta-texto { scroll-margin-top: 5rem; }
   button.secondary { background: #3949ab; }
   button.chatbtn { font-size: 1.1rem; min-width: 10rem; min-height: 2.8rem; padding: 0.6rem 1rem; }
   button:disabled { background: #555; color: #aaa; }
@@ -2350,6 +2356,7 @@ PAGE = """<!DOCTYPE html>
     <h1>💕 Amor con aroma a café 💕</h1>
     <div class="icons" aria-hidden="true">☕ 🧉 🧁 💗</div>
   </header>
+  <button id="btn-actualizar" class="secondary" aria-label="Actualizar esta página y volver a mi mesa">Actualizar</button>
 
   <main>
     <p class="visually-hidden">
@@ -2439,6 +2446,7 @@ PAGE = """<!DOCTYPE html>
 
       <button id="btn-girar" hidden disabled><span aria-hidden="true">🎡 </span><span id="btn-girar-text">Girar la ruleta</span></button>
 
+      <button id="btn-volver-cuestionario" class="secondary" hidden aria-label="Volver a la pregunta y sus cuatro opciones">Volver al cuestionario</button>
       <p id="quiz-progreso" role="status"></p>
       <div id="pregunta" hidden>
         <p id="pregunta-texto" role="status" tabindex="-1"></p>
@@ -2506,6 +2514,8 @@ PAGE = """<!DOCTYPE html>
   </main>
 <script>
 "use strict";
+const CLIENT_BUILD = "__CAFE_BUILD__";
+
 const $ = (id) => document.getElementById(id);
 const estado = $("estado"), voz = $("voz"), player = $("player");
 let ws = null, audioUnlocked = false;
@@ -2534,6 +2544,12 @@ $("btn-nombre").addEventListener("click", () => {
   ws.send(JSON.stringify({action:"rename", name}));
 });
 let micActive = false;
+$("btn-actualizar").addEventListener("click",()=>{
+  if(micActive){announce("Terminá de grabar antes de actualizar, así no perdés tu mensaje.");return;}
+  const active=lastState && !["lobby","gameover"].includes(lastState.phase);
+  if(active && !confirm("Estás en una partida. Actualizar vuelve a cargar la página y reconecta tu mesa; puede interrumpir la lectura. ¿Actualizar ahora?"))return;
+  location.reload();
+});
 function setMic(active) {
   micActive = active;
   updateMusicLevel();
@@ -2547,14 +2563,16 @@ function setMic(active) {
 let musicOn = localStorage.getItem("cafe_musica") === "1";
 let musicCtx = null, musicGain = null;
 function updateMusicLevel() {
-  if (musicCtx && musicGain) musicGain.gain.setTargetAtTime(
-    micActive ? 0 : (!player.paused ? 0.006 : 0.025), musicCtx.currentTime, 0.15);
+  if (musicCtx && musicGain) {
+    if(micActive){musicGain.gain.cancelScheduledValues(musicCtx.currentTime);musicGain.gain.setValueAtTime(0,musicCtx.currentTime);}
+    else musicGain.gain.setTargetAtTime(!player.paused ? 0.006 : 0.025,musicCtx.currentTime,0.15);
+  }
 }
 function startMusic() {
   if (!musicOn) return;
   if (!musicCtx) {
     musicCtx = new (window.AudioContext || window.webkitAudioContext)();
-    musicGain = musicCtx.createGain();
+    musicGain = musicCtx.createGain(); musicGain.gain.value=0;
     musicGain.connect(musicCtx.destination);
     [196, 246.94, 293.66].forEach((freq) => {
       const osc = musicCtx.createOscillator(), gain = musicCtx.createGain();
@@ -2883,6 +2901,20 @@ function enterSala(code, name) {
   connect(code, name);
 }
 
+async function checkClientVersion() {
+  if (micActive || document.visibilityState !== "visible") return;
+  try {
+    const r=await fetch("/amor-con-aroma-a-cafe/api/version",{cache:"no-store"});
+    if(!r.ok)return;
+    const data=await r.json();
+    if(data.build && data.build!==CLIENT_BUILD) {
+      announce("Actualizando el juego. Se conserva tu nombre y tu enlace de mesa.");
+      location.reload();
+    }
+  } catch(err) {}
+}
+window.addEventListener("focus",checkClientVersion);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")checkClientVersion();});
 function connect(code, name) {
   const seatStorage = "cafe_asiento_" + code;
   let seatKey = sessionStorage.getItem(seatStorage);
@@ -2896,6 +2928,10 @@ function connect(code, name) {
   ws.onmessage = (ev) => {
     const msg = JSON.parse(ev.data);
     if (msg.event === "welcome") {
+      if (msg.build && msg.build !== CLIENT_BUILD) {
+        announce("Hay una actualización del juego. Actualizando la página para recuperar tu mesa.");
+        location.reload(); return;
+      }
       myId = msg.id; myName = msg.name;
       lastQuestion = null;
       watching = !!msg.spectator;
@@ -2928,6 +2964,11 @@ function connect(code, name) {
       if (lastQuestion && lastQuestion.id === msg.id) {
         startClock(msg.seconds); startTicking(msg.seconds);
         $("btn-pregunta-lista").hidden = true;
+        if (lastQuestion.player===myId && !micActive &&
+            ($("pregunta").contains(document.activeElement) || document.activeElement===estado || document.activeElement===document.body)) {
+          const first=document.querySelector("#pregunta .opcion:not(:disabled)");
+          if(first)first.focus();
+        }
       }
     } else if (msg.event === "chatter") {
       if (!micActive && !playing && !audioQueue.length) {
@@ -2985,6 +3026,7 @@ function onState(msg) {
   if (msg.phase === "country_spin_ready") girarText = "Girar la ruleta de países";
   $("btn-girar-text").textContent = msg.spinning ? "Girando..." : (mine ? girarText : "Esperando a " + (msg.turn_name || "alguien"));
   $("reto-verdad").hidden = !(mine && msg.phase === "verdad_reto");
+  $("btn-volver-cuestionario").hidden=msg.phase!=="question";
   if (msg.phase !== "question") { $("pregunta").hidden = true; }
   else if (msg.question && (!lastQuestion || lastQuestion.id !== msg.question.id || $("pregunta").hidden)) {
     onQuestion(msg.question);
@@ -3048,6 +3090,14 @@ function onState(msg) {
   if (msg.phase === "gameover") { clearInterval(timerInterval); $("temporizador").textContent = ""; }
 }
 
+function focusQuestion() {
+  if (!lastQuestion) return;
+  $("pregunta").hidden=false;
+  $("pregunta-texto").focus();
+  $("pregunta").scrollIntoView({block:"start",behavior:"auto"});
+  announce("Pregunta: "+lastQuestion.q+". Opciones: "+lastQuestion.options.join(". ")+". Después de la lectura tenés sesenta segundos para responder.");
+}
+$("btn-volver-cuestionario").addEventListener("click",focusQuestion);
 function readyQuestion(id) {
   if (ws && ws.readyState === 1 && lastQuestion && lastQuestion.id === id && lastQuestion.player === myId)
     ws.send(JSON.stringify({action:"question-ready", id}));
@@ -3074,8 +3124,8 @@ function onQuestion(msg) {
   });
   $("btn-voz-resp").disabled = !mine;
   if (mine) {
-    announce("Pregunta: " + msg.q + " " + msg.options.join(". "));
-    $("pregunta-texto").focus();
+    $("btn-volver-cuestionario").hidden=false;
+    focusQuestion();
   }
   if (!mine) announce("Pregunta para " + (lastState ? lastState.turn_name : "otro jugador") + ": " + msg.q);
 }
@@ -3319,4 +3369,15 @@ async def serve_audio(name: str):
 @router.get("/amor-con-aroma-a-cafe", response_class=HTMLResponse)
 @router.get("/amor-con-aroma-a-cafe/sala/{code}", response_class=HTMLResponse)
 async def page(code: str = ""):
-    return HTMLResponse(PAGE)
+    return HTMLResponse(PAGE, headers={"Cache-Control":"no-store, no-cache, must-revalidate, max-age=0", "Pragma":"no-cache", "Expires":"0"})
+
+
+# Fingerprint of the HTML before inserting itself: changes whenever the client changes.
+CLIENT_BUILD = hashlib.sha256(PAGE.encode()).hexdigest()[:16]
+PAGE = PAGE.replace("__CAFE_BUILD__", CLIENT_BUILD)
+
+
+@router.get("/amor-con-aroma-a-cafe/api/version")
+async def client_version():
+    return Response(json.dumps({"build":CLIENT_BUILD}),media_type="application/json",
+                    headers={"Cache-Control":"no-store"})
