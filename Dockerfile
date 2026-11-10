@@ -1,11 +1,30 @@
+FROM python:3.12-slim AS rhvoice-build
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git g++ scons pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# RHVoice core plus only the pieces we need: the Spanish language data and
+# the Mateo voice (the free blind-community voice).
+RUN git clone --depth 1 https://github.com/RHVoice/RHVoice.git /rhvoice \
+    && cd /rhvoice \
+    && git submodule update --init --depth 1 \
+         external/libs/boost data/languages/Spanish data/voices/Mateo src/scripts/Spanish
+
+WORKDIR /rhvoice
+RUN scons -j2 && scons install prefix=/opt/rhvoice
+
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ffmpeg espeak-ng libgomp1 curl \
+    && apt-get install -y --no-install-recommends ffmpeg espeak-ng libgomp1 curl libstdc++6 \
     && rm -rf /var/lib/apt/lists/*
+
+COPY --from=rhvoice-build /opt/rhvoice /opt/rhvoice
+ENV LD_LIBRARY_PATH=/opt/rhvoice/lib
 
 WORKDIR /app
 COPY requirements.txt .
