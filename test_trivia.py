@@ -164,6 +164,29 @@ class SpinTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(game["current"]["correct"], 1)
         self.assertEqual(game["current"]["question"], "¿Qué país ganó el Mundial 2022?")
 
+    async def test_question_and_options_use_different_voices(self):
+        chat_id = 7209
+        game = fresh_game(chat_id)
+        app.trivia_lineups[chat_id] = ("voz-locutor", "voz-lector", "voz-reactor")
+        synth_calls = []
+        with patch.object(app, "get_preferred_name", return_value="Escorpio"), \
+             patch.object(app, "telegram", new=AsyncMock(return_value={"message_id": 999})), \
+             patch.object(app, "send_text", new=AsyncMock()), \
+             patch.object(app, "send_voice", new=AsyncMock()), \
+             patch.object(app, "send_voice_audio", new=AsyncMock()), \
+             patch.object(app, "send_spin_animation", new=AsyncMock()), \
+             patch.object(app, "trivia_sfx_ogg", new=AsyncMock(return_value=b"sfx")), \
+             patch.object(app, "synthesize", side_effect=lambda t, v: synth_calls.append((t, v)) or b"ogg"), \
+             patch.object(app, "join_ogg", new=AsyncMock(return_value=b"joined")), \
+             patch.object(app, "trivia_start_timer"), \
+             patch.object(app, "complete", new=AsyncMock(return_value=QUESTION_TEXT)):
+            await app.trivia_spin(chat_id)
+        by_text = {text: voice for text, voice in synth_calls}
+        self.assertIn("voz-lector", by_text.get("Pregunta: ¿Qué país ganó el Mundial 2022?", ""))
+        options_text = next(t for t, _ in synth_calls if t.startswith("Y las opciones son."))
+        self.assertEqual(by_text[options_text], "voz-locutor")
+        self.assertIn("Opción dos: Argentina.", options_text)
+
     async def test_countries_mode_picks_a_country(self):
         game, _ = await self.spin(countries=True)
         self.assertIn(game["current"]["country"], app.TRIVIA_COUNTRIES)
@@ -305,6 +328,16 @@ class RoutingTests(unittest.IsolatedAsyncioTestCase):
              patch.object(app, "complete", new=AsyncMock(return_value="ok")):
             await app.handle_message({"chat": {"id": chat_id}, "voice": {"file_id": "v1"}})
         self.assertEqual(game["score"].get("fútbol mundial"), 1)
+
+    async def test_gira_without_a_game_opens_the_menu(self):
+        chat_id = 7410
+        app.trivia_games.pop(chat_id, None)
+        with patch.object(app, "telegram", new=AsyncMock()), \
+             patch.object(app, "trivia_menu", new=AsyncMock()) as menu, \
+             patch.object(app, "prepare_live_query", new=AsyncMock()) as live:
+            await app.handle_message({"chat": {"id": chat_id}, "text": "girá"})
+        menu.assert_awaited_once_with(chat_id)
+        live.assert_not_called()
 
     async def test_unclear_answer_keeps_question_open(self):
         chat_id = 7402
@@ -635,6 +668,24 @@ class TimerTests(unittest.IsolatedAsyncioTestCase):
              patch.object(app, "send_text", new=AsyncMock()) as send_text:
             await app.trivia_timer_warning(chat_id, 3, 30)
         send_text.assert_not_awaited()
+
+
+class TimerVoiceTests(unittest.IsolatedAsyncioTestCase):
+    async def test_warning_uses_the_rounds_third_voice(self):
+        chat_id = 7501
+        game = fresh_game(chat_id)
+        current_question(game)
+        game["deadline"] = app.time.time() + 600
+        gen = game["timer_gen"]
+        synth_calls = []
+        with patch.object(app, "get_preferred_name", return_value="Escorpio"), \
+             patch.object(app, "send_text", new=AsyncMock()), \
+             patch.object(app, "send_voice_audio", new=AsyncMock()), \
+             patch.object(app, "synthesize", side_effect=lambda t, v: synth_calls.append((t, v)) or b"ogg"):
+            await app.trivia_timer_warning(chat_id, gen, 600)
+        self.assertTrue(synth_calls)
+        self.assertEqual(synth_calls[0][1], "es-CU-ManuelNeural")
+        game["deadline"] = None
 
 
 class TidyChatTests(unittest.IsolatedAsyncioTestCase):
