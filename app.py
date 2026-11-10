@@ -1221,6 +1221,7 @@ async def search_music(chat_id: int, query: str):
     if not query:
         pending_music_query[chat_id] = True
         await send_text(chat_id, "Decime el artista, la canción o ambos. Por ejemplo: Mercedes Sosa Alfonsina y el mar.")
+        await send_voice(chat_id, "Decime el artista o la canción que querés buscar.")
         return
     pending_music_query.pop(chat_id, None)
     apple_result, archive_result = await asyncio.gather(
@@ -1243,13 +1244,32 @@ async def search_music(chat_id: int, query: str):
             [{"text": "Buscar en Spotify", "url": spotify_music_url(query)}],
             [{"text": "Buscar en Internet Archive", "url": archive_music_url(query)}],
         ]})
+        if isinstance(apple_result, Exception):
+            await send_voice(
+                chat_id,
+                "No pude consultar el catálogo ahora. Te dejo botones para abrir "
+                "la búsqueda oficial en Spotify o en Internet Archive.",
+            )
+        else:
+            await send_voice(
+                chat_id,
+                f"No encontré nada para {query}. Te dejo botones para abrir la "
+                "búsqueda oficial en Spotify o en Internet Archive.",
+            )
         return
-    summary = f"Resultados de música para “{query}”."
+    summary = f"Resultados de música para «{query}»."
     if tracks:
         summary += " Las fichas y muestras son de Apple Music; Spotify abre su búsqueda oficial."
     if downloads:
         summary += " Las descargas de Internet Archive tienen una licencia explícita y llegan como archivo MP3 directo."
     await send_text(chat_id, summary)
+    total = len(tracks) + len(downloads)
+    canciones = "una canción" if total == 1 else f"{total} canciones"
+    await send_voice(
+        chat_id,
+        f"Encontré {canciones} para {query}. Te paso la lista abajo: cada ficha "
+        "tiene botones para escuchar la muestra, abrir Spotify o descargar el MP3.",
+    )
     for track in tracks:
         spotify_url = spotify_music_url(f"{track['artist']} {track['title']}")
         share_url = "https://t.me/share/url?" + urllib_parse.urlencode({
