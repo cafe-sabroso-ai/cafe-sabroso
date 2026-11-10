@@ -112,6 +112,25 @@ class PageAccessibilityTests(unittest.TestCase):
         self.assertIn("Copiar el link", webapp.PAGE)
         self.assertIn("Girar la ruleta", webapp.PAGE)
 
+    def test_wheel_is_decorative_and_the_button_is_the_control(self):
+        # El canvas no es un control: el botón real y etiquetado es lo que gira.
+        self.assertIn('<canvas id="wheel" width="640" height="640" aria-hidden="true">', webapp.PAGE)
+        self.assertNotIn('role="img"', webapp.PAGE)
+        self.assertIn('id="btn-girar-text">Girar la ruleta</span>', webapp.PAGE)
+
+    def test_emojis_never_reach_the_accessible_name(self):
+        # Voice Access / lectores: el nombre accesible es solo texto.
+        for emoji in ("☕", "💗", "📤", "🎡"):
+            self.assertIn(f'<span aria-hidden="true">{emoji} </span>', webapp.PAGE)
+
+    def test_he_keeps_his_name_across_visits(self):
+        self.assertIn('localStorage.getItem("cafe_nombre")', webapp.PAGE)
+        self.assertIn('localStorage.setItem("cafe_nombre", myName)', webapp.PAGE)
+        self.assertIn("?name=" , webapp.PAGE)
+
+    def test_welcome_announces_room_and_name(self):
+        self.assertIn('"Estás en la mesa " + codeSpelled + " como "', webapp.PAGE)
+
 
 class JoinGuidanceTests(unittest.IsolatedAsyncioTestCase):
     async def join(self, room, name=""):
