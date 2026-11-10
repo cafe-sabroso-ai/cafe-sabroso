@@ -423,6 +423,51 @@ class JoinTests(unittest.IsolatedAsyncioTestCase):
             webapp.rooms.pop("TEST", None)
 
 
+class AudioRouteTests(unittest.TestCase):
+    def client(self):
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+        app = FastAPI()
+        app.include_router(webapp.router)
+        return TestClient(app)
+
+    def test_cached_audio_is_served_as_mp3(self):
+        key = webapp.cache_audio(b"fake-mp3-bytes")
+        res = self.client().get(f"/amor-con-aroma-a-cafe/audio/{key}.mp3")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.content, b"fake-mp3-bytes")
+        self.assertEqual(res.headers["content-type"], "audio/mpeg")
+
+    def test_unknown_audio_is_a_404(self):
+        res = self.client().get("/amor-con-aroma-a-cafe/audio/nope123.mp3")
+        self.assertEqual(res.status_code, 404)
+
+
+class CrearSalaTests(unittest.TestCase):
+    def create(self, payload):
+        from fastapi import FastAPI
+        from fastapi.testclient import TestClient
+        app = FastAPI()
+        app.include_router(webapp.router)
+        res = TestClient(app).post("/amor-con-aroma-a-cafe/api/salas", json=payload)
+        self.assertEqual(res.status_code, 200)
+        code = res.json()["code"]
+        room = webapp.rooms.pop(code)
+        return room
+
+    def test_paises_modes_create_paises_games(self):
+        for mode in ("solo_paises", "paises"):
+            room = self.create({"mode": mode, "capacity": 3})
+            self.assertEqual(room["game"], "paises")
+            self.assertEqual(room["mode"], mode)
+        self.assertEqual(self.create({"mode": "solo_paises"})["capacity"], 1)
+
+    def test_category_modes_create_categorias_games(self):
+        for mode in ("solo", "sala"):
+            room = self.create({"mode": mode})
+            self.assertEqual(room["game"], "categorias")
+
+
 class PageTests(unittest.TestCase):
     def test_start_screen_buttons_are_labeled(self):
         self.assertIn('aria-label="Jugar solo, sin amigos"', webapp.PAGE)
