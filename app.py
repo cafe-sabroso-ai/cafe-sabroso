@@ -2169,8 +2169,11 @@ async def trivia_spin(chat_id: int):
         trivia_last_keyboard[chat_id] = game["current"]["message_id"]
     trivia_track(game, result)
     numbers = ["uno", "dos", "tres", "cuatro"]
-    read_text = (
-        f"Pregunta: {question['question']} "
+    # One voice reads the question, ANOTHER voice reads the options: he asked
+    # to tell them apart by voice, and the two notes chain-play with one tap.
+    question_text = f"Pregunta: {question['question']}"
+    options_text = (
+        "Y las opciones son. "
         + " ".join(
             f"Opción {numbers[index]}: {option}."
             for index, option in enumerate(question["options"])
@@ -2180,10 +2183,21 @@ async def trivia_spin(chat_id: int):
     try:
         trivia_track(
             game,
-            await send_voice_audio(chat_id, await synthesize(read_text, reader), "pregunta.ogg"),
+            await send_voice_audio(
+                chat_id, await synthesize(question_text, reader), "pregunta.ogg"
+            ),
         )
     except Exception:
         log.exception("Could not send the question voice note")
+    try:
+        trivia_track(
+            game,
+            await send_voice_audio(
+                chat_id, await synthesize(options_text, announcer), "opciones.ogg"
+            ),
+        )
+    except Exception:
+        log.exception("Could not send the options voice note")
 
 
 async def trivia_mock(name: str, current) -> str:
@@ -2370,10 +2384,11 @@ async def trivia_timer_warning(chat_id: int, gen: int, remaining: int):
         text = f"⏳ ¡{remaining} segundos, {name}, apurate!"
     trivia_track(game, await send_text(chat_id, text))
     try:
-        announcer = trivia_round_voices(chat_id)[0]
+        round_voices = (game.get("current") or {}).get("voices")
+        warner = round_voices[2] if round_voices else trivia_round_voices(chat_id)[0]
         trivia_track(
             game,
-            await send_voice_audio(chat_id, await synthesize(text, announcer), "cronometro.ogg"),
+            await send_voice_audio(chat_id, await synthesize(text, warner), "cronometro.ogg"),
         )
     except Exception:
         log.exception("Could not send the cronometro warning voice")
@@ -2628,7 +2643,8 @@ async def handle_message(message: dict):
             await trivia_spin(chat_id)
             return
         if not game and chat_id not in group_selection and re.search(
-            r"\bruleta\b|preguntados", normalized(user_text)
+            r"\bruleta\b|preguntados|\bgira\b|\bgirar\b|\bgiralo\b|\bgirala\b",
+            normalized(user_text),
         ):
             await trivia_menu(chat_id)
             return
