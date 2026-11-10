@@ -690,6 +690,26 @@ class TidyChatTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(deletes, [21, 22, 30])
         self.assertNotIn(chat_id, app.trivia_games)
 
+    async def test_menu_message_is_deleted_when_game_ends(self):
+        chat_id = 7705
+        with patch.object(app, "trivia_clear_keyboard", new=AsyncMock()), \
+             patch.object(app, "send_text", new=AsyncMock(return_value={"message_id": 88})):
+            await app.trivia_menu(chat_id)
+        self.assertEqual(app.trivia_pending_menu[chat_id], 88)
+        game = fresh_game(chat_id)
+        menu_mid = app.trivia_pending_menu.pop(chat_id, None)
+        app.trivia_track(game, menu_mid)
+        game["sent_ids"] = [88, 91]
+        game["phase"] = "question"
+        game["current"] = {"options": ["a", "b", "c", "d"], "correct": 0}
+        with patch.object(app, "telegram", new=AsyncMock()) as telegram, \
+             patch.object(app, "send_text", new=AsyncMock(return_value={"message_id": 99})):
+            await app.handle_message({"chat": {"id": chat_id}, "text": "salir"})
+        deletes = [c.kwargs["message_id"] for c in telegram.await_args_list
+                   if c.args and c.args[0] == "deleteMessage"]
+        self.assertIn(88, deletes)
+        self.assertNotIn(chat_id, app.trivia_pending_menu)
+
     async def test_answer_leaves_one_live_keyboard(self):
         chat_id = 7704
         game = fresh_game(chat_id)
