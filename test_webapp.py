@@ -703,7 +703,7 @@ class PageTests(unittest.TestCase):
         self.assertIn("SILENT_MP3", webapp.PAGE)
         self.assertIn('ctx.state === "suspend', webapp.PAGE.replace("suspended", "suspend"))
         self.assertIn("audioCtx.resume()", webapp.PAGE)
-        self.assertIn("audioQueue.unshift(url)", webapp.PAGE)
+        self.assertIn("audioQueue.unshift(item)", webapp.PAGE)
 
 
 if __name__ == "__main__":
@@ -1254,3 +1254,55 @@ class VoiceDeadlineTests(unittest.IsolatedAsyncioTestCase):
             await webapp.turn_chatter(room, room['players'][0])
             self.assertFalse(room['audio_lock'].locked())
             broadcast.assert_not_awaited()
+
+class QuestionDeliveryTests(unittest.IsolatedAsyncioTestCase):
+    async def test_text_and_options_arrive_before_speech_and_clock(self):
+        room = make_room('Ana', mode='solo_paises', capacity=1)
+        p = room['players'][0]
+        sent = []
+        async def broadcast(room, msg): sent.append(msg.copy())
+        async def narrate(*args, **kw):
+            self.assertTrue(any(m.get('event')=='question' for m in sent))
+            self.assertIsNone(room['timer_task'])
+            self.assertFalse(room['question']['clock_started'])
+        with patch.object(webapp, 'broadcast', side_effect=broadcast), \
+             patch.object(webapp, 'narrate', side_effect=narrate):
+            await webapp.ask_question(room, p, 'cultura')
+        self.assertEqual(len(sent[0]['options']), 4)
+        self.assertNotIn('correct', webapp.public_question(room))
+        self.assertEqual(webapp.room_state(room)['question']['q'], room['question']['q'])
+
+    async def test_only_owner_and_current_question_can_start_clock_once(self):
+        room = make_room('Ana', 'Beto', mode='solo')
+        with patch.object(webapp, 'narrate', new=AsyncMock()), \
+             patch.object(webapp, 'turn_clock', new=fake_clock), \
+             patch.object(webapp, 'broadcast', new=AsyncMock()) as b:
+            await webapp.ask_question(room, room['players'][0], 'cultura')
+            qid = room['question']['id']
+            await webapp.start_question_clock(room, room['players'][1], qid)
+            await webapp.start_question_clock(room, room['players'][0], qid-1)
+            self.assertIsNone(room['timer_task'])
+            await webapp.start_question_clock(room, room['players'][0], qid)
+            timer = room['timer_task']
+            await webapp.start_question_clock(room, room['players'][0], qid)
+            self.assertIs(timer, room['timer_task'])
+            self.assertTrue(room['question']['clock_started'])
+            webapp.cancel_timer(room)
+
+    async def test_spin_cancels_previous_clock_before_animation(self):
+        room = make_room('Ana', mode='solo_paises', capacity=1)
+        seen = []
+        original = webapp.cancel_timer
+        def cancel(r): seen.append('cancel'); original(r)
+        async def sleep(n): self.assertEqual(seen[0], 'cancel')
+        with patch.object(webapp, 'cancel_timer', side_effect=cancel), \
+             patch.object(webapp.asyncio, 'sleep', side_effect=sleep), \
+             patch.object(webapp, 'narrate', new=AsyncMock()):
+            await webapp.do_country_spin(room, room['players'][0])
+        self.assertEqual(room['phase'], 'spin_ready')
+
+    def test_client_restores_question_and_requires_ready_for_clock(self):
+        self.assertIn('onQuestion(msg.question)', webapp.PAGE)
+        self.assertIn('lastQuestion = null;', webapp.PAGE)
+        self.assertIn('action:"question-ready"', webapp.PAGE)
+        self.assertIn('Repetir pregunta', webapp.PAGE)
