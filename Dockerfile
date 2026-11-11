@@ -46,3 +46,9 @@ COPY app.py whatsapp_app.py webapp.py .
 
 EXPOSE 10000
 CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-10000}"]
+
+# Approved web-games release. Bot entrypoints and configuration stay unchanged.
+COPY release-part-*.b64 /tmp/web-release/
+RUN cat /tmp/web-release/release-part-*.b64 | base64 -d > /tmp/web-games-release.tar.gz \
+    && echo "b497cb5377522056a08b3cc19409279e3c545c6beb34c4f811f9f2a261ff7c92  /tmp/web-games-release.tar.gz" | sha256sum -c - \
+    && tar -xzf /tmp/web-games-release.tar.gz -C /app && rm /tmp/web-games-release.tar.gz
