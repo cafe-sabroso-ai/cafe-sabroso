@@ -53,3 +53,7 @@ RUN cat /tmp/web1431/web1431-*.b64 | base64 -d > /tmp/web1431.tar.xz \
     && echo "6e44c5383e22b7e33f4d22f841e5fd1530d11bdbca88cdfedc01e4301727a174  /tmp/web1431.tar.xz" | sha256sum -c - \
     && python -c "import tarfile; tarfile.open('/tmp/web1431.tar.xz').extractall('/app')" \
     && rm -rf /tmp/web1431 /tmp/web1431.tar.xz
+
+# Approved El Chavo405 only. No other WIP is included.
+COPY chavo405data.b64 apply_chavo405.py /tmp/
+RUN python /tmp/apply_chavo405.py && rm /tmp/chavo405data.b64 /tmp/apply_chavo405.py
