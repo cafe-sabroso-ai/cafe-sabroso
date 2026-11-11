@@ -208,8 +208,6 @@ BOT_COMMANDS = [
     {"command": "deceto", "description": "Conversar con diez voces"},
     {"command": "historia", "description": "Crear una historia con cuatro personajes"},
     {"command": "juegos", "description": "Abrir el apartado de juegos"},
-    {"command": "ruleta", "description": "Jugar a la ruleta de preguntas"},
-    {"command": "ahorcado", "description": "Jugar al ahorcado"},
     {"command": "musica", "description": "Buscar un artista o una canción"},
     {"command": "nombre", "description": "Cambiar cómo te llama el bot"},
     {"command": "solo_texto", "description": "Desactivar las respuestas de audio"},
@@ -2012,6 +2010,9 @@ def trivia_match_answer(user_text: str, options):
 
 
 async def trivia_menu(chat_id: int):
+    # Retired Telegram game: old commands and natural-language aliases redirect.
+    await games_menu(chat_id)
+    return
     mid = await trivia_send_keyboard(
         chat_id,
         "🎡 LA RULETA SABROSA\n"
@@ -2918,6 +2919,9 @@ async def ahorcado_word_lost(chat_id: int, game, reason: str):
 
 
 async def ahorcado_start(chat_id: int):
+    # Retired Telegram game: preserve old entrypoints as safe redirects.
+    await games_menu(chat_id)
+    return
     clear_group_modes(chat_id)
     pending_music_query.pop(chat_id, None)
     if chat_id in trivia_games:
@@ -3019,17 +3023,27 @@ async def ahorcado_guess_locked(chat_id: int, game, raw: str):
     trivia_track(game, voice_mid)
 
 
+WEB_GAMES_URL = "https://cafe-sabroso.onrender.com/amor-con-aroma-a-cafe"
+WEB_GAMES_TITLE = "Amor con aroma a café ☕ 🧉 🧁 ❤️"
+WEB_GAMES_DESCRIPTION = (
+    "Animate a jugar y compartir un momento lindo, lleno de amor. "
+    "Elegí tu juego en la página. Los juegos anteriores de este chat se retiraron."
+)
+
+
 async def games_menu(chat_id: int):
-    await trivia_send_keyboard(
-        chat_id,
-        "🎮 JUEGOS\nElegí un juego. En la ruleta respondés preguntas con tres "
-        "voces distintas; en el ahorcado adivinás una palabra letra por letra, "
-        "hablando o escribiendo.",
-        [
-            [{"text": "🎡 La Ruleta: preguntas y respuestas", "callback_data": "mode:trivia"}],
-            [{"text": "🎯 El Ahorcado: adiviná la palabra", "callback_data": "ahorcado:start"}],
-            [{"text": "⬅️ Volver al menú principal", "callback_data": "mode:menu"}],
-        ],
+    # Mini Apps are supported in private chats. Group chats keep the same HTTPS
+    # destination as a normal link. Never copy or redeploy the web game here.
+    play = {"text": "A jugar"}
+    play["web_app" if chat_id > 0 else "url"] = {"url": WEB_GAMES_URL} if chat_id > 0 else WEB_GAMES_URL
+    await send_text(
+        chat_id, WEB_GAMES_TITLE + "\n\n" + WEB_GAMES_DESCRIPTION +
+        "\n\nSi preferís tu navegador, usá el enlace alternativo y la opción Abrir en… de Telegram.",
+        reply_markup={"inline_keyboard": [
+            [play],
+            [{"text": "Abrir juegos en el navegador", "url": WEB_GAMES_URL}],
+            [{"text": "Volver al menú principal", "callback_data": "mode:menu"}],
+        ]},
     )
 
 
@@ -3055,7 +3069,7 @@ async def welcome(chat_id: int, fallback_name=None):
         [{"text": "👥 Octeto: 8 voces", "callback_data": "mode:octet"}, {"text": "👥 Noneto: 9 voces", "callback_data": "mode:nonet"}],
         [{"text": "👥 Deceto: 10 voces", "callback_data": "mode:decet"}, {"text": "📖 Historia: 4 personajes", "callback_data": "mode:story"}],
         [{"text": "🎵 Buscar música", "callback_data": "mode:music"}],
-        [{"text": "🎮 Juegos: la ruleta y el ahorcado", "callback_data": "mode:games"}],
+        [{"text": "Amor con aroma a café ☕ 🧉 🧁 ❤️", "callback_data": "mode:games"}],
     ]
     await send_text(chat_id, text, reply_markup={"inline_keyboard": keyboard})
     await send_voice(chat_id, f"Hola, {name}. Ya estoy listo. Elige hasta diez voces o una historia para empezar.")
@@ -3376,6 +3390,11 @@ async def handle_callback(callback: dict):
     chat_id = callback["message"]["chat"]["id"]
     data = callback.get("data", "")
     callback_id = callback["id"]
+    if data == "mode:trivia" or data.startswith(("ahorcado:", "trivia:", "tans:")):
+        await telegram("answerCallbackQuery", callback_query_id=callback_id,
+                       text="Este juego se retiró. Abrí Amor con aroma a café.")
+        await games_menu(chat_id)
+        return
     if data == "mode:menu":
         await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Menú principal")
         await welcome(chat_id, callback.get("from", {}).get("first_name"))
