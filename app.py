@@ -189,6 +189,9 @@ def clear_group_modes(chat_id: int):
 group_selection = {}
 pending_weather_query = {}
 pending_weather_country = {}
+weather_retry_after = 0.0
+weather_response_cache = {}
+pending_weather_location = {}
 pending_sports_query = {}
 pending_music_query = {}
 awaiting_name = defaultdict(lambda: False)
@@ -870,13 +873,154 @@ def weather_place(text: str):
     text = text.strip(" ¿?¡!.,;")
     match = re.search(r"\b(?:en|para|de)\s+([^?!\n]{2,80})", text, re.IGNORECASE)
     place = match.group(1) if match else re.sub(r"^(?:pon[eé](?:me)?|mostr[aá](?:me)?|dame|clima|temperatura)\s+", "", text, flags=re.IGNORECASE)
-    place = re.sub(r"^(?:el|la)\s+(?:de\s+)?", "", place, flags=re.IGNORECASE)
-    place = re.sub(r"^(?:ciudad|localidad)\s+de\s+", "", place, flags=re.IGNORECASE)
+    place = re.sub(r"^(?:el|la)\s+de\s+", "", place, flags=re.IGNORECASE)
+    place = re.sub(r"^(?:el|la)\s+(?=(?:ciudad|localidad)\s+de\s+)", "", place, flags=re.IGNORECASE)
+    # These are real city names, not an optional spoken "ciudad de" prefix.
+    if not normalized(place).startswith(("ciudad de mexico", "ciudad de guatemala", "ciudad de la paz")):
+        place = re.sub(r"^(?:ciudad|localidad)\s+de\s+", "", place, flags=re.IGNORECASE)
     place = re.sub(r"\b(?:hoy|mañana|manana|ahora|actualmente|por favor|esta semana)\b", "", place, flags=re.IGNORECASE)
     place = " ".join(place.split()).strip(" ,.;")
     if not place or is_weather_query(place):
         return None
     return place
+
+
+# Country/territory codes match the game destination catalog. Not city defaults.
+WEATHER_COUNTRIES = {'argentina': {'name': 'Argentina', 'code': 'AR', 'region': None},
+ 'bolivia': {'name': 'Bolivia', 'code': 'BO', 'region': None},
+ 'brasil': {'name': 'Brasil', 'code': 'BR', 'region': None},
+ 'chile': {'name': 'Chile', 'code': 'CL', 'region': None},
+ 'colombia': {'name': 'Colombia', 'code': 'CO', 'region': None},
+ 'ecuador': {'name': 'Ecuador', 'code': 'EC', 'region': None},
+ 'paraguay': {'name': 'Paraguay', 'code': 'PY', 'region': None},
+ 'peru': {'name': 'Perú', 'code': 'PE', 'region': None},
+ 'uruguay': {'name': 'Uruguay', 'code': 'UY', 'region': None},
+ 'venezuela': {'name': 'Venezuela', 'code': 'VE', 'region': None},
+ 'mexico': {'name': 'México', 'code': 'MX', 'region': None},
+ 'guatemala': {'name': 'Guatemala', 'code': 'GT', 'region': None},
+ 'honduras': {'name': 'Honduras', 'code': 'HN', 'region': None},
+ 'el salvador': {'name': 'El Salvador', 'code': 'SV', 'region': None},
+ 'nicaragua': {'name': 'Nicaragua', 'code': 'NI', 'region': None},
+ 'costa rica': {'name': 'Costa Rica', 'code': 'CR', 'region': None},
+ 'panama': {'name': 'Panamá', 'code': 'PA', 'region': None},
+ 'cuba': {'name': 'Cuba', 'code': 'CU', 'region': None},
+ 'haiti': {'name': 'Haití', 'code': 'HT', 'region': None},
+ 'jamaica': {'name': 'Jamaica', 'code': 'JM', 'region': None},
+ 'puerto rico': {'name': 'Puerto Rico', 'code': 'PR', 'region': None},
+ 'republica dominicana': {'name': 'República Dominicana', 'code': 'DO', 'region': None},
+ 'trinidad y tobago': {'name': 'Trinidad y Tobago', 'code': 'TT', 'region': None},
+ 'estados unidos': {'name': 'Estados Unidos', 'code': 'US', 'region': None},
+ 'canada': {'name': 'Canadá', 'code': 'CA', 'region': None},
+ 'espana': {'name': 'España', 'code': 'ES', 'region': None},
+ 'italia': {'name': 'Italia', 'code': 'IT', 'region': None},
+ 'francia': {'name': 'Francia', 'code': 'FR', 'region': None},
+ 'alemania': {'name': 'Alemania', 'code': 'DE', 'region': None},
+ 'inglaterra': {'name': 'Inglaterra', 'code': 'GB', 'region': 'England'},
+ 'portugal': {'name': 'Portugal', 'code': 'PT', 'region': None},
+ 'paises bajos': {'name': 'Países Bajos', 'code': 'NL', 'region': None},
+ 'belgica': {'name': 'Bélgica', 'code': 'BE', 'region': None},
+ 'croacia': {'name': 'Croacia', 'code': 'HR', 'region': None},
+ 'suecia': {'name': 'Suecia', 'code': 'SE', 'region': None},
+ 'suiza': {'name': 'Suiza', 'code': 'CH', 'region': None},
+ 'grecia': {'name': 'Grecia', 'code': 'GR', 'region': None},
+ 'rusia': {'name': 'Rusia', 'code': 'RU', 'region': None},
+ 'ucrania': {'name': 'Ucrania', 'code': 'UA', 'region': None},
+ 'noruega': {'name': 'Noruega', 'code': 'NO', 'region': None},
+ 'polonia': {'name': 'Polonia', 'code': 'PL', 'region': None},
+ 'irlanda del norte': {'name': 'Irlanda del Norte', 'code': 'GB', 'region': 'Northern Ireland'},
+ 'irlanda': {'name': 'Irlanda', 'code': 'IE', 'region': None},
+ 'escocia': {'name': 'Escocia', 'code': 'GB', 'region': 'Scotland'},
+ 'gales': {'name': 'Gales', 'code': 'GB', 'region': 'Wales'},
+ 'bulgaria': {'name': 'Bulgaria', 'code': 'BG', 'region': None},
+ 'rumania': {'name': 'Rumania', 'code': 'RO', 'region': None},
+ 'turquia': {'name': 'Turquía', 'code': 'TR', 'region': None},
+ 'dinamarca': {'name': 'Dinamarca', 'code': 'DK', 'region': None},
+ 'austria': {'name': 'Austria', 'code': 'AT', 'region': None},
+ 'hungria': {'name': 'Hungría', 'code': 'HU', 'region': None},
+ 'serbia': {'name': 'Serbia', 'code': 'RS', 'region': None},
+ 'republica checa': {'name': 'República Checa', 'code': 'CZ', 'region': None},
+ 'japon': {'name': 'Japón', 'code': 'JP', 'region': None},
+ 'china': {'name': 'China', 'code': 'CN', 'region': None},
+ 'corea del sur': {'name': 'Corea del Sur', 'code': 'KR', 'region': None},
+ 'corea del norte': {'name': 'Corea del Norte', 'code': 'KP', 'region': None},
+ 'catar': {'name': 'Catar', 'code': 'QA', 'region': None},
+ 'israel': {'name': 'Israel', 'code': 'IL', 'region': None},
+ 'india': {'name': 'India', 'code': 'IN', 'region': None},
+ 'arabia saudita': {'name': 'Arabia Saudita', 'code': 'SA', 'region': None},
+ 'australia': {'name': 'Australia', 'code': 'AU', 'region': None},
+ 'nueva zelanda': {'name': 'Nueva Zelanda', 'code': 'NZ', 'region': None},
+ 'nigeria': {'name': 'Nigeria', 'code': 'NG', 'region': None},
+ 'camerun': {'name': 'Camerún', 'code': 'CM', 'region': None},
+ 'sudafrica': {'name': 'Sudáfrica', 'code': 'ZA', 'region': None},
+ 'marruecos': {'name': 'Marruecos', 'code': 'MA', 'region': None},
+ 'costa de marfil': {'name': 'Costa de Marfil', 'code': 'CI', 'region': None},
+ 'senegal': {'name': 'Senegal', 'code': 'SN', 'region': None},
+ 'ghana': {'name': 'Ghana', 'code': 'GH', 'region': None},
+ 'tunez': {'name': 'Túnez', 'code': 'TN', 'region': None},
+ 'argelia': {'name': 'Argelia', 'code': 'DZ', 'region': None},
+ 'angola': {'name': 'Angola', 'code': 'AO', 'region': None},
+ 'togo': {'name': 'Togo', 'code': 'TG', 'region': None},
+ 'egipto': {'name': 'Egipto', 'code': 'EG', 'region': None},
+ 'finlandia': {'name': 'Finlandia', 'code': 'FI', 'region': None},
+ 'irak': {'name': 'Irak', 'code': 'IQ', 'region': None},
+ 'iran': {'name': 'Irán', 'code': 'IR', 'region': None},
+ 'kenia': {'name': 'Kenia', 'code': 'KE', 'region': None},
+ 'etiopia': {'name': 'Etiopía', 'code': 'ET', 'region': None},
+ 'tanzania': {'name': 'Tanzania', 'code': 'TZ', 'region': None},
+ 'republica democratica del congo': {'name': 'República Democrática del Congo', 'code': 'CD', 'region': None},
+ 'madagascar': {'name': 'Madagascar', 'code': 'MG', 'region': None},
+ 'guinea ecuatorial': {'name': 'Guinea Ecuatorial', 'code': 'GQ', 'region': None},
+ 'cabo verde': {'name': 'Cabo Verde', 'code': 'CV', 'region': None},
+ 'uzbekistan': {'name': 'Uzbekistán', 'code': 'UZ', 'region': None},
+ 'jordania': {'name': 'Jordania', 'code': 'JO', 'region': None},
+ 'islandia': {'name': 'Islandia', 'code': 'IS', 'region': None},
+ 'eslovaquia': {'name': 'Eslovaquia', 'code': 'SK', 'region': None},
+ 'albania': {'name': 'Albania', 'code': 'AL', 'region': None},
+ 'reino unido': {'name': 'Reino Unido', 'code': 'GB', 'region': None}}
+
+
+# Alternate city labels checked against provider results during the world audit.
+WEATHER_CITY_ALIASES = {('CL', 'santiago'): 'Santiago de Chile',
+ ('MX', 'mexico city'): 'Ciudad de México',
+ ('GT', 'guatemala city'): 'Ciudad de Guatemala',
+ ('PA', 'panama city'): 'Panamá',
+ ('CU', 'havana'): 'La Habana',
+ ('HT', 'port-au-prince'): 'Puerto Príncipe',
+ ('TT', 'port of spain'): 'Puerto España',
+ ('IT', 'rome'): 'Roma',
+ ('GB', 'london'): 'Londres',
+ ('PT', 'lisbon'): 'Lisboa',
+ ('BE', 'brussels'): 'Bruselas',
+ ('SE', 'stockholm'): 'Estocolmo',
+ ('CH', 'bern'): 'Berna',
+ ('GR', 'athens'): 'Atenas',
+ ('RU', 'moscow'): 'Moscú',
+ ('PL', 'warsaw'): 'Varsovia',
+ ('GB', 'edinburgh'): 'Edimburgo',
+ ('RO', 'bucharest'): 'Bucarest',
+ ('DK', 'copenhagen'): 'Copenhague',
+ ('AT', 'vienna'): 'Viena',
+ ('RS', 'belgrade'): 'Belgrado',
+ ('CZ', 'prague'): 'Praga',
+ ('JP', 'tokyo'): 'Tokio',
+ ('CN', 'beijing'): 'Pekín',
+ ('KR', 'seoul'): 'Seúl',
+ ('KP', 'pyongyang'): 'Pionyang',
+ ('IL', 'jerusalem'): 'Jerusalén',
+ ('IN', 'new delhi'): 'Nueva Delhi',
+ ('SA', 'riyadh'): 'Riad',
+ ('CM', 'yaounde'): 'Yaundé',
+ ('CI', 'yamoussoukro'): 'Yamusukro',
+ ('TN', 'tunis'): 'Túnez',
+ ('DZ', 'algiers'): 'Argel',
+ ('EG', 'cairo'): 'El Cairo',
+ ('IQ', 'baghdad'): 'Bagdad',
+ ('IR', 'tehran'): 'Teherán',
+ ('ET', 'addis ababa'): 'Addis Abeba',
+ ('CD', 'kinshasa'): 'Kinsasa',
+ ('UZ', 'tashkent'): 'Taskent',
+ ('IS', 'reykjavik'): 'Reikiavik',
+ ('US', 'washington d.c.'): 'Washington'}
 
 
 class WeatherCountryRequired(ValueError):
@@ -885,48 +1029,142 @@ class WeatherCountryRequired(ValueError):
         self.code = code
 
 
+class WeatherPlaceRequired(ValueError):
+    def __init__(self, message, city, country=None):
+        super().__init__(message)
+        self.city = city
+        self.country = country
+
+
+class WeatherCachedResponse:
+    def __init__(self, data):
+        self.data = data
+    def json(self):
+        return self.data
+
+
+async def weather_get(url, params):
+    """Respect provider throttling instead of retrying every voice follow-up."""
+    global weather_retry_after
+    key = (url, tuple(sorted(params.items())))
+    cached = weather_response_cache.get(key)
+    if cached and time.monotonic() - cached[0] < 120:
+        return WeatherCachedResponse(cached[1])
+    if time.monotonic() < weather_retry_after:
+        raise ValueError("La fuente del clima está limitando las consultas. Esperá unos minutos y volvé a probar.")
+    response = await http.get(url, params=params)
+    if getattr(response, "status_code", None) == 429:
+        try:
+            delay = max(60, min(3600, int(response.headers.get("Retry-After", "300"))))
+        except (TypeError, ValueError):
+            delay = 300
+        weather_retry_after = time.monotonic() + delay
+        raise ValueError("La fuente del clima está limitando las consultas. Esperá unos minutos y volvé a probar.")
+    response.raise_for_status()
+    data = response.json()
+    if data.get("results") or data.get("current", {}).get("time"):
+        if len(weather_response_cache) >= 256:
+            weather_response_cache.pop(next(iter(weather_response_cache)))
+        weather_response_cache[key] = (time.monotonic(), data)
+    return WeatherCachedResponse(data)
+
+
 async def weather_context(place: str, question: str, country_code=None):
     # A spoken city/country pair is not a single geocoding name. Resolve the
     # country independently, then constrain the city lookup. Explicit country
     # replaces an earlier conversational country only after validation.
+    region = None
+    country = None
+    territory_region = None
+    pending_country = WEATHER_COUNTRIES.get(normalized(country_code or ""))
+    if pending_country:
+        territory_region = pending_country["region"]
+        country = pending_country["name"]
+        country_code = pending_country["code"]
+    known_country = WEATHER_COUNTRIES.get(normalized(place))
+    if known_country:
+        raise WeatherCountryRequired(known_country["name"], known_country["name"] if known_country["region"] else known_country["code"])
+    if "," not in place and not country:
+        # Prefer the longest catalog prefix: Irlanda del Norte before Irlanda.
+        for prefix, entry in sorted(WEATHER_COUNTRIES.items(), key=lambda item: len(item[0]), reverse=True):
+            if normalized(place).startswith(prefix + " "):
+                return await weather_context(place[len(prefix):].strip() + ", " + entry["name"], question)
     if "," in place:
-        city, country = (part.strip() for part in place.rsplit(",", 1))
+        parts = [part.strip() for part in place.split(",")]
+        if len(parts) not in (2, 3):
+            raise ValueError("Decime ciudad, provincia y país, por ejemplo Bernal, Buenos Aires, Argentina.")
+        city, country = parts[0], parts[-1]
+        region = parts[1] if len(parts) == 3 else None
         if not city or not country:
             raise ValueError("Decime la ciudad y el país, por ejemplo Quilmes, Argentina.")
-        response = await http.get(
-            "https://geocoding-api.open-meteo.com/v1/search",
-            params={"name": country[:80], "count": 10, "language": "es", "format": "json"},
-        )
-        response.raise_for_status()
-        countries = [item for item in response.json().get("results", [])
-                     if item.get("feature_code") == "PCLI"
-                     and normalized(item.get("name", "")) == normalized(country)
-                     and item.get("country_code")]
-        if not countries:
-            raise ValueError("No pude identificar ese país. Decime ciudad y país, por ejemplo Quilmes, Argentina.")
-        country_code = countries[0]["country_code"]
+        known_country = WEATHER_COUNTRIES.get(normalized(country))
+        if known_country:
+            country_code = known_country["code"]
+            territory_region = known_country["region"]
+        else:
+            response = await weather_get(
+                "https://geocoding-api.open-meteo.com/v1/search",
+                params={"name": country[:80], "count": 10, "language": "es", "format": "json"},
+            )
+            countries = [item for item in response.json().get("results", [])
+                         if item.get("feature_code") == "PCLI"
+                         and normalized(item.get("name", "")) == normalized(country)
+                         and item.get("country_code")]
+            if not countries:
+                raise ValueError("No pude identificar ese país. Decime ciudad y país, por ejemplo Quilmes, Argentina.")
+            country_code = countries[0]["country_code"]
         place = city
-    response = await http.get(
+    place = WEATHER_CITY_ALIASES.get((country_code, normalized(place)), place)
+    response = await weather_get(
         "https://geocoding-api.open-meteo.com/v1/search",
         params={"name": place[:80], "count": 10, "language": "es", "format": "json", **({"countryCode": country_code} if country_code else {})},
     )
-    response.raise_for_status()
     results = response.json().get("results", [])
+    if not region and not country and len(place.split()) > 1 and not any(
+        x.get("feature_code", "").startswith("PPL") and normalized(x.get("name", "")) == normalized(place)
+        for x in results
+    ):
+        # Natural country-first speech: "México Guadalajara" or
+        # "Estados Unidos Nueva York". Only split a verified country prefix.
+        words = place.split()
+        for size in range(1, min(3, len(words) - 1) + 1):
+            prefix = " ".join(words[:size])
+            known_prefix = WEATHER_COUNTRIES.get(normalized(prefix))
+            if known_prefix:
+                return await weather_context(" ".join(words[size:]) + ", " + known_prefix["name"], question)
+            country_response = await weather_get(
+                "https://geocoding-api.open-meteo.com/v1/search",
+                params={"name": prefix, "count": 10, "language": "es", "format": "json"},
+            )
+            match = next((x for x in country_response.json().get("results", [])
+                          if x.get("feature_code") == "PCLI"
+                          and normalized(x.get("name", "")) == normalized(prefix)), None)
+            if match:
+                return await weather_context(" ".join(words[size:]) + ", " + match["name"], question)
     if not results:
-        raise ValueError("No encontré ese lugar. Decime la ciudad, por ejemplo Quilmes.")
+        raise ValueError(f'Busqué "{place}" y no encontré una ciudad. Decime ciudad y país, por ejemplo Quilmes, Argentina.')
     for candidate in results:
-        if candidate.get("feature_code") == "PCLI" and normalized(candidate.get("name", "")) == normalized(place):
+        if not country and candidate.get("feature_code") == "PCLI" and normalized(candidate.get("name", "")) == normalized(place):
             raise WeatherCountryRequired(candidate["name"], candidate.get("country_code"))
-    cities = [x for x in results if x.get("feature_code", "").startswith("PPL") and (not country_code or x.get("country_code") == country_code)]
+    cities = [x for x in results if x.get("feature_code", "").startswith("PPL")
+              and normalized(x.get("name", "")) == normalized(place)
+              and (not country_code or x.get("country_code") == country_code)
+              and (not territory_region or normalized(x.get("admin1", "")) in {normalized(territory_region), {"England":"inglaterra","Scotland":"escocia","Wales":"gales","Northern Ireland":"irlanda del norte"}.get(territory_region)})
+              and (not region or re.sub(r"^(?:provincia|estado|departamento) de ", "", normalized(x.get("admin1", ""))).strip(" .") == re.sub(r"^(?:provincia|estado|departamento) de ", "", normalized(region)).strip(" ."))]
     if not cities:
-        raise ValueError("Necesito una ciudad para consultar el clima actual. ¿Cuál querés?")
+        raise ValueError(f'Entendí "{place}" pero no pude confirmar esa ciudad. Decime ciudad, provincia y país.')
+    if len({(x.get("country_code"), x.get("admin1")) for x in cities}) > 1:
+        countries = sorted({x.get("country", x.get("country_code", "")) for x in cities})
+        if len(countries) > 1:
+            raise WeatherPlaceRequired(f'Hay más de una ciudad llamada "{place}". ¿En qué país la buscás?', place)
+        country = country or cities[0].get("country")
+        raise WeatherPlaceRequired(f'Hay más de una ciudad llamada "{place}" en {country}. ¿En qué provincia o estado la buscás?', place, country)
     location = cities[0]
-    response = await http.get(
+    response = await weather_get(
         "https://api.open-meteo.com/v1/forecast",
         params={"latitude": location["latitude"], "longitude": location["longitude"],
                 "current": "temperature_2m,weather_code", "timezone": "auto"},
     )
-    response.raise_for_status()
     data = response.json()
     current = data.get("current", {})
     temperature = current.get("temperature_2m")
@@ -1271,6 +1509,7 @@ async def send_archive_audio(chat_id: int, item: dict):
 
 
 async def search_music(chat_id: int, query: str):
+    clear_weather_context(chat_id)
     query = re.sub(r"\s+", " ", query).strip()[:120]
     if not query:
         pending_music_query[chat_id] = True
@@ -1374,9 +1613,18 @@ async def prepare_live_query(chat_id: int, user_text: str):
         if normalized(user_text).strip(" .!¿?") in {"salir", "cancelar", "basta"}:
             pending_weather_query.pop(chat_id, None)
             pending_weather_country.pop(chat_id, None)
+            pending_weather_location.pop(chat_id, None)
             return "ask", "Listo, dejamos la consulta del clima.", None
         original = pending_weather_query.get(chat_id, user_text)
         place = weather_place(user_text)
+        if place and chat_id in pending_weather_location and not is_weather_query(user_text) and "," not in place:
+            clarification = pending_weather_location[chat_id]
+            # A province may itself contain "de". Do not parse it as a question.
+            place = user_text.strip(" ¿?¡!.,;")
+            if clarification["country"]:
+                place = f'{clarification["city"]}, {place}, {clarification["country"]}'
+            else:
+                place = f'{clarification["city"]}, {place}'
         if not place:
             pending_weather_query[chat_id] = original
             return "ask", "¿Para qué ciudad querés saber el clima actual?", None
@@ -1384,7 +1632,12 @@ async def prepare_live_query(chat_id: int, user_text: str):
             context, source = await weather_context(place, original, pending_weather_country.get(chat_id))
             pending_weather_query.pop(chat_id, None)
             pending_weather_country.pop(chat_id, None)
+            pending_weather_location.pop(chat_id, None)
             return "ready", context, source
+        except WeatherPlaceRequired as error:
+            pending_weather_query[chat_id] = original
+            pending_weather_location[chat_id] = {"city": error.city, "country": error.country}
+            return "ask", str(error), None
         except WeatherCountryRequired as error:
             pending_weather_query[chat_id] = original
             pending_weather_country[chat_id] = error.code
@@ -1453,7 +1706,14 @@ async def ask_preferred_name(chat_id: int, action="mode"):
     )
 
 
+def clear_weather_context(chat_id):
+    pending_weather_query.pop(chat_id, None)
+    pending_weather_country.pop(chat_id, None)
+    pending_weather_location.pop(chat_id, None)
+
+
 async def start_group_mode(chat_id: int, kind: str):
+    clear_weather_context(chat_id)
     trivia_games.pop(chat_id, None)
     group_selection[chat_id] = {"kind": kind, "voices": []}
     own = selected_voice[chat_id]
@@ -3054,6 +3314,7 @@ WEB_GAMES_DESCRIPTION = (
 
 
 async def games_menu(chat_id: int):
+    clear_weather_context(chat_id)
     # Mini Apps are supported in private chats. Group chats keep the same HTTPS
     # destination as a normal link. Never copy or redeploy the web game here.
     play = {"text": "A jugar"}
@@ -3070,6 +3331,7 @@ async def games_menu(chat_id: int):
 
 
 async def welcome(chat_id: int, fallback_name=None):
+    clear_weather_context(chat_id)
     # A free Render filesystem is replaced on deploy. Never block the bot on a
     # saved preference that may no longer exist; /nombre remains available.
     group_selection.pop(chat_id, None)
@@ -3169,6 +3431,7 @@ async def handle_message(message: dict):
             await trivia_menu(chat_id)
             return
         if text.startswith("/individual"):
+            clear_weather_context(chat_id)
             group_selection.pop(chat_id, None)
             clear_group_modes(chat_id)
             await send_text(chat_id, f"Modo individual activado. Tu voz actual es {VOICES[selected_voice[chat_id]]}. Elige otra abajo si quieres cambiarla.")
@@ -3191,6 +3454,7 @@ async def handle_message(message: dict):
             histories[chat_id].clear()
             pending_weather_query.pop(chat_id, None)
             pending_weather_country.pop(chat_id, None)
+            pending_weather_location.pop(chat_id, None)
             pending_music_query.pop(chat_id, None)
             group_selection.pop(chat_id, None)
             trivia_games.pop(chat_id, None)
@@ -3210,6 +3474,11 @@ async def handle_message(message: dict):
             log.info("Voice message transcribed for chat %s (%s characters)", chat_id, len(user_text))
         else:
             user_text = text
+        if chat_id in pending_weather_query and not is_weather_query(user_text) and (
+            re.search(r"\b(?:musica|cancion|canciones|escuchar)\b", normalized(user_text))
+            or re.search(r"\b(?:historia|cuento|contame|cuentame|noticias|deportes|juegos|juego)\b", normalized(user_text))
+        ):
+            clear_weather_context(chat_id)
         if chat_id in pending_music_query and not (chat_id in pending_weather_query or is_weather_query(user_text)):
             if re.search(r"\b(salir|basta|cancelar|terminar)\b", normalized(user_text)):
                 pending_music_query.pop(chat_id, None)
@@ -3430,6 +3699,7 @@ async def handle_callback(callback: dict):
         await welcome(chat_id, callback.get("from", {}).get("first_name"))
         return
     if data == "mode:single":
+        clear_weather_context(chat_id)
         group_selection.pop(chat_id, None)
         clear_group_modes(chat_id)
         await telegram("answerCallbackQuery", callback_query_id=callback_id, text="Modo de una voz")
