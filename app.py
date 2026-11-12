@@ -188,6 +188,7 @@ def clear_group_modes(chat_id: int):
         flags[chat_id] = False
 group_selection = {}
 pending_weather_query = {}
+pending_weather_country = {}
 pending_sports_query = {}
 pending_music_query = {}
 awaiting_name = defaultdict(lambda: False)
@@ -865,62 +866,59 @@ def is_weather_query(text: str) -> bool:
 
 
 def weather_place(text: str):
-    match = re.search(r"(?:en|para|de)\s+([^?!\n]{2,80})", text, re.IGNORECASE)
-    if not match:
+    """Extract a place from a weather question or a conversational city reply."""
+    text = text.strip(" ¿?¡!.,;")
+    match = re.search(r"\b(?:en|para|de)\s+([^?!\n]{2,80})", text, re.IGNORECASE)
+    place = match.group(1) if match else re.sub(r"^(?:pon[eé](?:me)?|mostr[aá](?:me)?|dame|clima|temperatura)\s+", "", text, flags=re.IGNORECASE)
+    place = re.sub(r"^(?:el|la)\s+(?:de\s+)?", "", place, flags=re.IGNORECASE)
+    place = re.sub(r"\b(?:hoy|mañana|manana|ahora|actualmente|por favor|esta semana)\b", "", place, flags=re.IGNORECASE)
+    place = " ".join(place.split()).strip(" ,.;")
+    if not place or is_weather_query(place):
         return None
-    place = match.group(1)
-    place = re.sub(r"\b(hoy|manana|ahora|actualmente|esta semana)\b", "", place, flags=re.IGNORECASE)
-    return place.strip(" ,.;") or None
+    return place
 
 
-async def weather_context(place: str, question: str):
-    geocoding_url = "https://geocoding-api.open-meteo.com/v1/search"
+class WeatherCountryRequired(ValueError):
+    def __init__(self, name, code):
+        super().__init__(f"¿De qué ciudad de {name} querés el clima actual? Un país no tiene una sola temperatura.")
+        self.code = code
+
+
+async def weather_context(place: str, question: str, country_code=None):
     response = await http.get(
-        geocoding_url,
-        params={"name": place[:80], "count": 1, "language": "es", "format": "json"},
+        "https://geocoding-api.open-meteo.com/v1/search",
+        params={"name": place[:80], "count": 10, "language": "es", "format": "json", **({"countryCode": country_code} if country_code else {})},
     )
     response.raise_for_status()
     results = response.json().get("results", [])
     if not results:
-        raise ValueError("No encontré ese lugar. Probá con ciudad y país.")
-    location = results[0]
+        raise ValueError("No encontré ese lugar. Decime la ciudad, por ejemplo Quilmes.")
+    for candidate in results:
+        if candidate.get("feature_code") == "PCLI" and normalized(candidate.get("name", "")) == normalized(place):
+            raise WeatherCountryRequired(candidate["name"], candidate.get("country_code"))
+    cities = [x for x in results if x.get("feature_code", "").startswith("PPL") and (not country_code or x.get("country_code") == country_code)]
+    if not cities:
+        raise ValueError("Necesito una ciudad para consultar el clima actual. ¿Cuál querés?")
+    location = cities[0]
     response = await http.get(
         "https://api.open-meteo.com/v1/forecast",
-        params={
-            "latitude": location["latitude"], "longitude": location["longitude"],
-            "current": "temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m",
-            "daily": "temperature_2m_max,temperature_2m_min,precipitation_probability_max",
-            "timezone": "auto", "forecast_days": 1,
-        },
+        params={"latitude": location["latitude"], "longitude": location["longitude"],
+                "current": "temperature_2m,weather_code", "timezone": "auto"},
     )
     response.raise_for_status()
     data = response.json()
-    current = data["current"]
-    daily = data["daily"]
-    location_name = ", ".join(str(value) for value in (
-        location.get("name"), location.get("admin1"), location.get("country")
-    ) if value)
-    condition = WEATHER_CODES.get(current.get("weather_code"), f"código meteorológico {current.get('weather_code')}")
-    current_time = datetime.fromisoformat(current["time"]).strftime("%H horas %M")
-    precipitation = (
-        "sin precipitación registrada" if not current.get("precipitation")
-        else f"precipitación de {current['precipitation']} milímetros"
-    )
-    context = (
-        f"Datos reales consultados ahora en Open-Meteo para {location_name}, "
-        f"actualizados a las {current_time}, hora local de {location.get('name')}: {condition}; "
-        f"temperatura de {current.get('temperature_2m')} grados Celsius; "
-        f"sensación térmica de {current.get('apparent_temperature')} grados; "
-        f"humedad del {current.get('relative_humidity_2m')} por ciento; {precipitation}; "
-        f"viento de {current.get('wind_speed_10m')} kilómetros por hora. "
-        f"Para hoy: mínima de {daily['temperature_2m_min'][0]} grados, "
-        f"máxima de {daily['temperature_2m_max'][0]} grados y probabilidad máxima de precipitación "
-        f"del {daily['precipitation_probability_max'][0]} por ciento.\n"
-        f"Pregunta original: {question}\n"
-        "Para el clima usá únicamente estos valores y esta fecha; no agregues condiciones ni cifras no incluidas. "
-        "La primera voz debe mencionar que los datos son de Open-Meteo."
-    )
-    return context, "https://open-meteo.com/"
+    current = data.get("current", {})
+    temperature = current.get("temperature_2m")
+    code = current.get("weather_code")
+    if not isinstance(temperature, (int, float)) or code not in WEATHER_CODES or not current.get("time"):
+        raise ValueError("La fuente no devolvió temperatura y estado actuales completos. Probá de nuevo en un momento.")
+    current_time = datetime.fromisoformat(current["time"]).strftime("%H:%M")
+    label = ", ".join(str(x) for x in (location.get("name"), location.get("admin1"), location.get("country")) if x)
+    degrees = f"{temperature:g}".replace(".", ",")
+    condition = WEATHER_CODES[code]
+    state = f"está {condition}" if code in {0, 1, 2, 3} else f"hay {condition}"
+    text = f"En {label} {state} y la temperatura es de {degrees} grados Celsius. Datos de Open-Meteo de las {current_time}, hora local."
+    return text, "https://open-meteo.com/"
 
 
 SPORT_LEAGUES = (
@@ -1351,14 +1349,30 @@ async def search_music(chat_id: int, query: str):
 
 
 async def prepare_live_query(chat_id: int, user_text: str):
-    if chat_id in pending_weather_query:
-        original = pending_weather_query.pop(chat_id)
+    if chat_id in pending_weather_query or is_weather_query(user_text):
+        if normalized(user_text).strip(" .!¿?") in {"salir", "cancelar", "basta"}:
+            pending_weather_query.pop(chat_id, None)
+            pending_weather_country.pop(chat_id, None)
+            return "ask", "Listo, dejamos la consulta del clima.", None
+        original = pending_weather_query.get(chat_id, user_text)
+        place = weather_place(user_text)
+        if not place:
+            pending_weather_query[chat_id] = original
+            return "ask", "¿Para qué ciudad querés saber el clima actual?", None
         try:
-            context, source = await weather_context(user_text, original)
+            context, source = await weather_context(place, original, pending_weather_country.get(chat_id))
+            pending_weather_query.pop(chat_id, None)
+            pending_weather_country.pop(chat_id, None)
             return "ready", context, source
+        except WeatherCountryRequired as error:
+            pending_weather_query[chat_id] = original
+            pending_weather_country[chat_id] = error.code
+            return "ask", str(error), None
         except ValueError as error:
+            pending_weather_query[chat_id] = original
             return "ask", str(error), None
         except Exception:
+            pending_weather_query[chat_id] = original
             log.exception("Open-Meteo lookup failed")
             return "ask", "No pude consultar Open-Meteo ahora. Probá de nuevo en un momento.", None
     if chat_id in pending_sports_query:
@@ -1373,19 +1387,6 @@ async def prepare_live_query(chat_id: int, user_text: str):
         except Exception:
             log.exception("ESPN lookup failed")
             return "ask", "No pude consultar ESPN ahora. Probá de nuevo en un momento.", None
-    if is_weather_query(user_text):
-        place = weather_place(user_text)
-        if not place:
-            pending_weather_query[chat_id] = user_text
-            return "ask", "¿Para qué ciudad o lugar querés saber el clima?", None
-        try:
-            context, source = await weather_context(place, user_text)
-            return "ready", context, source
-        except ValueError as error:
-            return "ask", str(error), None
-        except Exception:
-            log.exception("Open-Meteo lookup failed")
-            return "ask", "No pude consultar Open-Meteo ahora. Probá de nuevo en un momento.", None
     if is_sports_query(user_text):
         try:
             context, source = await sports_context(user_text)
@@ -3167,6 +3168,8 @@ async def handle_message(message: dict):
             return
         if text.startswith("/reset"):
             histories[chat_id].clear()
+            pending_weather_query.pop(chat_id, None)
+            pending_weather_country.pop(chat_id, None)
             pending_music_query.pop(chat_id, None)
             group_selection.pop(chat_id, None)
             trivia_games.pop(chat_id, None)
@@ -3186,7 +3189,7 @@ async def handle_message(message: dict):
             log.info("Voice message transcribed for chat %s (%s characters)", chat_id, len(user_text))
         else:
             user_text = text
-        if chat_id in pending_music_query:
+        if chat_id in pending_music_query and not (chat_id in pending_weather_query or is_weather_query(user_text)):
             if re.search(r"\b(salir|basta|cancelar|terminar)\b", normalized(user_text)):
                 pending_music_query.pop(chat_id, None)
                 await send_text(chat_id, "Listo, saliste de la búsqueda de música. Escribí /musica para volver.")
@@ -3237,6 +3240,12 @@ async def handle_message(message: dict):
             r"\bjuegos\b|\bjuego\b", normalized(user_text)
         ):
             await games_menu(chat_id)
+            return
+        # Weather follow-ups such as "poné el de Quilmes" must not become music searches.
+        if chat_id in pending_weather_query or is_weather_query(user_text):
+            status, weather_text, source = await prepare_live_query(chat_id, user_text)
+            await send_text(chat_id, weather_text + (f"\n\nFuente: {source}" if source else ""))
+            await send_voice(chat_id, weather_text)
             return
         music_query = music_query_from_text(user_text)
         if music_query is not None:
