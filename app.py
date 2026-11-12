@@ -871,6 +871,7 @@ def weather_place(text: str):
     match = re.search(r"\b(?:en|para|de)\s+([^?!\n]{2,80})", text, re.IGNORECASE)
     place = match.group(1) if match else re.sub(r"^(?:pon[eé](?:me)?|mostr[aá](?:me)?|dame|clima|temperatura)\s+", "", text, flags=re.IGNORECASE)
     place = re.sub(r"^(?:el|la)\s+(?:de\s+)?", "", place, flags=re.IGNORECASE)
+    place = re.sub(r"^(?:ciudad|localidad)\s+de\s+", "", place, flags=re.IGNORECASE)
     place = re.sub(r"\b(?:hoy|mañana|manana|ahora|actualmente|por favor|esta semana)\b", "", place, flags=re.IGNORECASE)
     place = " ".join(place.split()).strip(" ,.;")
     if not place or is_weather_query(place):
@@ -885,6 +886,26 @@ class WeatherCountryRequired(ValueError):
 
 
 async def weather_context(place: str, question: str, country_code=None):
+    # A spoken city/country pair is not a single geocoding name. Resolve the
+    # country independently, then constrain the city lookup. Explicit country
+    # replaces an earlier conversational country only after validation.
+    if "," in place:
+        city, country = (part.strip() for part in place.rsplit(",", 1))
+        if not city or not country:
+            raise ValueError("Decime la ciudad y el país, por ejemplo Quilmes, Argentina.")
+        response = await http.get(
+            "https://geocoding-api.open-meteo.com/v1/search",
+            params={"name": country[:80], "count": 10, "language": "es", "format": "json"},
+        )
+        response.raise_for_status()
+        countries = [item for item in response.json().get("results", [])
+                     if item.get("feature_code") == "PCLI"
+                     and normalized(item.get("name", "")) == normalized(country)
+                     and item.get("country_code")]
+        if not countries:
+            raise ValueError("No pude identificar ese país. Decime ciudad y país, por ejemplo Quilmes, Argentina.")
+        country_code = countries[0]["country_code"]
+        place = city
     response = await http.get(
         "https://geocoding-api.open-meteo.com/v1/search",
         params={"name": place[:80], "count": 10, "language": "es", "format": "json", **({"countryCode": country_code} if country_code else {})},
