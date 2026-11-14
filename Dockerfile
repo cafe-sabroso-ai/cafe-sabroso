@@ -90,3 +90,7 @@ RUN python -c "import base64,zlib;exec(zlib.decompress(base64.b64decode('eJyFVs1
 # Arena approved integration, isolated rooms and banks.
 COPY apply_arena_integration.py /tmp/apply_arena_integration.py
 RUN python /tmp/apply_arena_integration.py
+
+# Second chance for category, country and converted VOF prompts only.
+COPY apply_second_chance.py /tmp/apply_second_chance.py
+RUN python /tmp/apply_second_chance.py
