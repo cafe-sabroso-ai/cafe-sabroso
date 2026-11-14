@@ -94,3 +94,6 @@ RUN python /tmp/apply_arena_integration.py
 # Second chance for category, country and converted VOF prompts only.
 COPY apply_second_chance.py /tmp/apply_second_chance.py
 RUN python /tmp/apply_second_chance.py
+
+COPY apply_leyenda_integration.py /tmp/apply_leyenda_integration.py
+RUN python /tmp/apply_leyenda_integration.py
