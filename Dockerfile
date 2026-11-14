@@ -97,3 +97,6 @@ RUN python /tmp/apply_second_chance.py
 
 COPY apply_leyenda_integration.py /tmp/apply_leyenda_integration.py
 RUN python /tmp/apply_leyenda_integration.py
+
+COPY apply_leyenda_welcomes.py /tmp/apply_leyenda_welcomes.py
+RUN python /tmp/apply_leyenda_welcomes.py
