@@ -799,97 +799,46 @@ async def answer_story(chat_id: int, theme: str):
     return replies
 
 
-class TranscriptionUnavailable(RuntimeError):
-    """Neither hosted nor memory-bounded local transcription completed."""
-
-
-# A short-lived process returns all model memory to the OS after each audio.
-# No VAD model, no persistent cache in the web process, one local task at a time.
-_LOCAL_TRANSCRIPTION_WORKER = """
-import sys
-from faster_whisper import WhisperModel
-model = WhisperModel('tiny', device='cpu', compute_type='int8', cpu_threads=1, num_workers=1)
-segments, _ = model.transcribe(sys.argv[1], language='es', beam_size=1,
-                             vad_filter=False, condition_on_previous_text=False)
-print(' '.join(segment.text.strip() for segment in segments).strip())
-"""
-
-
-def transcription_memory_usage():
-    # cgroup includes the web process AND its children, unlike process RSS.
-    for name, stat, key in (
-        ('/sys/fs/cgroup/memory.current', '/sys/fs/cgroup/memory.stat', 'inactive_file'),
-        ('/sys/fs/cgroup/memory/memory.usage_in_bytes', '/sys/fs/cgroup/memory/memory.stat', 'total_inactive_file'),
-    ):
-        try:
-            used = int(Path(name).read_text().strip())
-            # Reclaimable inactive file cache is not model working memory.
-            values = dict(line.split() for line in Path(stat).read_text().splitlines())
-            return max(0, used - int(values.get(key, '0')))
-        except (OSError, ValueError):
-            continue
-    return None
-
-
-async def transcribe_local_bounded(audio: bytes, suffix: str) -> str:
-    async with piper_lock:
-        used = transcription_memory_usage()
-        if used is None or used > 160 * 1024 * 1024:
-            log.warning('Local transcription deferred: insufficient verified memory headroom')
-            raise TranscriptionUnavailable()
-        with tempfile.TemporaryDirectory() as directory:
-            audio_path = Path(directory) / ('audio' + suffix)
-            audio_path.write_bytes(audio)
-            env = dict(os.environ, OMP_NUM_THREADS='1', OPENBLAS_NUM_THREADS='1', MKL_NUM_THREADS='1')
-            process = await asyncio.create_subprocess_exec(
-                os.sys.executable, '-c', _LOCAL_TRANSCRIPTION_WORKER, str(audio_path),
-                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, env=env,
-            )
-            output = asyncio.create_task(process.communicate())
-            deadline = time.monotonic() + 90
-            try:
-                while not output.done():
-                    used = transcription_memory_usage()
-                    if used is None or used > 448 * 1024 * 1024 or time.monotonic() > deadline:
-                        log.warning('Stopped local transcription before memory/time safety limit')
-                        raise TranscriptionUnavailable()
-                    await asyncio.sleep(0.1)
-                stdout, _ = await output
-                if process.returncode:
-                    log.warning('Isolated local transcription failed (exit %s)', process.returncode)
-                    raise TranscriptionUnavailable()
-                log.info('Transcribed %s audio bytes with isolated tiny model; model process released', len(audio))
-                return stdout.decode('utf-8').strip()
-            finally:
-                if process.returncode is None:
-                    try:
-                        process.kill()
-                    except ProcessLookupError:
-                        pass
-                await output
-
-
 async def transcribe(file_id: str) -> str:
-    info = await telegram('getFile', file_id=file_id)
+    global whisper_model
+    info = await telegram("getFile", file_id=file_id)
     audio_response = await http.get(f"{TELEGRAM_FILE}/{info['file_path']}")
     audio_response.raise_for_status()
-    suffix = Path(info['file_path']).suffix or '.ogg'
+    suffix = Path(info["file_path"]).suffix or ".ogg"
     if GROQ_API_KEY:
         try:
             response = await http.post(
-                'https://api.groq.com/openai/v1/audio/transcriptions',
-                headers={'Authorization': f'Bearer {GROQ_API_KEY}'},
-                data={'model': GROQ_WHISPER_MODEL, 'language': 'es', 'response_format': 'json'},
-                files={'file': (f'telegram{suffix}', audio_response.content)}, timeout=30,
+                "https://api.groq.com/openai/v1/audio/transcriptions",
+                headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
+                data={"model": GROQ_WHISPER_MODEL, "language": "es", "response_format": "json"},
+                files={"file": (f"telegram{suffix}", audio_response.content)},
+                timeout=30,
             )
             if response.status_code < 400:
-                text = (response.json().get('text') or '').strip()
-                log.info('Transcribed %s audio bytes with Groq %s', len(audio_response.content), GROQ_WHISPER_MODEL)
+                text = (response.json().get("text") or "").strip()
+                log.info("Transcribed %s audio bytes with Groq %s", len(audio_response.content), GROQ_WHISPER_MODEL)
                 return text
-            log.warning('Hosted transcription failed (HTTP %s); trying isolated fallback', response.status_code)
+            log.warning("Groq transcription failed: %s %s", response.status_code, response.text[:300])
         except Exception:
-            log.warning('Hosted transcription request failed; trying isolated fallback')
-    return await transcribe_local_bounded(audio_response.content, suffix)
+            log.exception("Groq transcription error; falling back to local Whisper")
+    # Hold the shared lock for the whole transcription so whisper and local
+    # piper never use memory at the same time.
+    async with piper_lock:
+        async with whisper_lock:
+            if whisper_model is None:
+                from faster_whisper import WhisperModel
+                whisper_model = await asyncio.to_thread(
+                    WhisperModel, WHISPER_MODEL, device="cpu", compute_type="int8", cpu_threads=1
+                )
+        with tempfile.TemporaryDirectory() as directory:
+            audio_path = Path(directory) / f"telegram{suffix}"
+            audio_path.write_bytes(audio_response.content)
+            segments, _ = await asyncio.to_thread(
+                whisper_model.transcribe, str(audio_path), language="es", beam_size=1, vad_filter=True
+            )
+            text = " ".join(segment.text.strip() for segment in segments).strip()
+    log.info("Transcribed %s audio bytes with local Whisper %s", len(audio_response.content), WHISPER_MODEL)
+    return text
 
 
 WEATHER_CODES = {
@@ -3630,15 +3579,6 @@ async def handle_message(message: dict):
         result = await answer(chat_id, user_text)
         await send_text(chat_id, result + source_text)
         await send_voice(chat_id, result)
-    except TranscriptionUnavailable:
-        notice = "No pude transcribir este audio sin arriesgar la memoria del servicio. Esperá un momento y probá un audio más corto. El resto del bot sigue disponible."
-        await send_text(chat_id, notice)
-        if voice_enabled[chat_id]:
-            try:
-                audio = await synthesize_once(notice, "espeak-es-419")
-                await send_voice_audio(chat_id, audio, "aviso-transcripcion.ogg")
-            except Exception:
-                log.warning("Lightweight transcription notice voice unavailable")
     except Exception:
         log.exception("Failed to handle message")
         await send_text(chat_id, "Tuve un problema técnico. Probá de nuevo en un momento.")
