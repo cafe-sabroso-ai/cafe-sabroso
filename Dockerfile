@@ -113,3 +113,8 @@ RUN cat /tmp/sonido-v7/sonido-v7-part*.b64 | base64 -d > /tmp/sonido-v7.tar.xz \
     && cd /app/sonido_static && sha256sum -c /app/sonido_static.sha256 > /dev/null && cd /app \
     && python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_sonido' not in s; p.write_text(s+'\nfrom sonido_integration import install as _install_sonido\n_install_sonido(app, _arena_webapp)\n')" \
     && rm -rf /tmp/sonido-v7 /tmp/sonido-v7.tar.xz
+
+# Corazon v5 only: production entrypoints and other integrations remain unchanged.
+RUN echo "e6d20eb44a867771606412f81adfbf22f15ef9a494b0e908e2fa9ae22bfb698e  /app/webapp.py" | sha256sum -c -
+COPY corazon_v5/ /app/
+RUN python -m compileall -q /app
