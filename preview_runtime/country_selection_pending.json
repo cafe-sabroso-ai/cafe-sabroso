@@ -1,0 +1,133 @@
+{
+  "status": "83 confirmed destinations; final list closed with Madagascar; full verified content pending, unpublished",
+  "confirmed_regions": {
+    "América del Sur": [
+      "Argentina",
+      "Bolivia",
+      "Brasil",
+      "Chile",
+      "Colombia",
+      "Ecuador",
+      "Paraguay",
+      "Perú",
+      "Uruguay",
+      "Venezuela"
+    ],
+    "Centroamérica y México": [
+      "México",
+      "Guatemala",
+      "Honduras",
+      "El Salvador",
+      "Nicaragua",
+      "Costa Rica",
+      "Panamá"
+    ],
+    "Caribe": [
+      "Cuba",
+      "Haití",
+      "Jamaica",
+      "Puerto Rico",
+      "República Dominicana",
+      "Trinidad y Tobago"
+    ],
+    "Norteamérica, resto": [
+      "Estados Unidos",
+      "Canadá"
+    ],
+    "Europa": [
+      "España",
+      "Italia",
+      "Francia",
+      "Alemania",
+      "Inglaterra",
+      "Portugal",
+      "Países Bajos",
+      "Bélgica",
+      "Croacia",
+      "Suecia",
+      "Suiza",
+      "Grecia",
+      "Rusia",
+      "Ucrania",
+      "Noruega",
+      "Polonia",
+      "Irlanda del Norte",
+      "Irlanda",
+      "Escocia",
+      "Bulgaria",
+      "Rumania",
+      "Gales",
+      "Turquía",
+      "Dinamarca",
+      "Austria",
+      "Hungría",
+      "Serbia",
+      "República Checa"
+    ],
+    "Asia": [
+      "Japón",
+      "China",
+      "Corea del Sur",
+      "Corea del Norte",
+      "Catar",
+      "Israel",
+      "India",
+      "Arabia Saudita"
+    ],
+    "Oceanía": [
+      "Australia",
+      "Nueva Zelanda"
+    ],
+    "África": [
+      "Nigeria",
+      "Camerún",
+      "Sudáfrica",
+      "Marruecos",
+      "Costa de Marfil",
+      "Senegal",
+      "Ghana",
+      "Túnez",
+      "Argelia",
+      "Angola",
+      "Togo",
+      "Egipto"
+    ],
+    "Nuevos confirmados": [
+      "Finlandia",
+      "Irak",
+      "Irán"
+    ],
+    "África nuevos confirmados": [
+      "Kenia",
+      "Etiopía",
+      "Tanzania",
+      "República Democrática del Congo",
+      "Madagascar"
+    ]
+  },
+  "awaiting_blocks": [],
+  "ambiguous_exclusions": [
+    "Guyana",
+    "Surinam",
+    "Curazao",
+    "Belice",
+    "Bahamas",
+    "Barbados",
+    "Santa Lucía"
+  ],
+  "notes": [
+    "England,Scotland,NorthernIreland are separate game destinations,not sovereign state claims.",
+    "Israel requested while discussing Europe,route to Asia;Catar also requested,await Asia block.",
+    "No missing bloc inferred as rejection.",
+    "Qatar normalized as Catar, same destination.",
+    "Saudi Arabia disputed yes/no in same turn, do not add pending clarification.",
+    "Saudi Arabia explicitly reconfirmed yes by Rocky17:34; ambiguity resolved.",
+    "Africa explicit yes11 via Rocky17:36. Egypt unmentioned, await clarification; do not infer rejection. Australia reconfirmed yes.",
+    "Egypt explicitly yes17:37.",
+    "New Zealand explicitly yes17:43. Main confirms68withIsrael; remove unlisted destinations on next authorized implementation."
+  ],
+  "explicit_out_for_now": [
+    "Emiratos Árabes Unidos",
+    "Tailandia"
+  ]
+}

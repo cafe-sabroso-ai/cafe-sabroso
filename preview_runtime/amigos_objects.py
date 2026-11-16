@@ -1,0 +1,18 @@
+"""Generic object catalogue and original sound cues, no voices assigned to objects."""
+GROUPS={
+'Braille y accesibilidad':('máquina de escribir braille','pizarra braille','punzón','regleta braille','bastón'),
+'Cocina':('olla','sartén','cuchara','tenedor','cuchillo','plato','taza','jarra','pava','tetera','tabla','colador','mate','bombilla','termo','yerbera','azucarera','salero','cucharón','espumadera','batidor','rodillo','delantal','manopla de horno','fuente de horno','balanza','vaso','botella','leche','café','té','mate cocido'),
+'Hogar':('escoba','llaves','linterna','paraguas','almohada','control remoto','reloj'),
+'Cuidado personal':('secador de pelo','peine','cepillo de dientes','perfume','desodorante','labial','espejo','toalla','maquillaje','jabón','champú','crema'),
+'Ropa y accesorios':('zapatillas','ojotas','zapatos','botas','campera','buzo','pantalón','medias','gorro','bufanda','mochila','cartera','guantes','bolso'),
+'Tecnología y otros':('celular','computadora','gafas','pelota','radio','auriculares','cargador')}
+OBJECTS=tuple(x for group in GROUPS.values() for x in group)
+SOUNDS={
+'máquina de escribir braille':'tecleo mecánico suave','pizarra braille':'clic suave de pizarra','punzón':'puntos suaves sobre papel','regleta braille':'clic y puntos sobre papel','leche':'tapita de envase suave','café':'granitos suaves de café','té':'roce de saquito suave','mate cocido':'agua suave en taza',
+'mate':'agua y toque suave de mate','bombilla':'nota metálica breve','termo':'clic y agua suave','yerbera':'hojitas secas suaves','azucarera':'granitos suaves','salero':'granitos breves','cucharón':'nota metálica grave','espumadera':'tres toques metálicos','batidor':'batido suave','rodillo':'rodado suave de madera','delantal':'roce de delantal','manopla de horno':'roce de tela gruesa','fuente de horno':'resonancia suave de fuente','balanza':'dos clics de balanza','vaso':'nota suave de vidrio',
+'olla':'resonancia suave de olla','sartén':'toque suave de sartén','cuchara':'tintineo de cuchara','tenedor':'tintineo de tenedor','cuchillo':'toque suave de utensilio','jarra':'agua servida suave','pava':'silbido suave de pava','tetera':'nota suave de tetera','tabla':'golpecitos suaves de madera','colador':'resonancia suave de colador',
+'jabón':'espuma y roce suave','champú':'tapita y burbujas suaves','crema':'tapa de envase suave','bolso':'cierre de bolso suave','escoba':'barrido suave','llaves':'tintineo de llaves','linterna':'clic de encendido','paraguas':'gotitas sobre tela','taza':'toque suave de cerámica','almohada':'roce de tela acolchada','control remoto':'dos clics de botón','reloj':'tic tac pausado','plato':'resonancia suave de plato','botella':'tapita y agua suave',
+'secador de pelo':'soplido de aire suave','peine':'raspado suave de dientes del peine','cepillo de dientes':'cepillado breve','perfume':'atomizador suave','desodorante':'aerosol corto suave','labial':'clic de tapa','espejo':'nota de brillo breve','toalla':'roce de tela','maquillaje':'toque de estuche',
+'zapatillas':'pasitos sobre goma','ojotas':'pasitos livianos de ojotas','zapatos':'pasitos de suela','botas':'pasitos graves de botas','campera':'cierre suave','buzo':'roce de tejido','pantalón':'roce de bolsillos','medias':'roce suave de algodón','gorro':'dos notas cálidas','bufanda':'tres notas suaves','mochila':'cierre y hebilla','cartera':'clic de broche','guantes':'palmitas suaves',
+'celular':'timbre electrónico original','computadora':'tecleo suave','bastón':'golpecito suave de bastón','gafas':'dos notas de cristal suaves','pelota':'rebote suave','radio':'sintonía breve original','auriculares':'notas alternadas izquierda y derecha','cargador':'clic de conexión'}
+assert len(OBJECTS)==77 and len(set(OBJECTS))==77 and set(SOUNDS)==set(OBJECTS)

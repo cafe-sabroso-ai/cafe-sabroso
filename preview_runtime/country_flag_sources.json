@@ -1,0 +1,455 @@
+{
+  "source": "https://github.com/lipis/flag-icons/",
+  "revision": "ac7e0eb3259eb62aa6100c435607e2fe03896a97",
+  "license": "MIT",
+  "mapping": [
+    {
+      "name": "Argentina",
+      "code": "ar",
+      "dataset_name": "Argentina"
+    },
+    {
+      "name": "Bolivia",
+      "code": "bo",
+      "dataset_name": "Bolivia"
+    },
+    {
+      "name": "Brasil",
+      "code": "br",
+      "dataset_name": "Brazil"
+    },
+    {
+      "name": "Chile",
+      "code": "cl",
+      "dataset_name": "Chile"
+    },
+    {
+      "name": "Colombia",
+      "code": "co",
+      "dataset_name": "Colombia"
+    },
+    {
+      "name": "Ecuador",
+      "code": "ec",
+      "dataset_name": "Ecuador"
+    },
+    {
+      "name": "Paraguay",
+      "code": "py",
+      "dataset_name": "Paraguay"
+    },
+    {
+      "name": "Perú",
+      "code": "pe",
+      "dataset_name": "Peru"
+    },
+    {
+      "name": "Uruguay",
+      "code": "uy",
+      "dataset_name": "Uruguay"
+    },
+    {
+      "name": "Venezuela",
+      "code": "ve",
+      "dataset_name": "Venezuela"
+    },
+    {
+      "name": "México",
+      "code": "mx",
+      "dataset_name": "Mexico"
+    },
+    {
+      "name": "Guatemala",
+      "code": "gt",
+      "dataset_name": "Guatemala"
+    },
+    {
+      "name": "Honduras",
+      "code": "hn",
+      "dataset_name": "Honduras"
+    },
+    {
+      "name": "El Salvador",
+      "code": "sv",
+      "dataset_name": "El Salvador"
+    },
+    {
+      "name": "Nicaragua",
+      "code": "ni",
+      "dataset_name": "Nicaragua"
+    },
+    {
+      "name": "Costa Rica",
+      "code": "cr",
+      "dataset_name": "Costa Rica"
+    },
+    {
+      "name": "Panamá",
+      "code": "pa",
+      "dataset_name": "Panama"
+    },
+    {
+      "name": "Cuba",
+      "code": "cu",
+      "dataset_name": "Cuba"
+    },
+    {
+      "name": "Haití",
+      "code": "ht",
+      "dataset_name": "Haiti"
+    },
+    {
+      "name": "Jamaica",
+      "code": "jm",
+      "dataset_name": "Jamaica"
+    },
+    {
+      "name": "Puerto Rico",
+      "code": "pr",
+      "dataset_name": "Puerto Rico"
+    },
+    {
+      "name": "República Dominicana",
+      "code": "do",
+      "dataset_name": "Dominican Republic"
+    },
+    {
+      "name": "Trinidad y Tobago",
+      "code": "tt",
+      "dataset_name": "Trinidad and Tobago"
+    },
+    {
+      "name": "Estados Unidos",
+      "code": "us",
+      "dataset_name": "United States of America"
+    },
+    {
+      "name": "Canadá",
+      "code": "ca",
+      "dataset_name": "Canada"
+    },
+    {
+      "name": "España",
+      "code": "es",
+      "dataset_name": "Spain"
+    },
+    {
+      "name": "Italia",
+      "code": "it",
+      "dataset_name": "Italy"
+    },
+    {
+      "name": "Francia",
+      "code": "fr",
+      "dataset_name": "France"
+    },
+    {
+      "name": "Alemania",
+      "code": "de",
+      "dataset_name": "Germany"
+    },
+    {
+      "name": "Inglaterra",
+      "code": "gb-eng",
+      "dataset_name": "England"
+    },
+    {
+      "name": "Portugal",
+      "code": "pt",
+      "dataset_name": "Portugal"
+    },
+    {
+      "name": "Países Bajos",
+      "code": "nl",
+      "dataset_name": "Netherlands"
+    },
+    {
+      "name": "Bélgica",
+      "code": "be",
+      "dataset_name": "Belgium"
+    },
+    {
+      "name": "Croacia",
+      "code": "hr",
+      "dataset_name": "Croatia"
+    },
+    {
+      "name": "Suecia",
+      "code": "se",
+      "dataset_name": "Sweden"
+    },
+    {
+      "name": "Suiza",
+      "code": "ch",
+      "dataset_name": "Switzerland"
+    },
+    {
+      "name": "Grecia",
+      "code": "gr",
+      "dataset_name": "Greece"
+    },
+    {
+      "name": "Rusia",
+      "code": "ru",
+      "dataset_name": "Russia"
+    },
+    {
+      "name": "Ucrania",
+      "code": "ua",
+      "dataset_name": "Ukraine"
+    },
+    {
+      "name": "Noruega",
+      "code": "no",
+      "dataset_name": "Norway"
+    },
+    {
+      "name": "Polonia",
+      "code": "pl",
+      "dataset_name": "Poland"
+    },
+    {
+      "name": "Irlanda",
+      "code": "ie",
+      "dataset_name": "Ireland"
+    },
+    {
+      "name": "Escocia",
+      "code": "gb-sct",
+      "dataset_name": "Scotland"
+    },
+    {
+      "name": "Bulgaria",
+      "code": "bg",
+      "dataset_name": "Bulgaria"
+    },
+    {
+      "name": "Rumania",
+      "code": "ro",
+      "dataset_name": "Romania"
+    },
+    {
+      "name": "Japón",
+      "code": "jp",
+      "dataset_name": "Japan"
+    },
+    {
+      "name": "China",
+      "code": "cn",
+      "dataset_name": "China"
+    },
+    {
+      "name": "Corea del Sur",
+      "code": "kr",
+      "dataset_name": "South Korea"
+    },
+    {
+      "name": "Corea del Norte",
+      "code": "kp",
+      "dataset_name": "North Korea"
+    },
+    {
+      "name": "Catar",
+      "code": "qa",
+      "dataset_name": "Qatar"
+    },
+    {
+      "name": "Israel",
+      "code": "il",
+      "dataset_name": "Israel"
+    },
+    {
+      "name": "India",
+      "code": "in",
+      "dataset_name": "India"
+    },
+    {
+      "name": "Arabia Saudita",
+      "code": "sa",
+      "dataset_name": "Saudi Arabia"
+    },
+    {
+      "name": "Australia",
+      "code": "au",
+      "dataset_name": "Australia"
+    },
+    {
+      "name": "Nueva Zelanda",
+      "code": "nz",
+      "dataset_name": "New Zealand"
+    },
+    {
+      "name": "Nigeria",
+      "code": "ng",
+      "dataset_name": "Nigeria"
+    },
+    {
+      "name": "Camerún",
+      "code": "cm",
+      "dataset_name": "Cameroon"
+    },
+    {
+      "name": "Sudáfrica",
+      "code": "za",
+      "dataset_name": "South Africa"
+    },
+    {
+      "name": "Marruecos",
+      "code": "ma",
+      "dataset_name": "Morocco"
+    },
+    {
+      "name": "Costa de Marfil",
+      "code": "ci",
+      "dataset_name": "Côte d'Ivoire"
+    },
+    {
+      "name": "Senegal",
+      "code": "sn",
+      "dataset_name": "Senegal"
+    },
+    {
+      "name": "Ghana",
+      "code": "gh",
+      "dataset_name": "Ghana"
+    },
+    {
+      "name": "Túnez",
+      "code": "tn",
+      "dataset_name": "Tunisia"
+    },
+    {
+      "name": "Argelia",
+      "code": "dz",
+      "dataset_name": "Algeria"
+    },
+    {
+      "name": "Angola",
+      "code": "ao",
+      "dataset_name": "Angola"
+    },
+    {
+      "name": "Togo",
+      "code": "tg",
+      "dataset_name": "Togo"
+    },
+    {
+      "name": "Egipto",
+      "code": "eg",
+      "dataset_name": "Egypt"
+    },
+    {
+      "name": "Gales",
+      "code": "gb-wls",
+      "dataset_name": "Wales"
+    },
+    {
+      "name": "Turquía",
+      "code": "tr",
+      "dataset_name": "Türkiye"
+    },
+    {
+      "name": "Dinamarca",
+      "code": "dk",
+      "dataset_name": "Denmark"
+    },
+    {
+      "name": "Austria",
+      "code": "at",
+      "dataset_name": "Austria"
+    },
+    {
+      "name": "Hungría",
+      "code": "hu",
+      "dataset_name": "Hungary"
+    },
+    {
+      "name": "Serbia",
+      "code": "rs",
+      "dataset_name": "Serbia"
+    },
+    {
+      "name": "República Checa",
+      "code": "cz",
+      "dataset_name": "Czech Republic"
+    },
+    {
+      "name": "Finlandia",
+      "code": "fi",
+      "dataset_name": "Finland"
+    },
+    {
+      "name": "Irak",
+      "code": "iq",
+      "dataset_name": "Iraq"
+    },
+    {
+      "name": "Irán",
+      "code": "ir",
+      "dataset_name": "Iran"
+    },
+    {
+      "name": "Kenia",
+      "code": "ke",
+      "dataset_name": "Kenya"
+    },
+    {
+      "name": "Etiopía",
+      "code": "et",
+      "dataset_name": "Ethiopia"
+    },
+    {
+      "name": "Tanzania",
+      "code": "tz",
+      "dataset_name": "Tanzania"
+    },
+    {
+      "name": "República Democrática del Congo",
+      "code": "cd",
+      "dataset_name": "Democratic Republic of the Congo"
+    },
+    {
+      "name": "Madagascar",
+      "code": "mg",
+      "dataset_name": "Madagascar"
+    },
+    {
+      "name": "Guinea Ecuatorial",
+      "code": "gq",
+      "dataset_name": "Guinea Ecuatorial"
+    },
+    {
+      "name": "Cabo Verde",
+      "code": "cv",
+      "dataset_name": "Cabo Verde"
+    },
+    {
+      "name": "Uzbekistán",
+      "code": "uz",
+      "dataset_name": "Uzbekistán"
+    },
+    {
+      "name": "Jordania",
+      "code": "jo",
+      "dataset_name": "Jordania"
+    },
+    {
+      "name": "Islandia",
+      "code": "is",
+      "dataset_name": "Islandia"
+    },
+    {
+      "name": "Eslovaquia",
+      "code": "sk",
+      "dataset_name": "Eslovaquia"
+    },
+    {
+      "name": "Albania",
+      "code": "al",
+      "dataset_name": "Albania"
+    }
+  ],
+  "omitted": {
+    "Irlanda del Norte": "Name only, as confirmed by main 2026-11-10."
+  }
+}

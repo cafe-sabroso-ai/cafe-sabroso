@@ -1,0 +1,882 @@
+{
+ "Espacio": [
+  {
+   "topic": "Espacio",
+   "statement": "El Sol es una estrella enana amarilla de unos 4.500 millones de años.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://science.nasa.gov/sun/facts/",
+   "checked_on": "2026-11-10",
+   "evidence": "Our Sun is a 4.5 billion-year-old yellow dwarf star."
+  },
+  {
+   "topic": "Espacio",
+   "statement": "El Sol está a unos 150 millones de kilómetros de la Tierra.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://science.nasa.gov/sun/facts/",
+   "checked_on": "2026-11-10",
+   "evidence": "It's about 93 million miles (150 million kilometers) from Earth."
+  },
+  {
+   "topic": "Espacio",
+   "statement": "El Sol es unas 10 veces más ancho que la Tierra.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://science.nasa.gov/sun/facts/",
+   "checked_on": "2026-11-10",
+   "evidence": "The Sun is about 100 times wider than Earth and about 10 times wider than Jupiter, the biggest planet."
+  },
+  {
+   "topic": "Espacio",
+   "statement": "En su ecuador, el Sol completa una rotación en 25 días terrestres.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://science.nasa.gov/sun/facts/",
+   "checked_on": "2026-11-10",
+   "evidence": "At its equator, the Sun completes one rotation in 25 Earth days."
+  },
+  {
+   "topic": "Espacio",
+   "statement": "El Sol tiene una superficie sólida llamada fotosfera.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://science.nasa.gov/sun/facts/",
+   "checked_on": "2026-11-10",
+   "evidence": "The Sun doesn't actually have a solid surface because it's a ball of plasma."
+  },
+  {
+   "topic": "Espacio",
+   "statement": "La temperatura del núcleo del Sol ronda los 15 millones de grados Celsius.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://science.nasa.gov/sun/facts/",
+   "checked_on": "2026-11-10",
+   "evidence": "The temperature in the Sun's core is about 27 million degrees Fahrenheit (15 million degrees Celsius)."
+  },
+  {
+   "topic": "Espacio",
+   "statement": "La Luna es el único satélite natural de la Tierra.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://science.nasa.gov/moon/facts/",
+   "checked_on": "2026-11-10",
+   "evidence": "The Moon is Earth's only natural satellite."
+  },
+  {
+   "topic": "Espacio",
+   "statement": "La Luna está a unos 100.000 kilómetros de la Tierra.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://science.nasa.gov/moon/facts/",
+   "checked_on": "2026-11-10",
+   "evidence": "It goes around the Earth at a distance of about 239,000 miles (385,000 kilometers)."
+  },
+  {
+   "topic": "Espacio",
+   "statement": "Solo vemos una cara de la Luna porque la Tierra y la Luna están acopladas por marea.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://science.nasa.gov/moon/facts/",
+   "checked_on": "2026-11-10",
+   "evidence": "The Earth and Moon are tidally locked. Their rotations are so in sync we only see one side of the Moon."
+  },
+  {
+   "topic": "Espacio",
+   "statement": "El ser humano no vio la cara oculta de la Luna hasta que una nave soviética pasó en 1959.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://science.nasa.gov/moon/facts/",
+   "checked_on": "2026-11-10",
+   "evidence": "Humans didn't see the lunar far side until a Soviet spacecraft flew past in 1959."
+  },
+  {
+   "topic": "Espacio",
+   "statement": "La Luna tiene una atmósfera respirable.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://science.nasa.gov/moon/facts/",
+   "checked_on": "2026-11-10",
+   "evidence": "It has a very thin and tenuous atmosphere called an exosphere. It is not breathable."
+  },
+  {
+   "topic": "Espacio",
+   "statement": "La Luna es el único cuerpo celeste más allá de la Tierra visitado por seres humanos.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://science.nasa.gov/moon/facts/",
+   "checked_on": "2026-11-10",
+   "evidence": "It is the only celestial body beyond Earth – so far – visited by human beings."
+  }
+ ],
+ "Cuerpo humano": [
+  {
+   "topic": "Cuerpo humano",
+   "statement": "El corazón humano está entre los dos pulmones, levemente a la izquierda del centro.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/heart",
+   "checked_on": "2026-11-10",
+   "evidence": "In humans, the heart is situated between the two lungs and slightly to the left of center, behind the breastbone."
+  },
+  {
+   "topic": "Cuerpo humano",
+   "statement": "La pared del corazón está formada por cinco capas.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/heart",
+   "checked_on": "2026-11-10",
+   "evidence": "The heart wall consists of three layers."
+  },
+  {
+   "topic": "Cuerpo humano",
+   "statement": "El latido del corazón se inicia en células marcapasos del nodo sinoauricular, en la aurícula derecha.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/heart",
+   "checked_on": "2026-11-10",
+   "evidence": "The heartbeat is initiated by specialized pacemaker cells in the sinoatrial (SA) node, a cluster of cells in the right atrium."
+  },
+  {
+   "topic": "Cuerpo humano",
+   "statement": "El sonido \"lub-dub\" del corazón lo produce el cierre de sus válvulas.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/heart",
+   "checked_on": "2026-11-10",
+   "evidence": "Heart sounds are the noises produced by the closing of the heart valves during each heartbeat."
+  },
+  {
+   "topic": "Cuerpo humano",
+   "statement": "El corazón de los peces tiene exactamente la misma estructura que el de los mamíferos.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/heart",
+   "checked_on": "2026-11-10",
+   "evidence": "In fishes the heart is a folded tube, with three or four enlarged areas that correspond to the chambers in the mammalian heart."
+  },
+  {
+   "topic": "Cuerpo humano",
+   "statement": "El miocardio es la capa muscular media y gruesa que genera la fuerza para bombear sangre.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/heart",
+   "checked_on": "2026-11-10",
+   "evidence": "The myocardium, composed of cardiac muscle, forms the thick middle layer and generates the force needed to pump blood."
+  },
+  {
+   "topic": "Cuerpo humano",
+   "statement": "El cuerpo humano es aproximadamente 60% agua en peso.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/human-body",
+   "checked_on": "2026-11-10",
+   "evidence": "The human body is about 60 percent water by weight."
+  },
+  {
+   "topic": "Cuerpo humano",
+   "statement": "Un cuerpo humano adulto tiene típicamente 206 huesos.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/human-body",
+   "checked_on": "2026-11-10",
+   "evidence": "An adult human body typically has 206 bones."
+  },
+  {
+   "topic": "Cuerpo humano",
+   "statement": "El cuerpo humano tiene seis tipos primarios de tejido.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/human-body",
+   "checked_on": "2026-11-10",
+   "evidence": "The human body is composed of four primary types of tissue—epithelial, connective, muscle, and nervous."
+  },
+  {
+   "topic": "Cuerpo humano",
+   "statement": "En el desarrollo humano, la notocorda es reemplazada por la columna vertebral.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/human-body",
+   "checked_on": "2026-11-10",
+   "evidence": "the notochord is replaced by the vertebral column."
+  },
+  {
+   "topic": "Cuerpo humano",
+   "statement": "Varios mamíferos además del ser humano tienen postura predominantemente bípeda.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/human-body",
+   "checked_on": "2026-11-10",
+   "evidence": "Among the mammals, only humans have a predominantly two-legged (bipedal) posture."
+  },
+  {
+   "topic": "Cuerpo humano",
+   "statement": "El neocórtex humano es el más desarrollado del reino animal.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/human-body",
+   "checked_on": "2026-11-10",
+   "evidence": "the human brain, particularly the neocortex, is far and away the most highly developed in the animal kingdom."
+  }
+ ],
+ "Ciencia": [
+  {
+   "topic": "Ciencia",
+   "statement": "Casi todo el oxígeno de la atmósfera terrestre existe gracias a la fotosíntesis.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/photosynthesis",
+   "checked_on": "2026-11-10",
+   "evidence": "almost all the oxygen in the atmosphere is because of the process of photosynthesis."
+  },
+  {
+   "topic": "Ciencia",
+   "statement": "La fotosíntesis convierte dióxido de carbono y agua en azúcar y oxígeno usando energía lumínica.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/photosynthesis",
+   "checked_on": "2026-11-10",
+   "evidence": "six carbon dioxide molecules and six water molecules, are converted by light energy captured by chlorophyll (implied by the arrow) into a sugar molecule and six oxygen molecules."
+  },
+  {
+   "topic": "Ciencia",
+   "statement": "Ninguna bacteria puede hacer fotosíntesis.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/photosynthesis",
+   "checked_on": "2026-11-10",
+   "evidence": "Cyanobacteria and certain sulfur bacteria are photosynthetic prokaryotes."
+  },
+  {
+   "topic": "Ciencia",
+   "statement": "Algunos animales hacen fotosíntesis por sí mismos de forma natural.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/photosynthesis",
+   "checked_on": "2026-11-10",
+   "evidence": "No animals are thought to be independently capable of photosynthesis."
+  },
+  {
+   "topic": "Ciencia",
+   "statement": "Las algas son importantes productores primarios que hacen fotosíntesis.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/photosynthesis",
+   "checked_on": "2026-11-10",
+   "evidence": "All algae, which include massive kelps and microscopic diatoms, are important primary producers."
+  },
+  {
+   "topic": "Ciencia",
+   "statement": "Los organismos fotosintéticos forman la base de las redes alimentarias de la Tierra.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/photosynthesis",
+   "checked_on": "2026-11-10",
+   "evidence": "As primary producers, photosynthetic organisms form the base of Earth's food webs."
+  },
+  {
+   "topic": "Ciencia",
+   "statement": "La molécula de agua se compone de hidrógeno y oxígeno.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/water",
+   "checked_on": "2026-11-10",
+   "evidence": "Water is made up of hydrogen and oxygen, and it exists in gaseous, liquid, and solid states."
+  },
+  {
+   "topic": "Ciencia",
+   "statement": "Al nivel del mar, el agua hierve a 100 °C.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/water",
+   "checked_on": "2026-11-10",
+   "evidence": "At sea level, atmospheric pressure is high, and water boils at 100 °C (212 °F)."
+  },
+  {
+   "topic": "Ciencia",
+   "statement": "A mayor altitud, el agua hierve a mayor temperatura.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/water",
+   "checked_on": "2026-11-10",
+   "evidence": "at higher altitudes it is lower, so water boils at a lower temperature."
+  },
+  {
+   "topic": "Ciencia",
+   "statement": "El agua tiene un color azul intrínseco porque absorbe levemente la luz de longitudes de onda rojas.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/water",
+   "checked_on": "2026-11-10",
+   "evidence": "water actually has an intrinsic blue color caused by the slight absorption of light at red wavelengths."
+  },
+  {
+   "topic": "Ciencia",
+   "statement": "El agua es un compuesto escaso en la Tierra.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/water",
+   "checked_on": "2026-11-10",
+   "evidence": "Water is the most plentiful compound on Earth and is essential to life."
+  },
+  {
+   "topic": "Ciencia",
+   "statement": "El agua existe en estados gaseoso, líquido y sólido.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/science/water",
+   "checked_on": "2026-11-10",
+   "evidence": "it exists in gaseous, liquid, and solid states."
+  }
+ ],
+ "Animales": [
+  {
+   "topic": "Animales",
+   "statement": "El guepardo es el animal terrestre más rápido: alcanza entre 93 y 104 km/h.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/Cheetah",
+   "checked_on": "2026-11-10",
+   "evidence": "the fastest land animal, capable of running at 93–104 km/h (58–65 mph)."
+  },
+  {
+   "topic": "Animales",
+   "statement": "El guepardo tiene marcas negras en forma de lágrima en la cara.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/Cheetah",
+   "checked_on": "2026-11-10",
+   "evidence": "The head is small and rounded, with a short snout and black tear-like facial streaks."
+  },
+  {
+   "topic": "Animales",
+   "statement": "El guepardo pertenece al género Panthera.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/Cheetah",
+   "checked_on": "2026-11-10",
+   "evidence": "The cheetah (Acinonyx jubatus) is a species of large feline and the only living member of the genus Acinonyx."
+  },
+  {
+   "topic": "Animales",
+   "statement": "Hay cuatro subespecies de guepardo, nativas de África y del centro de Irán.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/Cheetah",
+   "checked_on": "2026-11-10",
+   "evidence": "Four subspecies are recognised today that are native to Africa and central Iran."
+  },
+  {
+   "topic": "Animales",
+   "statement": "El pelaje del guepardo es rayado como el del tigre.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/Cheetah",
+   "checked_on": "2026-11-10",
+   "evidence": "marked with evenly spaced, solid black spots."
+  },
+  {
+   "topic": "Animales",
+   "statement": "El okapi es endémico de la República Democrática del Congo.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://whc.unesco.org/en/list/63/",
+   "checked_on": "2026-11-10",
+   "evidence": "the okapi (Okapi johnstoni), endemic to the Democratic Republic of the Congo."
+  },
+  {
+   "topic": "Animales",
+   "statement": "Un tercio de la población mundial de gorilas de montaña vive en el parque Virunga.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://whc.unesco.org/en/list/63/",
+   "checked_on": "2026-11-10",
+   "evidence": "with a third of the world population of mountain gorillas."
+  },
+  {
+   "topic": "Animales",
+   "statement": "En los ríos del parque Virunga viven unos 200 hipopótamos.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://whc.unesco.org/en/list/63/",
+   "checked_on": "2026-11-10",
+   "evidence": "some 20,000 hippopotamuses live in the rivers."
+  },
+  {
+   "topic": "Animales",
+   "statement": "Aves de Siberia pasan el invierno en el parque Virunga.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://whc.unesco.org/en/list/63/",
+   "checked_on": "2026-11-10",
+   "evidence": "birds from Siberia spend the winter there."
+  },
+  {
+   "topic": "Animales",
+   "statement": "El orden de aves Mesitornithiformes, endémico de Madagascar, tiene 5 millones de años.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://whc.unesco.org/en/list/494/",
+   "checked_on": "2026-11-10",
+   "evidence": "the Mesitornithiformes, an order of birds which is 54 million years old."
+  },
+  {
+   "topic": "Animales",
+   "statement": "El lémur mangosta y el águila pescadora de Madagascar viven en los bosques secos de Andrefana.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://whc.unesco.org/en/list/494/",
+   "checked_on": "2026-11-10",
+   "evidence": "Important species also include the Perrier's Sifaka, and the Mongoose Lemur, the Madagascar Fish Eagle."
+  },
+  {
+   "topic": "Animales",
+   "statement": "El parque Virunga alberga 218 especies de mamíferos y 706 de aves.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://whc.unesco.org/en/list/63/",
+   "checked_on": "2026-11-10",
+   "evidence": "The Park contains 218 mammal species, 706 bird species, 109 reptile species and 78 amphibian species."
+  }
+ ],
+ "Geografía": [
+  {
+   "topic": "Geografía",
+   "statement": "El Kilimanjaro, con 5.895 metros, es el punto más alto de África.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://whc.unesco.org/en/list/403/",
+   "checked_on": "2026-11-10",
+   "evidence": "At 5,895 m, Kilimanjaro is the highest point in Africa."
+  },
+  {
+   "topic": "Geografía",
+   "statement": "El lago Tanganica es el lago más profundo del mundo.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://www.britannica.com/place/Tanzania",
+   "checked_on": "2026-11-10",
+   "evidence": "Africa’s highest mountain, Kilimanjaro, and the world’s second deepest lake, Lake Tanganyika."
+  },
+  {
+   "topic": "Geografía",
+   "statement": "El río Congo cruza el Ecuador dos veces en su curso.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/place/Democratic-Republic-of-the-Congo",
+   "checked_on": "2026-11-10",
+   "evidence": "flows north and then south in a great arc, crossing the Equator twice."
+  },
+  {
+   "topic": "Geografía",
+   "statement": "La República Democrática del Congo es el país más grande de África.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://www.britannica.com/place/Democratic-Republic-of-the-Congo",
+   "checked_on": "2026-11-10",
+   "evidence": "It is the second largest country on the continent; only Algeria is larger."
+  },
+  {
+   "topic": "Geografía",
+   "statement": "Madagascar es la cuarta isla más grande del mundo.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/place/Madagascar",
+   "checked_on": "2026-11-10",
+   "evidence": "Madagascar is the fourth largest island in the world, after Greenland, New Guinea, and Borneo."
+  },
+  {
+   "topic": "Geografía",
+   "statement": "Madagascar está en el océano Atlántico.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://www.britannica.com/place/Madagascar",
+   "checked_on": "2026-11-10",
+   "evidence": "Madagascar is located in the southwestern Indian Ocean."
+  },
+  {
+   "topic": "Geografía",
+   "statement": "La región del Ruwenzori es la región glaciar más grande de África.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://whc.unesco.org/en/list/63/",
+   "checked_on": "2026-11-10",
+   "evidence": "the largest glacial region of Africa and the only true alpine mountain chain of the continent."
+  },
+  {
+   "topic": "Geografía",
+   "statement": "El pico más alto de la República Democrática del Congo es el Kilimanjaro.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://www.britannica.com/place/Democratic-Republic-of-the-Congo",
+   "checked_on": "2026-11-10",
+   "evidence": "mark the country’s highest elevation of 16,763 feet (5,109 meters) at Margherita Peak."
+  },
+  {
+   "topic": "Geografía",
+   "statement": "Tanzania está justo al sur del Ecuador.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/place/Tanzania",
+   "checked_on": "2026-11-10",
+   "evidence": "Tanzania, East African country situated just south of the Equator."
+  },
+  {
+   "topic": "Geografía",
+   "statement": "El canal de Mozambique, de unos 400 km de ancho, separa a Madagascar de África.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/place/Madagascar",
+   "checked_on": "2026-11-10",
+   "evidence": "separated from the African coast by the 250-mile- (400-km-) wide Mozambique Channel."
+  },
+  {
+   "topic": "Geografía",
+   "statement": "Los picos del Ruwenzori superan los 8.000 metros.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://www.britannica.com/place/Democratic-Republic-of-the-Congo",
+   "checked_on": "2026-11-10",
+   "evidence": "the country's highest elevation of 16,763 feet (5,109 meters) at Margherita Peak."
+  },
+  {
+   "topic": "Geografía",
+   "statement": "Dar es Salaam es la ciudad más grande y el principal puerto de Tanzania.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/place/Tanzania",
+   "checked_on": "2026-11-10",
+   "evidence": "Dar es Salaam is the largest city and port in the country."
+  }
+ ],
+ "Historia": [
+  {
+   "topic": "Historia",
+   "statement": "Tanganica y Zanzíbar se unieron el 26 de abril de 1964 para formar Tanzania.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/place/Tanzania",
+   "checked_on": "2026-11-10",
+   "evidence": "Tanzania was formed as a sovereign state on April 26, 1964, through the union of the theretofore separate states of Tanganyika and Zanzibar."
+  },
+  {
+   "topic": "Historia",
+   "statement": "La República Democrática del Congo se llamó Zaire entre 1960 y 1971.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://www.britannica.com/place/Democratic-Republic-of-the-Congo",
+   "checked_on": "2026-11-10",
+   "evidence": "From 1971 to 1997 the country was officially the Republic of Zaire."
+  },
+  {
+   "topic": "Historia",
+   "statement": "El Estado Libre del Congo fue posesión personal del rey Leopoldo II entre 1885 y 1908.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/Cinema_of_the_Democratic_Republic_of_the_Congo",
+   "checked_on": "2026-11-10",
+   "evidence": "the creation of the Congo Free State (1885–1908), a territory that was initially controlled as his personal possession rather than as a formal Belgian colony."
+  },
+  {
+   "topic": "Historia",
+   "statement": "Madagascar se independizó de Francia en 1945.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/History_of_Madagascar",
+   "checked_on": "2026-11-10",
+   "evidence": "The country gained full independence from France in 1960."
+  },
+  {
+   "topic": "Historia",
+   "statement": "Los primeros pobladores llegaron a Madagascar alrededor del año 700 d.C.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/place/Madagascar/History",
+   "checked_on": "2026-11-10",
+   "evidence": "Archaeological investigations in the 20th century indicated that human settlers reached Madagascar about 700 ce."
+  },
+  {
+   "topic": "Historia",
+   "statement": "El idioma malgache pertenece a la familia de lenguas bantúes.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://www.britannica.com/place/Madagascar/History",
+   "checked_on": "2026-11-10",
+   "evidence": "its language, Malagasy, belongs to the distant Western Malayo-Polynesian branch of the Austronesian language family."
+  },
+  {
+   "topic": "Historia",
+   "statement": "Los franceses abolieron la esclavitud en Madagascar en 1896, liberando a unas 500.000 personas.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/History_of_Madagascar",
+   "checked_on": "2026-11-10",
+   "evidence": "Following conquest, the French abolished slavery in 1896, freeing approximately 500,000 slaves."
+  },
+  {
+   "topic": "Historia",
+   "statement": "La reina Ranavalona I de Madagascar expulsó a los misioneros franceses en 1835.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/History_of_Madagascar",
+   "checked_on": "2026-11-10",
+   "evidence": "she expelled British missionaries from the island."
+  },
+  {
+   "topic": "Historia",
+   "statement": "Tanganica se independizó de Gran Bretaña el 9 de diciembre de 1961.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/place/Tanzania",
+   "checked_on": "2026-11-10",
+   "evidence": "Tanganyika had gained independence from Great Britain on December 9, 1961."
+  },
+  {
+   "topic": "Historia",
+   "statement": "El nombre \"Zaire\" significa \"tierra de oro\" en las lenguas locales.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://www.britannica.com/place/Democratic-Republic-of-the-Congo",
+   "checked_on": "2026-11-10",
+   "evidence": "“Zaire” is a variation of a term meaning “great river” in local African languages."
+  },
+  {
+   "topic": "Historia",
+   "statement": "El general Mobutu cambió el nombre del Congo a Zaire dentro de su campaña de \"autenticidad\".",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.britannica.com/place/Democratic-Republic-of-the-Congo",
+   "checked_on": "2026-11-10",
+   "evidence": "a change made by then ruler Gen. Mobutu Sese Seko to give the country what he thought was a more authentic African name."
+  },
+  {
+   "topic": "Historia",
+   "statement": "La guerra civil de la República Democrática del Congo terminó oficialmente en 1997.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://www.britannica.com/place/Democratic-Republic-of-the-Congo",
+   "checked_on": "2026-11-10",
+   "evidence": "the conflict officially ended in 2003, although fighting continued in the eastern part of the country."
+  }
+ ],
+ "Deportes": [
+  {
+   "topic": "Deportes",
+   "statement": "Los primeros Juegos Olímpicos modernos se hicieron en Atenas en 1896.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/Olympic_Games",
+   "checked_on": "2026-11-10",
+   "evidence": "Baron Pierre de Coubertin founded the International Olympic Committee (IOC) in 1894, leading to the first modern Games in Athens in 1896."
+  },
+  {
+   "topic": "Deportes",
+   "statement": "Los Juegos Olímpicos antiguos se celebraban en Olimpia, Grecia, desde el siglo VIII a.C. hasta el IV d.C.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/Olympic_Games",
+   "checked_on": "2026-11-10",
+   "evidence": "held in Olympia, Greece, from the 8th century BC to the 4th century AD."
+  },
+  {
+   "topic": "Deportes",
+   "statement": "Pierre de Coubertin fundó el Comité Olímpico Internacional en 1896.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/Olympic_Games",
+   "checked_on": "2026-11-10",
+   "evidence": "Baron Pierre de Coubertin founded the International Olympic Committee (IOC) in 1894."
+  },
+  {
+   "topic": "Deportes",
+   "statement": "Los primeros Juegos del COI reunieron 14 naciones y 241 atletas en 43 eventos.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/Olympic_Games",
+   "checked_on": "2026-11-10",
+   "evidence": "The Games brought together 14 nations and 241 athletes who competed in 43 events."
+  },
+  {
+   "topic": "Deportes",
+   "statement": "El emblema olímpico tiene seis anillos entrelazados.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/Olympic_Games",
+   "checked_on": "2026-11-10",
+   "evidence": "five intertwined rings symbolising the unity of the five inhabited continents."
+  },
+  {
+   "topic": "Deportes",
+   "statement": "Los colores de los anillos olímpicos se eligieron porque toda bandera nacional tenía al menos uno de ellos.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/Olympic_Games",
+   "checked_on": "2026-11-10",
+   "evidence": "These colours were chosen because every nation had at least one of them on its national flag."
+  },
+  {
+   "topic": "Deportes",
+   "statement": "El relevo de la antorcha olímpica existe desde los Juegos de la antigua Grecia.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/Olympic_Games",
+   "checked_on": "2026-11-10",
+   "evidence": "the torch relay was only introduced at the 1936 Summer Games."
+  },
+  {
+   "topic": "Deportes",
+   "statement": "La llama es un símbolo olímpico desde 1928.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/Olympic_Games",
+   "checked_on": "2026-11-10",
+   "evidence": "Though the flame has been an Olympic symbol since 1928."
+  },
+  {
+   "topic": "Deportes",
+   "statement": "Los primeros Juegos Olímpicos de Invierno fueron en Chamonix en 1936.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/Olympic_Games",
+   "checked_on": "2026-11-10",
+   "evidence": "Winter Chamonix, France in 1924."
+  },
+  {
+   "topic": "Deportes",
+   "statement": "Los Juegos de 2024 fueron los primeros con plena paridad de género en el campo de juego.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/Olympic_Games",
+   "checked_on": "2026-11-10",
+   "evidence": "The 2024 Summer Olympics were the first Olympics in history to reach full gender parity on the field of play."
+  },
+  {
+   "topic": "Deportes",
+   "statement": "Los Juegos de 1916, 1940 y 1944 se trasladaron a ciudades neutrales.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/Olympic_Games",
+   "checked_on": "2026-11-10",
+   "evidence": "World Wars I and II led to the cancellation of the 1916, 1940, and 1944 Olympics."
+  },
+  {
+   "topic": "Deportes",
+   "statement": "La bandera olímpica se adoptó en 1914 pero flameó por primera vez recién en Amberes 1920.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://en.wikipedia.org/wiki/Olympic_Games",
+   "checked_on": "2026-11-10",
+   "evidence": "The flag was adopted in 1914 but flown for the first time only at the 1920 Summer Olympics in Antwerp, Belgium."
+  }
+ ],
+ "Comida": [
+  {
+   "topic": "Comida",
+   "statement": "El fufu se hace con mandioca, plátanos o ñames hervidos y pisados.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://travelfoodatlas.com/drc-food",
+   "checked_on": "2026-11-10",
+   "evidence": "Fufu is a starchy staple food made from cassava, plantains, or yams. It is typically boiled, mashed."
+  },
+  {
+   "topic": "Comida",
+   "statement": "El moambe, plato emblemático de la RDC, es un postre dulce.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://travelfoodatlas.com/drc-food",
+   "checked_on": "2026-11-10",
+   "evidence": "Moambe chicken is a savoury chicken stew, typically served at special occasions in the DRC."
+  },
+  {
+   "topic": "Comida",
+   "statement": "El ugali tanzano es una masa firme de harina de maíz y agua.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://travelfoodatlas.com/tanzanian-food",
+   "checked_on": "2026-11-10",
+   "evidence": "Ugali is a mixture of ground corn and water which creates a food that is much like a firm polenta dough."
+  },
+  {
+   "topic": "Comida",
+   "statement": "En la cocina malgache se usa mucha sal.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://www.alimentarium.org/en/story/delights-madagascan-cuisine",
+   "checked_on": "2026-11-10",
+   "evidence": "Salt is not used in Madagascan cooking, and neither are sauces."
+  },
+  {
+   "topic": "Comida",
+   "statement": "El romazava y el ravitoto son los dos platos de acompañamiento \"nacionales\" de Madagascar.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://www.alimentarium.org/en/story/delights-madagascan-cuisine",
+   "checked_on": "2026-11-10",
+   "evidence": "The two “national” accompanying dishes are romazava, a meat stew with green leafy vegetables... and ravitoto, stewed pork with shredded manioc leaves."
+  },
+  {
+   "topic": "Comida",
+   "statement": "El ají scotch bonnet del pili pili llega a 100.000-350.000 unidades Scoville.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://travelfoodatlas.com/drc-food",
+   "checked_on": "2026-11-10",
+   "evidence": "The main ingredient in pili pili is the scotch bonnet pepper, which is rated 100,000–350,000 Scoville units."
+  },
+  {
+   "topic": "Comida",
+   "statement": "\"Madesu\" significa arroz en el idioma lingala.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://travelfoodatlas.com/drc-food",
+   "checked_on": "2026-11-10",
+   "evidence": "Madesu translates to ‘beans’ in the Lingala language."
+  },
+  {
+   "topic": "Comida",
+   "statement": "El chips mayai tanzano es una tortilla de huevo con papas fritas adentro.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://travelfoodatlas.com/tanzanian-food",
+   "checked_on": "2026-11-10",
+   "evidence": "Chips Mayai is an egg omelet with potato fries added into it."
+  },
+  {
+   "topic": "Comida",
+   "statement": "El ranopango malgache es un vino de palma.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://www.alimentarium.org/en/story/delights-madagascan-cuisine",
+   "checked_on": "2026-11-10",
+   "evidence": "Rice water (ranopango) is the most affordable drink, and is traditionally prepared by boiling water over a layer of browned (burned) rice, before straining."
+  },
+  {
+   "topic": "Comida",
+   "statement": "El urojo tanzano, también llamado \"Zanzibar Mix\", se cubre con una salsa fría.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://travelfoodatlas.com/tanzanian-food",
+   "checked_on": "2026-11-10",
+   "evidence": "a variety of vegetables and protein which are entirely covered in a cold, slightly sweet and spicy sauce. Also known as Zanzibar Mix."
+  },
+  {
+   "topic": "Comida",
+   "statement": "En el biryani suajili, el arroz y la carne se cocinan juntos en la misma olla.",
+   "vf": false,
+   "verified": true,
+   "source_url": "https://travelfoodatlas.com/tanzanian-food",
+   "checked_on": "2026-11-10",
+   "evidence": "the rice and meat are cooked separately then the meat is served on top of the rice."
+  },
+  {
+   "topic": "Comida",
+   "statement": "La chikwanga es un pan de mandioca cocido al vapor en hojas de banana.",
+   "vf": true,
+   "verified": true,
+   "source_url": "https://travelfoodatlas.com/drc-food",
+   "checked_on": "2026-11-10",
+   "evidence": "Chikwanga is a type of Congolese bread made from cassava flour, prepared by wrapping the flour balls in banana leaves and steaming them."
+  }
+ ]
+}
