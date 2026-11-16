@@ -36,5 +36,10 @@ webapp.PAGE=webapp.PAGE.replace('</body>', '''<script>
   const b=document.createElement('button');b.textContent=label;b.onclick=()=>{pendingMode='solo';unlockAudio();document.getElementById('btn-modo-'+key).click();};actions.appendChild(b);
  }
  note.appendChild(actions);
+ const label=document.createElement('label');label.textContent='Cómo querés que te despidamos: ';
+ const select=document.createElement('select');select.setAttribute('aria-label','Trato en las despedidas');
+ for(const [value,text] of [['neutral','Con mi nombre, sin género'],['femenino','Amiga'],['masculino','Amigo']]){const option=document.createElement('option');option.value=value;option.textContent=text;select.appendChild(option);}
+ select.value=localStorage.getItem('cafe_trato')||'neutral';select.onchange=()=>localStorage.setItem('cafe_trato',select.value);label.appendChild(select);note.appendChild(label);
+
 })();
 </script></body>''',1)

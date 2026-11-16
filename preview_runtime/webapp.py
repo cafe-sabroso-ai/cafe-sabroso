@@ -9491,16 +9491,32 @@ async def tateti_play(room, player, cell, mark=None):
     await tateti_after_move(room, player)
 
 
+async def voice_safe_sleep(room, seconds):
+    """Only the three rehearsal games: at most 15 extra seconds per timer."""
+    if room.get('game') not in ('ahorcado','bomba','misterio'):
+        await asyncio.sleep(seconds); return
+    clock=room.setdefault('voice_clock', {'budget':15.0})
+    remaining=float(seconds)
+    loop=asyncio.get_running_loop()
+    while remaining>0:
+        before=loop.time()
+        await asyncio.sleep(min(.1,remaining))
+        elapsed=loop.time()-before
+        paused=min(elapsed,clock['budget']) if room.get('voice_hold_until',0)>before else 0
+        clock['budget']-=paused
+        remaining-=elapsed-paused
+
 async def turn_clock(room, player_id):
     """Frequent nudges, independent of synthesis latency; no queued chatter."""
     chatter_task = None
     try:
         actor=next((p for p in room.get("players",[]) if p["id"]==player_id),None)
         duration=difficulty_rules.seconds(player_difficulty(actor),TURN_SECONDS)
+        room['voice_clock']={'budget':15.0}
         elapsed=0
         while elapsed<duration:
             step=min(6,duration-elapsed)
-            await asyncio.sleep(step)
+            await voice_safe_sleep(room,step)
             elapsed+=step
             current = current_player(room)
             if not current or current["id"] != player_id or room["phase"] in ("lobby", "gameover", "answering"):
@@ -10582,6 +10598,7 @@ async def ah_start_turn(room):
     if player is None:
         return
     ah = room["ahorcado"]
+    room['voice_hold_until']=0
     saved = ah.setdefault("saved_words", {}).get(player["id"])
     if saved:
         ah.update({k: (set(v) if isinstance(v, set) else v) for k,v in saved.items()})
@@ -10950,6 +10967,7 @@ async def bb_next_prompt(room, new_prompt):
     """Arm a fresh fuse for the current bomb holder; optionally a fresh prompt."""
     bb = room["bomba"]
     bb["generation"] = bb.get("generation",0)+1
+    room['voice_hold_until']=0
     cancel_timer(room)
     holder = current_player(room)
     if holder is None:
@@ -10977,10 +10995,11 @@ async def bb_next_prompt(room, new_prompt):
 async def wait_with_chatter(room, seconds):
     task = None
     try:
+        room['voice_clock']={'budget':15.0}
         remaining = seconds
         while remaining > 0:
             step = min(6, remaining)
-            await asyncio.sleep(step)
+            await voice_safe_sleep(room,step)
             remaining -= step
             current = current_player(room)
             if remaining > 0 and current and (task is None or task.done()):
@@ -11067,6 +11086,7 @@ async def bb_explode(room, holder, reason):
 
 
 async def mst_next_case(room):
+    room['voice_hold_until']=0
     """Tell a new mystery and open the floor: everyone guesses at once."""
     mst = room["misterio"]
     cancel_timer(room)
@@ -12018,6 +12038,7 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bo
                 await set_difficulty(room,player,str(message.get("level","")))
                 continue
             if action == "leave":
+                player['address_form']=message.get('address_form') if message.get('address_form') in ('femenino','masculino') else 'neutral'
                 await leave_game(room, code, player)
                 break
             if player.get("spectator") and action not in ("descripcion", "chat", "rename", "origin"):
@@ -12494,7 +12515,10 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bo
                     await complete_verdad_reto(room, player, done=False)
             elif action == "microfono":
                 if current is player or room["phase"] == "misterio":
-                    room["mic_until"] = asyncio.get_running_loop().time() + (15 if message.get("active") else 0)
+                    now=asyncio.get_running_loop().time()
+                    room["mic_until"] = now + (12 if message.get("active") else 0)
+                    if room.get('game') in ('ahorcado','bomba','misterio'):
+                        room['voice_hold_until']=now+(12 if message.get('active') else 1.5)
             elif action == "voz-texto":
                 text = str(message.get("text") or "").strip()
                 if not text or player.get("out") or player.get("spectator"):
@@ -12883,6 +12907,20 @@ FAREWELLS = [
 ]
 
 
+def farewell_text(player,idx):
+    form=player.get('address_form')
+    friend='amiga' if form=='femenino' else 'amigo' if form=='masculino' else ''
+    name=player.get('name') or ''
+    address=', '+(friend or name) if friend or name else ''
+    phrases=[f'Te espero{address}. Tu taza queda lista para la próxima.',
+             f'Nos vemos{address}. Gracias por compartir este rato.',
+             f'Hasta la próxima{address}. Que tengas un lindo día.',
+             f'Chau{address}. Volvé cuando quieras jugar.',
+             f'Un abrazo{address}. Nos encontramos en el próximo café.',
+             f'Gracias por jugar{address}. Te esperamos para otra partida.']
+    return phrases[idx % len(phrases)]
+
+
 TURN_OWNED_GAMES = {"cartas", "carrera", "flota", "truco", "corazones", "trenes", "patos", "pesca", "damas", "backgammon", "poker", "chinchon", "escoba", "uno_oro", "bingo", "escalera", "rosco", "pistas", "oca", "aim", "sapo", "bolos", "hockey", "tejo", "pingpong", "tenis", "ajedrez", "torre", "caballos", "autitos", "aviones", "viborita", "comepuntos", "fantasmas", "castillo", "zombi", "grua", "tesoros","laberinto","ppt","series","escondida","piedritas","motos","western","pueblos","flipper","rompebloques","bloques","feria","amigos","soldados","topo", "cocinando","veoveo", "cadena", "stop", "simon", "mochila", "vistiendo", "muneco", "pool", "metegol", "dinosaurios", "viborita", "comepuntos", "fantasmas", "castillo", "zombi", "grua", "tesoros","laberinto","ppt","series","escondida","piedritas","motos","western","pueblos","flipper","rompebloques","bloques","feria","amigos","soldados","topo", "cocinando","veoveo", "cadena", "stop", "simon", "mochila", "vistiendo", "muneco", "pool", "metegol", "dinosaurios"}
 
 
@@ -13072,7 +13110,7 @@ async def leave_game(room, code, player):
 async def farewell_player(room, player):
     idx = room.get("farewell_idx", random.randrange(len(FAREWELLS)))
     room["farewell_idx"] = idx + 1
-    text = FAREWELLS[idx % len(FAREWELLS)].format(name=player["name"])
+    text = farewell_text(player,idx)
     try:
         audio = await bounded_voice_mp3(text, random.choice(NARRATOR_VOICES))
         url = f"/amor-con-aroma-a-cafe/audio/{cache_audio(audio)}.mp3"
@@ -14976,6 +15014,13 @@ $("btn-nombre").addEventListener("click", () => {
   ws.send(JSON.stringify({action:"rename", name}));
   ws.send(JSON.stringify({action:"difficulty",level:myDifficulty}));
 });
+function localFarewell(){
+ const form=localStorage.getItem("cafe_trato"),who=form==="femenino"?"amiga":form==="masculino"?"amigo":myName;
+ const address=who?", "+who:"";
+ const lines=["Te espero","Nos vemos","Hasta la próxima","Chau","Gracias por jugar","Volvé cuando quieras"];
+ let i=Number(sessionStorage.getItem("cafe_despedida")||Math.floor(Math.random()*lines.length));sessionStorage.setItem("cafe_despedida",String(i+1));
+ return lines[i%lines.length]+address+". Tu taza te espera.";
+}
 let micActive = false, leavingGame = false;
 let exitWatchdog = null;
 function returnToMenu(text) {
@@ -15016,9 +15061,9 @@ $("btn-salir").addEventListener("click",()=>{
   leavingGame=true;unlockAudio();
   announce("Saliendo de este juego. Los demás pueden seguir jugando.");
   if(ws && ws.readyState===1){
-    ws.send(JSON.stringify({action:"leave"}));
-    exitWatchdog=setTimeout(()=>farewell("Hasta pronto, "+(myName||"amigo")+". Tu taza te espera.",null),25000);
-  }else farewell("Hasta pronto, "+(myName||"amigo")+". Nos vemos en la próxima partida.",null);
+    ws.send(JSON.stringify({action:"leave",address_form:localStorage.getItem("cafe_trato")||"neutral"}));
+    exitWatchdog=setTimeout(()=>farewell(localFarewell(),null),25000);
+  }else farewell(localFarewell(),null);
 });
 $("btn-actualizar").addEventListener("click",()=>{
   if(micActive){announce("Terminá de grabar antes de actualizar, así no perdés tu mensaje.");return;}
@@ -17501,22 +17546,35 @@ function oneTapVoice(id) {
       try {
         const rec = new SR();
         rec.lang = "es-AR";
-        rec.interimResults = false;
-        rec.maxAlternatives = 1;
-        let got = false;
-        announce("Te escucho. Hablá tranquilo: se manda sola.");
-        rec.onresult = (e) => {
-          got = true;
-          setMic(false);
-          const text = e.results[0][0].transcript;
-          if(id!=="btn-eh-voz")announce("Dijiste: " + text);
-          if(id==="btn-difficulty-voz")difficultyFromSpeech(text);else if(id==="btn-presentation-voz")presentationFromSpeech(text);else sendVoiceText(text,pescaTiming);
+        rec.interimResults = true;
+        rec.maxAlternatives = 3;
+        let got=false, ended=false, interim="",watchdog;
+        const fields={"btn-ah-voz":"ah-input","btn-bb-voz":"bb-input","btn-mst-voz":"mst-input"};
+        function finish(text,error){
+          if(ended)return;ended=true;clearTimeout(watchdog);
+          text=String(text||"").trim();
+          if(text){got=true;const input=fields[id]&&$(fields[id]);if(input)input.value=text;
+            if(id!=="btn-eh-voz")announce("Dijiste: "+text);
+            if(id==="btn-difficulty-voz")difficultyFromSpeech(text);else if(id==="btn-presentation-voz")presentationFromSpeech(text);else sendVoiceText(text,pescaTiming);
+          }else announce(error||"No recibí palabras. Podés volver a tocar Decirla por voz o escribir. El tiempo extra de voz es limitado.");
+          setMic(false);try{rec.stop();}catch(e){}
+        }
+        announce("Te escucho. Decí la palabra; tenés hasta diez segundos para hablar. Se manda sola. El reloj de estos tres juegos da hasta quince segundos extra por turno.");
+        rec.onresult=(e)=>{
+          for(let i=e.resultIndex||0;i<e.results.length;i++){
+            const r=e.results[i];const text=r[0]?.transcript||"";
+            if(r.isFinal){finish(text);return;}interim=text;
+          }
         };
-        rec.onerror = () => { setMic(false); if (!got) announce("No te escuché. Probá de nuevo o escribila."); };
-        rec.onend = () => { setMic(false); if (!got) announce("No te escuché. Probá de nuevo o escribila."); };
+        rec.onerror=(e)=>finish("",e.error==="not-allowed"?"El navegador no permitió el micrófono. Revisá el permiso del sitio.":e.error==="network"?"El reconocimiento del navegador no pudo conectarse. Probá de nuevo o escribí la respuesta.":"No recibí palabras. Probá de nuevo o escribí la respuesta.");
+        rec.onend=()=>finish(interim);
+        watchdog=setTimeout(()=>finish(interim),10000);
         rec.start();
         return;
       } catch (err) { /* fall through to the audio-upload path */ }
+    }
+    if(["btn-ah-voz","btn-bb-voz","btn-mst-voz"].includes(id)){
+      setMic(false);announce("Este navegador no ofrece reconocimiento de voz para responder en el ensayo. Probá con Chrome en Android o escribí la respuesta. Las notas de voz del chat son otra función.");return;
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({audio: true});

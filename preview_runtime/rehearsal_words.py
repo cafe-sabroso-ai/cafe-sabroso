@@ -138,3 +138,12 @@ def normalized(text: str) -> str:
         char for char in unicodedata.normalize("NFD", text.lower())
         if unicodedata.category(char) != "Mn"
     )
+
+AHORCADO_LETTER_NAMES = {
+    "a": "A", "be": "B", "ce": "C", "de": "D", "e": "E", "efe": "F",
+    "ge": "G", "hache": "H", "i": "I", "jota": "J", "ka": "K",
+    "ele": "L", "eme": "M", "ene": "N", "eñe": "Ñ", "enie": "Ñ",
+    "o": "O", "pe": "P", "cu": "Q", "ere": "R", "ese": "S",
+    "te": "T", "u": "U", "uve": "V", "ve": "V", "equis": "X",
+    "ye": "Y", "i griega": "Y", "zeta": "Z",
+}
