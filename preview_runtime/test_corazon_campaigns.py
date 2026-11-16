@@ -40,14 +40,18 @@ class Campaign(unittest.IsolatedAsyncioTestCase):
   self.mock=patch.object(w,'say',AsyncMock());self.say=self.mock.start()
   self.narr=patch.object(w,'narrate',AsyncMock());self.narr.start()
   await m.start(self.room)
+  for p in self.players[:2]:await m.action(self.room,p,"spin",m.getrun(self.room,p["id"])["token"])
  async def asyncTearDown(self):
   for r in self.room.get('misterio',{}).get('runs',{}).values():m.cancel(r)
   w.cancel_timer(self.room);self.mock.stop();self.narr.stop()
  async def answer(self,p):
-  run=m.getrun(self.room,p['id']);await m.ready(self.room,p['id'],run['token']);case=m.case_for(self.room,run);await w.mst_guess(self.room,p,case['accepted'][-1],run['token']);return case
+  run=m.getrun(self.room,p['id']);
+  if run.get('needs_spin'):await m.action(self.room,p,'spin',run['token'])
+  await m.ready(self.room,p['id'],run['token']);case=m.case_for(self.room,run);await w.mst_guess(self.room,p,case['accepted'][-1],run['token']);return case
  async def test_independent_progress_and_private_views(self):
   old=m.case_for(self.room,m.getrun(self.room,2));await self.answer(self.players[0])
   self.assertEqual(m.getrun(self.room,1)['index'],1);self.assertEqual(m.getrun(self.room,2)['index'],0)
+  await m.action(self.room,self.players[0],'spin',m.getrun(self.room,1)['token'])
   state=w.room_state(self.room);p=w.private_player_state(state,1);q=w.private_player_state(state,2);spect=w.private_player_state(state,3)
   self.assertNotIn('_mystery_views',p);self.assertNotEqual(p['misterio']['title'],q['misterio']['title']);self.assertNotIn('case',spect['misterio'])
   self.assertNotIn('solution',json.dumps(p));self.assertEqual(q['misterio']['title'],old['title'])
@@ -69,9 +73,17 @@ class Campaign(unittest.IsolatedAsyncioTestCase):
   p=self.players[0];run=m.getrun(self.room,1)
   for _ in range(50):await self.answer(p)
   self.assertEqual(len(run['solved']),50);self.assertEqual(len(set(run['solved'])),50);self.assertEqual(self.room['phase'],'gameover');self.assertEqual(self.room['misterio']['winner'],1)
+ async def test_roulette_hides_next_case_until_own_spin(self):
+  p=self.players[0];run=m.getrun(self.room,1);await self.answer(p)
+  hidden=m.view(self.room,1);self.assertTrue(hidden['needs_spin']);self.assertEqual(hidden['case'],'');self.assertEqual(hidden['category'],'')
+  self.assertFalse(await m.ready(self.room,1,run['token']))
+  await m.action(self.room,p,'hint',run['token']);self.assertEqual(run['hint'],'')
+  await m.action(self.room,p,'spin',run['token']);self.assertFalse(m.view(self.room,1)['needs_spin']);self.assertTrue(m.view(self.room,1)['case'])
+  token=run['token'];await m.action(self.room,p,'spin',token);self.assertEqual(run['token'],token)
+  self.assertEqual(m.getrun(self.room,2)['index'],0)
  async def test_reconnect_preserves_case_and_waits_for_read(self):
   p=self.players[0];run=m.getrun(self.room,1)
-  await self.answer(p);case=m.case_for(self.room,run);run['remaining']=82
+  await self.answer(p);await m.action(self.room,p,'spin',run['token']);case=m.case_for(self.room,run);run['remaining']=82
   await m.ready(self.room,1,run['token']);old=run['token'];m.suspend(self.room,p)
   self.assertIsNone(run['started']);self.assertGreater(run['token'],old)
   self.assertFalse(await m.ready(self.room,1,old))

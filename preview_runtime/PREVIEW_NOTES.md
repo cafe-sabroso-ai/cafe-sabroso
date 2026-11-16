@@ -1,3 +1,7 @@
+# Estado actual: ensayo local v5, no subido
+
+ENSAYO_V5_LOCAL.md reemplaza el estado anterior. Misterio mantiene su banco y pistas con nueva ruleta; Ahorcado no da definiciones y anuncia casilleros y muñeco; incluye memoria v4. Las notas anteriores quedan como historial, no como reglas actuales.
+
 # Estado de esta copia: v3 local, no subida
 
 Leé CAMPAIGNS_V3.md para las reglas y pruebas actuales. El texto de abajo conserva el historial inicial de v1; sus descripciones de bancos y final de Ahorcado/Misterio fueron reemplazadas en v3. El ensayo remoto v2 sigue separado y no contiene estos cambios.

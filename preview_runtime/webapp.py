@@ -830,25 +830,46 @@ async def broadcast(room, message: dict):
         await asyncio.gather(*(tell(p,message) for p in list(room['players']) if not p.get('gone')))
 
 
+_audio_encode_gate = None
+_audio_encode_loop = None
+_voice_builds = {}
+
+def audio_encode_gate():
+    global _audio_encode_gate, _audio_encode_loop
+    loop = asyncio.get_running_loop()
+    if loop is not _audio_encode_loop:
+        _audio_encode_loop = loop
+        _audio_encode_gate = asyncio.Semaphore(1)
+    return _audio_encode_gate
+
 async def ogg_to_mp3(ogg: bytes) -> bytes:
-    """Safari can't play ogg/opus; every phone plays mp3."""
+    """One bounded encoder for the small rehearsal instance, including chat clips."""
     import tempfile
     from pathlib import Path
-
-    with tempfile.TemporaryDirectory() as directory:
-        source = Path(directory) / "in.ogg"
-        target = Path(directory) / "out.mp3"
-        source.write_bytes(ogg)
-        process = await asyncio.create_subprocess_exec(
-            "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
-            "-i", str(source), "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
-            "-c:a", "libmp3lame", "-b:a", "64k", str(target),
-            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
-        )
-        _, stderr = await process.communicate()
-        if process.returncode:
-            raise RuntimeError(f"ffmpeg mp3 failed: {stderr.decode()[:300]}")
-        return target.read_bytes()
+    async with audio_encode_gate():
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "in.ogg"
+            target = Path(directory) / "out.mp3"
+            source.write_bytes(ogg)
+            process = await asyncio.create_subprocess_exec(
+                "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                "-threads", "1", "-filter_threads", "1", "-i", str(source),
+                "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-threads", "1",
+                "-c:a", "libmp3lame", "-b:a", "64k", str(target),
+                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+            )
+            try:
+                _, stderr = await process.communicate()
+            except BaseException:
+                # A timeout/cancel must not leave a detached memory-heavy encoder.
+                if process.returncode is None:
+                    try: process.kill()
+                    except ProcessLookupError: pass
+                await process.communicate()
+                raise
+            if process.returncode:
+                raise RuntimeError(f"ffmpeg mp3 failed: {stderr.decode()[:300]}")
+            return target.read_bytes()
 
 
 def cache_audio(mp3: bytes) -> str:
@@ -857,12 +878,29 @@ def cache_audio(mp3: bytes) -> str:
     for old_key, (_, ts) in list(audio_cache.items()):
         if time.time() - ts > 3600:
             audio_cache.pop(old_key, None)
+    # Bound retained audio too; old replay links are best-effort in this rehearsal.
+    total = sum(len(item[0]) for item in audio_cache.values())
+    while total > 32 * 1024 * 1024 and len(audio_cache) > 1:
+        oldest = next(iter(audio_cache))
+        total -= len(audio_cache.pop(oldest)[0])
     return key
 
 
 async def bounded_voice_mp3(text, voice):
     from app import synthesize
-    return await ogg_to_mp3(await synthesize(text, voice))
+    # Identical concurrent private case readings share one synthesis/encode, not data delivery.
+    key = (id(asyncio.get_running_loop()), text, voice)
+    task = _voice_builds.get(key)
+    if task is None or task.done():
+        async def build():
+            return await ogg_to_mp3(await synthesize(text, voice))
+        task = asyncio.create_task(build())
+        _voice_builds[key] = task
+        def finished(done):
+            if _voice_builds.get(key) is done: _voice_builds.pop(key, None)
+            if not done.cancelled(): done.exception()
+        task.add_done_callback(finished)
+    return await asyncio.shield(task)
 
 
 def narrated_timer(room, coroutine):
@@ -10575,7 +10613,16 @@ def ah_spelled(word, speak):
 
 def ah_positions_text(word, letter, speak):
     positions=[str(i+1) for i,c in enumerate(word) if c==letter]
-    return f"La palabra lleva {len(positions)} letras {speak[letter]}, en " + ('el casillero ' if len(positions)==1 else 'los casilleros ') + ', '.join(positions) + '.'
+    return f"La letra {speak[letter]} está en " + ('el casillero ' if len(positions)==1 else 'los casilleros ') + ', '.join(positions) + '.'
+
+
+def ah_formed_text(word, guessed, speak):
+    import re
+    visible=''.join(c if c in guessed else '_'for c in word)
+    chunks=[m.group()for m in re.finditer(r'[^_]+',visible)if len(m.group())>1]
+    formed=' '.join('Formaste '+chunk+': '+', '.join(speak[c]for c in chunk)+'.'for chunk in chunks)
+    missing=sum(c not in guessed for c in word)
+    return formed+' '+('Queda un casillero vacío.'if missing==1 else f'Quedan {missing} casilleros vacíos.')
 
 
 def ah_adjacency_text(word, letter, guessed, speak):
@@ -10677,19 +10724,21 @@ async def _ah_guess_unlocked(room, player, guess):
                 return
             positions = ah_positions_text(word, value, speak)
             adjacency = ah_adjacency_text(word, value, ah["guessed"], speak)
+            formed=ah_formed_text(word,ah["guessed"],speak)
             spoken_board = ", ".join(speak[c] if c in ah["guessed"] else "vacío" for c in word)
             await narrate(room, f"¡Sí! {positions} {adjacency} "
-                                f"Así va: {spoken_board}. "
+                                f"{formed} Así va: {spoken_board}. "
                                 f"Seguís, {player['name']}.")
             await broadcast(room, room_state(room))
             return
         await wrong_answer_feedback(room, "")
         ah["wrong"].add(value)
         ah["attempts"] -= 1
-        miss_beat = "Perdiste, no es la correcta. "
+        figure = ah_miss_figure(room) if ah.get('long_campaign') else ''
+        miss_beat = figure+' ' if ah.get('long_campaign') else "Perdiste, no es la correcta. "
         if ah["attempts"] <= 0:
-            await ah_pass(room, miss_beat + f"No hay {speak[value]} y se te acabaron los intentos, "
-                                f"{player['name']}. La palabra era {ah_spelled(word, speak)}.")
+            ending=ah_loss_line(room,word) if ah.get('long_campaign') else f"No hay {speak[value]} y se te acabaron los intentos, {player['name']}. La palabra era {ah_spelled(word, speak)}."
+            await ah_pass(room,miss_beat+ending)
             return
         left = ah["attempts"]
         await ah_pass(room, miss_beat + f"No hay {speak[value]}. Te {'queda' if left == 1 else 'quedan'} "
@@ -10701,9 +10750,10 @@ async def _ah_guess_unlocked(room, player, guess):
         return
     prefix = await wrong_answer_feedback(room, "")
     ah["attempts"] -= 1
+    if ah.get('long_campaign'):prefix=ah_miss_figure(room)+' '
     if ah["attempts"] <= 0:
-        await ah_pass(room, prefix + f"¡{ah_spelled(value, speak)} no es y se te acabaron los intentos, "
-                            f"{player['name']}! La palabra era {ah_spelled(word, speak)}.")
+        ending=ah_loss_line(room,word)if ah.get('long_campaign')else f"¡{ah_spelled(value, speak)} no es y se te acabaron los intentos, {player['name']}! La palabra era {ah_spelled(word,speak)}."
+        await ah_pass(room,prefix+ending)
         return
     left = ah["attempts"]
     await ah_pass(room, prefix + f"{ah_spelled(value, speak)} no es. Te {'queda' if left == 1 else 'quedan'} "
@@ -12417,6 +12467,8 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bo
             elif action == "mst-campaign":
                 if room.get('misterio',{}).get('campaign'):
                     await mst_campaign_action(room,player,str(message.get('kind')or''),message.get('token'))
+            elif action == "ah-read-board" and room.get('ahorcado',{}).get('long_campaign'):
+                await ah_campaign_read_board(room,player)
             elif action == "ah-campaign-ready" and room.get('ahorcado',{}).get('long_campaign'):
                 await ah_campaign_ready(room,player['id'],message.get('token'))
             elif action == "grid-ready" and room.get('game')=='ahorcado' and room.get('ahorcado',{}).get('long_campaign'):
@@ -14056,6 +14108,8 @@ PAGE = """<!DOCTYPE html>
   #mst-caso { font-size: 1.3rem; }
   #bb-quien, #bb-vidas, #mst-vidas { font-size: 1.2rem; }
   #ahorcado { max-width: 34rem; }
+  #ah-slots{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:12px auto;max-width:650px;}
+  #ah-slots button{min-width:44px;min-height:44px;padding:8px;margin:0;font-size:1.3rem;border:1px solid #ddd;}
   #ah-pista { font-size: 1.4rem; color: #ffe082; }
   #ah-tablero {
     font-size: 3rem; font-weight: bold; letter-spacing: 1.2rem; color: #80d8ff;
@@ -14143,6 +14197,11 @@ PAGE = """<!DOCTYPE html>
   body.no-images #damas-tablero,body.no-images #backgammon-tablero{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%)!important;}
   body.no-images #flota-propio-tablero,body.no-images #flota-rival-tablero,body.no-images #tateti-tablero{display:flex!important;flex-wrap:wrap;gap:6px;}
   body.no-images #escala-board li{border-left:0;background:none;padding:4px;}body.no-images #bingo-bolilla{border-radius:0;box-shadow:none;background:none;color:inherit;width:auto;height:auto;line-height:1.5;font-size:1.4rem;}
+  #mst-roulette{border:2px solid #e6bc58;border-radius:16px;padding:12px;margin:12px auto;max-width:550px;}
+  #mst-wheel-disc{display:grid;place-items:center;width:140px;height:140px;margin:12px auto;border:4px solid #f5cf75;border-radius:50%;background:conic-gradient(#564db0 0deg 72deg,#ad375e 72deg 144deg,#236c78 144deg 216deg,#76502d 216deg 288deg,#405278 288deg);font-size:2.4rem;}
+  #mst-wheel{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;margin:12px;}
+  #mst-wheel span{padding:10px;border:1px solid #b9b4d0;border-radius:12px;background:#24203e;color:#fff;}
+  #mst-wheel span.selected{background:#f3cf71;color:#17121d;border:3px solid #fff;}
   #difficulty-panel{max-width:650px;margin:10px auto;padding:10px;border:1px solid #687aca;border-radius:12px;}
   #difficulty-panel summary{font-size:1.2rem;cursor:pointer;padding:10px;}
   #difficulty-buttons{display:flex;flex-wrap:wrap;gap:6px;}
@@ -14559,9 +14618,18 @@ PAGE = """<!DOCTYPE html>
 
       <div id="ahorcado" hidden>
         <p id="ah-pista" role="status"></p>
+        <p id="ah-no-definition" hidden>Sin pista de significado. Las letras aparecen al acertarlas.</p>
+        <div id="ah-slots" role="group" aria-label="Casilleros de la palabra" hidden></div>
+        <button id="ah-read-board" class="secondary" hidden>Escuchar mi palabra formada</button>
         <p id="ah-tablero" aria-label="La palabra"></p>
         <p id="ah-intentos"></p>
         <p id="ah-letras"></p>
+        <div id="ah-figure-panel" hidden><h3>Muñeco de esta palabra</h3>
+        <svg id="ah-figure" width="140" height="175" viewBox="0 0 140 175" aria-hidden="true"><g fill="none" stroke="#f5cf75" stroke-width="5" stroke-linecap="round"><circle data-part="cabeza" cx="70" cy="26" r="18"/><path data-part="cuerpo" d="M70 45 V102"/><path data-part="brazo izquierdo" d="M70 60 L35 85"/><path data-part="brazo derecho" d="M70 60 L105 85"/><path data-part="pierna izquierda" d="M70 102 L42 152"/><path data-part="pierna derecha" d="M70 102 L98 152"/></g></svg>
+        <p id="ah-figure-text" role="status"></p>
+        <div id="ah-last-figure-panel" hidden><h3>Último desafío terminado</h3>
+        <svg width="100" height="125" viewBox="0 0 140 175" aria-hidden="true"><g fill="none" stroke="#f5cf75" stroke-width="5" stroke-linecap="round"><circle cx="70" cy="26" r="18"/><path d="M70 45 V102 M70 60 L35 85 M70 60 L105 85 M70 102 L42 152 M70 102 L98 152"/></g></svg>
+        <p id="ah-last-figure" role="status"></p></div></div>
         <label for="ah-input" id="ah-label">Escribí una letra o la palabra entera:</label><br>
         <input id="ah-input" type="text" autocomplete="off" aria-labelledby="ah-label">
         <button id="ah-start" class="secondary">Empezar mi turno</button>
@@ -14877,6 +14945,14 @@ PAGE = """<!DOCTYPE html>
       <div id="misterio" hidden>
         <button id="btn-ambiente" class="secondary" aria-pressed="false" aria-label="Prender o apagar el ambiente sonoro del misterio">Ambiente: apagado</button>
         <p id="ambiente-descripcion">Ambiente original suave según el caso. No hace falta escucharlo para resolver. Se pausa al hablar.</p>
+        <section id="mst-roulette" aria-labelledby="mst-roulette-title" hidden>
+          <h2 id="mst-roulette-title">Ruleta de apartados</h2>
+          <div id="mst-wheel-disc" aria-hidden="true">☕</div>
+          <div id="mst-wheel" aria-hidden="true"><span>Objetos</span><span>Café y casa</span><span>Viajes</span><span>Mensajes</span><span>Lógica</span></div>
+          <p id="mst-spin-result" role="status"></p>
+          <button id="mst-spin">Girar mi ruleta</button>
+          <p>Avanzás a tu ritmo. La secuencia sorteada es la misma para todos.</p>
+        </section>
         <p id="mst-titulo" role="status"></p>
         <p id="mst-caso"></p>
         <p id="mst-vidas"></p>
@@ -16248,20 +16324,42 @@ function onState(msg) {
   const ah = msg.ahorcado;
   $("ahorcado").hidden = !(msg.game === "ahorcado" && ah);
   if (msg.game === "ahorcado" && ah) {
-    $("ah-pista").textContent = "Pista: " + ah.hint;
-    if (ah.hint && ah.hint !== lastHint) {
+    $("ah-pista").hidden=!!ah.no_definition;
+    $("ah-no-definition").hidden=!ah.no_definition;
+    $("ah-read-board").hidden=!ah.no_definition;
+    $("ah-slots").hidden=!ah.no_definition;
+    if(ah.no_definition){
+      const cells=ah.board.split(" "),signature=ah.board;
+      if($("ah-slots").dataset.board!==signature){
+        const active=document.activeElement,focusIndex=active?.parentElement===$("ah-slots")?Array.from($("ah-slots").children).indexOf(active):-1;
+        $("ah-slots").dataset.board=signature;$("ah-slots").replaceChildren();
+        cells.forEach((c,i)=>{const slot=document.createElement("button");slot.type="button";slot.className="secondary";slot.textContent=c==="_"?"_":c;slot.setAttribute("aria-label","Casillero "+(i+1)+": "+(c==="_"?"vacío":c));slot.onclick=()=>announce(slot.getAttribute("aria-label"));$("ah-slots").appendChild(slot);});
+        if(focusIndex>=0)$("ah-slots").children[focusIndex]?.focus();
+      }
+    }
+    $("ah-pista").textContent = ah.no_definition?"":"Pista: " + ah.hint;
+    if (!ah.no_definition && ah.hint && ah.hint !== lastHint) {
       lastHint = ah.hint;
       announce("Turno de " + msg.turn_name + ". Pista: " + ah.hint);
     }
+    $("ah-tablero").hidden=!!ah.no_definition;
     $("ah-tablero").textContent = ah.board;
     $("ah-tablero").setAttribute("aria-label", ah.board.split(" ").map((c,i)=>"Casillero "+(i+1)+": "+(c==="_"?"vacío":c)).join(". "));
-    $("ah-intentos").textContent = "Quedan " + ah.attempts + " intentos para esta palabra"+(ah.campaign?". Campaña de cien desafíos. "+Object.entries(ah.progress||{}).map(([pid,r])=>(msg.players.find(p=>String(p.id)===pid)?.name||"Jugador")+": "+r.done+" terminados, "+r.correct+" aciertos").join(". "):"");
+    $("ah-intentos").textContent = (ah.attempts===1?"Queda 1 intento para esta palabra":"Quedan "+ah.attempts+" intentos para esta palabra")+(ah.campaign?". Campaña de cien desafíos. "+Object.entries(ah.progress||{}).map(([pid,r])=>(msg.players.find(p=>String(p.id)===pid)?.name||"Jugador")+": "+r.done+" terminados, "+r.correct+" aciertos").join(". "):"");
+    $("ah-figure-panel").hidden=!ah.no_definition;
+    const figureParts=ah.figure_parts||[];
+    $("ah-figure").style.display=figureParts.length?"":"none";
+    $("ah-last-figure-panel").hidden=!ah.last_figure;
+    $("ah-figure").querySelectorAll("[data-part]").forEach(el=>el.style.display=figureParts.includes(el.dataset.part)?"":"none");
+    $("ah-figure-text").textContent=figureParts.length?"Partes formadas: "+figureParts.join(", ")+".":"El muñeco todavía no tiene partes formadas.";
+    $("ah-last-figure").textContent=ah.last_figure?"Último desafío terminado de "+ah.last_figure.name+": muñeco completo. "+ah.last_figure.text:"";
     $("ah-letras").textContent = ah.wrong.length ? "Letras que no están: " + ah.wrong.join(", ") : "";
     const ahReady=!ah.campaign||ah.clock_started;
     $("btn-ah-mandar").disabled = !mine||!ahReady;
     $("btn-ah-voz").disabled = !mine||!ahReady;
     $("ah-input").disabled = !mine||!ahReady;
     $("ah-start").hidden=!ah.campaign;$("ah-start").disabled=!mine||ahReady;
+    $("ah-read-board").disabled=!mine;
   }
   const tateti = msg.tateti;
   $("tateti").hidden = !(msg.game === "tateti" && tateti && !["lobby","gameover"].includes(msg.phase));
@@ -16757,14 +16855,21 @@ const siete = msg.siete;
     $("mst-titulo").textContent = "Misterio: " + mst.title;
     $("mst-caso").textContent = mst.case;
     if(mst.campaign){
-      $("mst-category").textContent=mst.watching?"Espectador: solo se comparte el marcador.":"Ruleta de apartados: "+mst.category+". Tu caso "+mst.position+" de "+mst.total+". Orden sorteado compartido, avance individual.";
+      $("mst-roulette").hidden=!!mst.watching;
+      $("mst-spin").hidden=!mst.needs_spin;
+      $("mst-spin").disabled=watching||mst.watching||msg.phase!=="misterio";
+      $("mst-titulo").hidden=!!mst.needs_spin;
+      $("mst-caso").hidden=!!mst.needs_spin;
+      $("mst-spin-result").textContent=mst.needs_spin?"Girá para el caso "+mst.position+" de "+mst.total+". Reloj en pausa.":"Resultado: "+mst.category+". Caso "+mst.position+" de "+mst.total+".";
+      Array.from($("mst-wheel").children).forEach((el,i)=>el.classList.toggle("selected",!mst.needs_spin&&(mst.categories||[])[i]===mst.category));
+      $("mst-category").textContent=mst.watching?"Espectador: solo se comparte el marcador.":(mst.needs_spin?"Apartado pendiente del giro":"Ruleta de apartados: "+mst.category)+". Tu caso "+mst.position+" de "+mst.total+". Orden sorteado compartido, avance individual.";
       $("mst-clock").textContent=mst.ready?"Tiempo personal restante: "+mst.remaining+" segundos.":"Reloj personal en pausa.";
       $("mst-private").textContent=(mst.feedback||"")+(mst.hint?" Pista privada: "+mst.hint:"");
       $("mst-vidas").textContent=mst.watching?"":"Tus intentos: "+mst.lives+". Resueltos: "+mst.completed+" de "+mst.total+". "+(mst.ready?"Reloj personal en marcha.":"Reloj personal en pausa.");
       const progress=mst.progress||[],high=Math.max(0,...progress.map(p=>p.solved)),leaders=progress.filter(p=>p.solved===high).map(p=>p.name);
       $("mst-scoreboard").textContent=progress.map(p=>p.name+": "+p.solved+" de "+mst.total).join(". ")+". "+(high===0?"Todavía nadie resolvió el primer caso.":(leaders.length>1?"Van adelante empatados: ":"Va adelante: ")+leaders.join(", ")+".");
       for(const id of ["btn-mst-mandar","btn-mst-voz","mst-input"])$(id).disabled=watching||mst.watching||!mst.ready||msg.phase!=="misterio";
-      for(const id of ["mst-start","mst-repeat","mst-hint","mst-progress"])$(id).disabled=watching||mst.watching||msg.phase!=="misterio";
+      for(const id of ["mst-start","mst-repeat","mst-hint","mst-progress"])$(id).disabled=watching||mst.watching||msg.phase!=="misterio"||(mst.needs_spin&&id!=="mst-progress");
       $("mst-start").disabled=$("mst-start").disabled||mst.ready;
     }else{
     const myLives = mst.lives && myId != null ? mst.lives[myId] : null;
@@ -17587,6 +17692,7 @@ LOCAL_DESCRIPTIONS["vof"] = "Verdadero o falso: girás la ruleta de temas y deci
 $("btn-info-ahorcado").addEventListener("click", () => askDescription("ahorcado"));
 $("btn-info").addEventListener("click", () => askDescription(lastState && lastState.game ? lastState.game : "ahorcado"));
 
+$("ah-read-board").onclick=()=>{if(ws&&ws.readyState===1)ws.send(JSON.stringify({action:"ah-read-board"}));};
 function sendGuess() {
   const t = $("ah-input").value.trim();
   if (!t || !ws || ws.readyState !== 1) return;
@@ -17784,7 +17890,7 @@ function sendMisterio() {
   ws.send(JSON.stringify({action: "guess", text: t,mst_token:lastState?.misterio?.token}));
   $("mst-input").value = "";
 }
-for(const [id,kind]of [["mst-start","ready"],["mst-repeat","read"],["mst-hint","hint"],["mst-progress","progress"]])$(id).onclick=()=>{if(ws&&ws.readyState===1)ws.send(JSON.stringify({action:"mst-campaign",kind,token:lastState?.misterio?.token}));};
+for(const [id,kind]of [["mst-spin","spin"],["mst-start","ready"],["mst-repeat","read"],["mst-hint","hint"],["mst-progress","progress"]])$(id).onclick=()=>{if(ws&&ws.readyState===1)ws.send(JSON.stringify({action:"mst-campaign",kind,token:lastState?.misterio?.token}));};
 $("mst-time").onclick=()=>announce($("mst-clock").textContent||"El reloj está en pausa.");
 $("btn-mst-mandar").addEventListener("click", sendMisterio);
 $("mst-input").addEventListener("keydown", (e) => { if (e.key === "Enter") sendMisterio(); });
