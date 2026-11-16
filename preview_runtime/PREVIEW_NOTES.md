@@ -1,3 +1,7 @@
+# Estado de esta copia: v3 local, no subida
+
+Leé CAMPAIGNS_V3.md para las reglas y pruebas actuales. El texto de abajo conserva el historial inicial de v1; sus descripciones de bancos y final de Ahorcado/Misterio fueron reemplazadas en v3. El ensayo remoto v2 sigue separado y no contiene estos cambios.
+
 # Corazón: ensayo aislado de mejoras
 
 Base verificada: cafe-sabroso-ai/cafe-sabroso, main 2256c71ea510173526055fb79d866f0c68bc5399. La página reconstruida antes del parche coincide byte por byte con https://cafe-sabroso.onrender.com/amor-con-aroma-a-cafe al 16 de noviembre de 2026.

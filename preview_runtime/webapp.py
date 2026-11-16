@@ -891,6 +891,7 @@ async def say(room, text: str, voice=None, to=None, question_id=None, rosco_toke
     from app import synthesize  # local import: app.py mounts this router
 
     voice = voice or room.get("voice") or "es-AR-ElenaNeural"
+    private_campaign = to is not None and room.get('game')=='misterio' and room.get('misterio',{}).get('campaign')
     try:
         task = asyncio.create_task(bounded_voice_mp3(text, voice))
         try:
@@ -910,10 +911,11 @@ async def say(room, text: str, voice=None, to=None, question_id=None, rosco_toke
     except Exception:
         log.exception("Web sala: synthesis failed; sending text only")
         url = None
-        gate = room.get("natural_voice_gate")
-        if gate is None or gate.is_set():
-            room["natural_voice_gate"] = asyncio.Event()
-        room["natural_voice_token"] = room.get("natural_voice_token",0) + 1
+        if not private_campaign:
+            gate = room.get("natural_voice_gate")
+            if gate is None or gate.is_set():
+                room["natural_voice_gate"] = asyncio.Event()
+            room["natural_voice_token"] = room.get("natural_voice_token",0) + 1
         notice = {"event":"voice_unavailable", "text":"No se pudo preparar la voz natural. Usá Reintentar voz. No se usará una voz robotizada."}
         targets = [to] if to is not None else connected(room)
         for target in targets:
@@ -923,7 +925,7 @@ async def say(room, text: str, voice=None, to=None, question_id=None, rosco_toke
         else:
             await broadcast(room, notice)
     message = {"event": "say", "text": text, "audio": url}
-    if url and room.get("natural_voice_gate") is not None and not room["natural_voice_gate"].is_set():
+    if url and not private_campaign and room.get("natural_voice_gate") is not None and not room["natural_voice_gate"].is_set():
         message["natural_retry_token"] = room.get("natural_voice_token",0)
         owner=to or current_player(room) or host_player(room)
         if owner and is_game_bot(room,owner["id"]):owner=host_player(room)
@@ -9820,6 +9822,9 @@ async def start_match(room):
                             "si les explota tres veces, quedan afuera. ¡El último en pie gana!")
         await bb_next_prompt(room, new_prompt=True)
         return
+    if room["game"] == "misterio" and globals().get('mst_start_campaign'):
+        await mst_start_campaign(room)
+        return
     if room["game"] == "misterio":
         room["misterio"] = {"lives": {p["id"]: MISTERIO_LIVES for p in room["players"]
                                       if not p.get("gone") and not p.get("spectator")},
@@ -9832,6 +9837,13 @@ async def start_match(room):
     if room["game"] == "ahorcado":
         room["ahorcado"] = {"levels": {}, "used": set(), "word": None, "hint": "",
                             "guessed": set(), "wrong": set(), "attempts": 0}
+        room['ahorcado']['long_campaign']=bool(globals().get('_hangman_campaign_installed'))
+        if room['ahorcado']['long_campaign']:
+            room['team_count']=0
+            for p in room['players']:p['out']=False
+            await narrate(room,'Ensayo largo de Ahorcado: cien palabras únicas por persona, por tramos de longitud. Cada desafío termina al acertar o agotar intentos. Se cuentan los aciertos por separado. No se repiten las palabras falladas. La partida termina cuando todos completan sus cien desafíos, sin reinicio automático.')
+            await ah_start_turn(room)
+            return
         await ah_invite(room)
         await narrate(room, f"¡Arranca el ahorcado! Adiviná la palabra letra por letra. "
                             f"Si errás, pasa al siguiente. En este ensayo cada persona conserva su palabra e intentos para cuando vuelva su turno. "
@@ -10562,14 +10574,8 @@ def ah_spelled(word, speak):
 
 
 def ah_positions_text(word, letter, speak):
-    """'La palabra lleva dos letras A: una en el primer casillero y otra en el segundo.'"""
-    positions = [i for i, char in enumerate(word) if char == letter]
-    name = speak[letter]
-    if len(positions) == 1:
-        return f"La palabra lleva una letra {name}, en el {AH_ORDINALES[positions[0]]} casillero."
-    places = ", ".join(f"una en el {AH_ORDINALES[p]} casillero" for p in positions[:-1])
-    places += f" y otra en el {AH_ORDINALES[positions[-1]]} casillero"
-    return f"La palabra lleva {len(positions)} letras {name}: {places}."
+    positions=[str(i+1) for i,c in enumerate(word) if c==letter]
+    return f"La palabra lleva {len(positions)} letras {speak[letter]}, en " + ('el casillero ' if len(positions)==1 else 'los casilleros ') + ', '.join(positions) + '.'
 
 
 def ah_adjacency_text(word, letter, guessed, speak):
@@ -11949,6 +11955,8 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bo
     if seat is None and room["phase"] not in ("lobby", "gameover") and room.get("game") in (
             "cartas", "carrera", "flota", "truco", "corazones", "trenes", "patos", "pesca", "damas", "backgammon", "poker", "chinchon", "escoba", "uno_oro", "bingo", "escalera", "rosco", "pistas", "oca", "aim", "sapo", "bolos", "hockey", "tejo", "pingpong", "tenis", "ajedrez", "torre", "caballos", "autitos", "aviones", "viborita", "comepuntos", "fantasmas", "castillo", "zombi", "grua", "tesoros","laberinto","ppt","series","escondida","piedritas","motos","western","pueblos","flipper","rompebloques","bloques","feria","amigos","soldados","topo", "cocinando","veoveo", "cadena", "stop", "simon", "mochila", "vistiendo", "muneco", "pool", "metegol", "dinosaurios"):
         spectator = True  # no un-dealt hand may enter a running match
+    if seat is None and room.get('game')=='misterio' and room.get('misterio',{}).get('campaign') and room['phase']=='misterio':
+        spectator=True
     if seat is not None:
         pending_disconnect = room.get("disconnect_tasks", {}).pop(seat["id"], None)
         if pending_disconnect:
@@ -12003,6 +12011,9 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bo
         await ah_invite(room)
         cancel_timer(room)
         room["timer_task"]=narrated_timer(room,ah_lobby_invites(room))
+    if seat is not None and room.get('misterio',{}).get('campaign') and room['phase']=='misterio':
+        import mystery_race
+        await mystery_race.resume(room,player)
     await broadcast(room, room_state(room))
     if seat is not None and room["phase"] == "question" and current_player(room) is player:
         q = room.get("question")
@@ -12038,6 +12049,10 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bo
                 await set_difficulty(room,player,str(message.get("level","")))
                 continue
             if action == "leave":
+                if room.get('misterio',{}).get('campaign'):
+                    import mystery_race
+                    run=mystery_race.getrun(room,player['id'])
+                    if run:mystery_race.cancel(run)
                 player['address_form']=message.get('address_form') if message.get('address_form') in ('femenino','masculino') else 'neutral'
                 await leave_game(room, code, player)
                 break
@@ -12082,7 +12097,11 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bo
                 if retry:
                     qid = retry.get("question_id")
                     if qid is None or (room.get("question") or {}).get("id") == qid:
-                        await narrate(room, to=player, **retry)
+                        if room.get('game')=='misterio' and room.get('misterio',{}).get('campaign'):
+                            run=room['misterio']['runs'].get(player['id'])
+                            ack=retry.get('grid_ack')
+                            if not ack or (run and ack.get('token')==run['token']):await say(room,to=player,**retry)
+                        else:await narrate(room, to=player, **retry)
                 continue
             if action == "question-ready":
                 await start_question_clock(room, player, message.get("id"))
@@ -12098,7 +12117,9 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bo
                     else:
                         await narrate(room, q["q"] + " " + ". ".join(q["options"]), voice="es-AR-ElenaNeural" if q["category"] == "deportes" else room["question_voice"], to=player, question_id=q["id"])
                 continue
-            if action == "equipos" and room["phase"] == "lobby" and player is host_player(room):
+            if action == "equipos" and room["phase"] == "lobby" and player is host_player(room) and room.get('game') in ('misterio','ahorcado'):
+                await narrate(room,'Este ensayo de campaña es individual. Equipos no está habilitado aquí.',to=player)
+            elif action == "equipos" and room["phase"] == "lobby" and player is host_player(room):
                 try:
                     count = int(message.get("count", 0))
                 except (TypeError, ValueError):
@@ -12140,7 +12161,7 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bo
             elif action == "guess" and room["phase"] == "bomba" and current_player(room) is player:
                 await bb_answer(room, player, str(message.get("text") or ""))
             elif action == "guess" and room["phase"] == "misterio":
-                await mst_guess(room, player, str(message.get("text") or ""))
+                await mst_guess(room, player, str(message.get("text") or ""),message.get("mst_token"))
             elif action == "guess" and room["phase"] == "ahorcado" and current_player(room) is player:
                 _, _, _, _, clean, parse_guess = ah_helpers()
                 guess = parse_guess(str(message.get("text") or ""))
@@ -12393,6 +12414,15 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bo
                 await fantasmas_voice(room,player,str(message.get('text') or ''))
             elif action == "fantasmas-ready":
                 await fantasmas_ready(room,player['id'],message.get('token'))
+            elif action == "mst-campaign":
+                if room.get('misterio',{}).get('campaign'):
+                    await mst_campaign_action(room,player,str(message.get('kind')or''),message.get('token'))
+            elif action == "ah-campaign-ready" and room.get('ahorcado',{}).get('long_campaign'):
+                await ah_campaign_ready(room,player['id'],message.get('token'))
+            elif action == "grid-ready" and room.get('game')=='ahorcado' and room.get('ahorcado',{}).get('long_campaign'):
+                await ah_campaign_ready(room,player['id'],message.get('token'))
+            elif action == "grid-ready" and room.get('game')=='misterio' and room.get('misterio',{}).get('campaign'):
+                await mst_campaign_ready(room,player['id'],message.get('token'))
             elif action == "grid-ready":
                 await grid_ready(room,player['id'],message.get('token'),str(message.get('game') or ''))
             elif action == "comepuntos":
@@ -12514,6 +12544,7 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bo
                 if room["phase"] == "verdad_reto" and current is player:
                     await complete_verdad_reto(room, player, done=False)
             elif action == "microfono":
+                if room.get('misterio',{}).get('campaign'):mst_campaign_mic(room,player['id'],bool(message.get('active')))
                 if current is player or room["phase"] == "misterio":
                     now=asyncio.get_running_loop().time()
                     room["mic_until"] = now + (12 if message.get("active") else 0)
@@ -12537,7 +12568,7 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bo
                     await syn_answer(room, player, text, source="voice")
                     continue
                 if room["phase"] == "misterio":
-                    await mst_guess(room, player, text)
+                    await mst_guess(room, player, text,message.get("mst_token"))
                     continue
                 if room["phase"] == "flota":
                     st = room.get("flota")
@@ -12881,9 +12912,17 @@ async def sala_ws(websocket: WebSocket, code: str, name: str = "", spectator: bo
                     await broadcast(room, room_state(room))
     except WebSocketDisconnect:
         pass
+    except RuntimeError:
+        # A send failure can close this same socket before its receive resumes.
+        from starlette.websockets import WebSocketState
+        if websocket.application_state is not WebSocketState.DISCONNECTED and websocket.client_state is not WebSocketState.DISCONNECTED:
+            raise
     finally:
         if player["ws"] is websocket:
             player["ws"] = None
+            if room.get('misterio',{}).get('campaign'):
+                import mystery_race
+                mystery_race.suspend(room,player)
             if room["phase"] in ("question","escalera_question") and current_player(room) is player and room.get("question"):
                 cancel_timer(room)
                 room["question"]["clock_started"] = False
@@ -13290,6 +13329,7 @@ async def voice_answer(code: str, request: Request, sender: int = -1, bite_id: s
     if phase not in ("tesoros","laberinto","ppt","series","escondida","piedritas","motos","western","pueblos","flipper","rompebloques","bloques","feria","amigos","soldados","topo", "cocinando","veoveo", "tesoros_setup", "laberinto_setup", "ppt_setup", "series_setup", "series_spin", "series_question", "escondida_setup", "escondida_hide", "escondida_search", "piedritas_setup", "motos_setup", "motos_reading", "motos_result", "western_setup", "western_reward", "western_result", "pueblos_setup", "pueblos_between", "pueblos_result", "flipper_setup", "flipper_result", "rompebloques_setup", "rompebloques_result", "rompebloques_between", "bloques_setup", "bloques_result", "feria_setup", "feria_result", "feria_between", "amigos_setup", "amigos_result", "amigos_between", "soldados_setup", "soldados_reward", "soldados_result", "topo_setup", "cocinando_setup", "veoveo_setup", "cadena", "cadena_setup", "stop", "stop_setup", "stop_review", "stop_result", "simon", "simon_setup", "mochila", "mochila_setup", "vistiendo", "vistiendo_setup", "muneco", "muneco_setup", "grua", "grua_setup", "pool_setup", "pool_ready", "pool_aiming", "metegol_setup", "metegol_ready", "metegol_aiming", "metegol_between", "question", "ahorcado", "bomba", "misterio", "siete", "tateti", "tateti_marca", "cartas", "cartas_color", "carrera", "flota", "veintiuno", "truco", "truco_canto", "truco_envido", "corazones", "trenes", "patos", "patos_trivia", "pesca", "pesca_ya", "damas", "backgammon", "poker", "chinchon", "escoba", "uno_oro", "bingo", "escalera", "rosco", "pistas", "oca", "aim", "sapo", "bolos", "hockey", "tejo", "pingpong", "tenis", "ajedrez", "torre", "caballos", "autitos", "aviones", "viborita", "comepuntos", "fantasmas", "castillo", "zombi", "dinosaurios", "dinosaurios_wave", "dinosaurios_pause", "dinosaurios_reward", "dinosaurios_retry", "zombi_wave", "zombi_pause", "zombi_reward", "zombi_retry", "castillo_elegir", "castillo_reto", "fantasmas_puerta", "fantasmas_reto", "uno_reto", "escalera_question", "escalera_choose", "escalera_reto", "rosco_question", "pistas_setup", "pistas_category", "pistas_clue", "pistas_guess", "race", "oca", "hockey_defend", "bolos_frames", "aim_mode", "aim_ready", "aiming", "syn_question", "syn_timeout_review", "cups_guess") and not (room.get('game') in ('tesoros','laberinto','ppt','series','escondida','piedritas','motos','western','pueblos','flipper','rompebloques','bloques','feria','amigos','soldados','topo','cocinando','veoveo','cadena','stop','simon','mochila','vistiendo','muneco','grua','pool','metegol','dinosaurios','zombi','castillo','fantasmas','comepuntos','viborita','caballos','autitos','aviones','torre','ajedrez') and phase=='gameover') and not (room.get('game') in ('escalera','rosco','pistas','oca','aim','sapo','bolos','hockey','tejo','pingpong','tenis') and phase=='gameover'):
         return Response(status_code=409)
     memory_guard=(id(room.get(room.get('game'))),room.get(room.get('game'),{}).get('token')) if room.get('game') in ('tesoros','laberinto','ppt','series','escondida','piedritas','motos','western','pueblos','flipper','rompebloques','bloques','feria','amigos','soldados','topo','cocinando','veoveo','cadena','stop','simon','mochila','vistiendo') else None
+    mystery_token = room.get('misterio',{}).get('runs',{}).get(sender,{}).get('token') if room.get('misterio',{}).get('campaign') else None
     body = await request.body()
     if not body or len(body) > 3_000_000:
         return Response(status_code=400)
@@ -13308,7 +13348,7 @@ async def voice_answer(code: str, request: Request, sender: int = -1, bite_id: s
         await bb_answer(room, player, text)
         return {"heard": True, "text": text}
     if room["phase"] == "misterio":
-        await mst_guess(room, player, text)
+        await mst_guess(room, player, text,mystery_token)
         return {"heard": True, "text": text}
     if room["phase"] == "ahorcado":
         _, _, _, _, _, parse_guess = ah_helpers()
@@ -14524,6 +14564,7 @@ PAGE = """<!DOCTYPE html>
         <p id="ah-letras"></p>
         <label for="ah-input" id="ah-label">Escribí una letra o la palabra entera:</label><br>
         <input id="ah-input" type="text" autocomplete="off" aria-labelledby="ah-label">
+        <button id="ah-start" class="secondary">Empezar mi turno</button>
         <button id="btn-ah-mandar" aria-label="Mandar la letra o palabra escrita">Mandar</button>
         <button id="btn-ah-voz" class="secondary" aria-label="Decirla por voz, una letra o la palabra">Decirla por voz</button>
       </div>
@@ -14839,8 +14880,14 @@ PAGE = """<!DOCTYPE html>
         <p id="mst-titulo" role="status"></p>
         <p id="mst-caso"></p>
         <p id="mst-vidas"></p>
-        <label for="mst-input" id="mst-label">Escribí tu teoría:</label><br>
+        <label for="mst-input" id="mst-label">Escribí tu teoría privada:</label><br>
         <input id="mst-input" type="text" autocomplete="off" aria-labelledby="mst-label">
+        <p id="mst-category"></p><p id="mst-clock" aria-live="off"></p><button id="mst-time" class="secondary">Leer tiempo restante</button><p id="mst-private" role="status"></p>
+        <button id="mst-start" class="secondary">Empezar a responder</button>
+        <button id="mst-repeat" class="secondary">Repetir mi caso</button>
+        <button id="mst-hint" class="secondary">Pedir pista privada</button>
+        <button id="mst-progress" class="secondary">Escuchar marcador</button>
+        <p id="mst-scoreboard" aria-live="polite"></p>
         <button id="btn-mst-mandar" aria-label="Mandar teoría">Mandar teoría</button>
         <button id="btn-mst-voz" class="secondary" aria-label="Decirla por voz, tu teoría">Decirla por voz</button>
       </div>
@@ -15912,6 +15959,8 @@ function connect(code, name) {
     + "?name=" + encodeURIComponent(name || "")+"&difficulty="+encodeURIComponent(myDifficulty) + "&origin=" + encodeURIComponent(myOrigin) + "&seat_key=" + encodeURIComponent(seatKey) + "&spectator=" + (watching ? "true" : "false"));
   ws.onmessage = (ev) => {
     const msg = JSON.parse(ev.data);
+    if(msg.event==="mst-clock"){if(msg.token===lastState?.misterio?.token)$("mst-clock").textContent="Tiempo personal restante: "+msg.seconds+" segundos.";return;}
+    if(msg.event==="mst-progress"){$("mst-scoreboard").textContent=msg.text;return;}
     if (msg.event === "left") {
       farewell(msg.text,msg.audio);return;
     }
@@ -16156,7 +16205,7 @@ function onState(msg) {
   $("btn-empezar").hidden = !(msg.phase === "lobby" && msg.game && msg.players.some(p => !p.spectator && p.id === myId && msg.players.find(x => !x.spectator).id === myId) && msg.capacity !== 1);
   const host = msg.players.find(p => !p.spectator);
   const imHost = !!host && host.id === myId;
-  $("equipos-panel").hidden = msg.phase !== "lobby" || watching;
+  $("equipos-panel").hidden = msg.phase !== "lobby" || watching || ["misterio","ahorcado"].includes(msg.game);
   $("equipos-host").hidden = !imHost;
   $("equipos-count").value = String(msg.team_count || 0);
   $("equipo-propio").hidden = !msg.team_count;
@@ -16206,11 +16255,13 @@ function onState(msg) {
     }
     $("ah-tablero").textContent = ah.board;
     $("ah-tablero").setAttribute("aria-label", ah.board.split(" ").map((c,i)=>"Casillero "+(i+1)+": "+(c==="_"?"vacío":c)).join(". "));
-    $("ah-intentos").textContent = "Quedan " + ah.attempts + " intentos para esta palabra";
+    $("ah-intentos").textContent = "Quedan " + ah.attempts + " intentos para esta palabra"+(ah.campaign?". Campaña de cien desafíos. "+Object.entries(ah.progress||{}).map(([pid,r])=>(msg.players.find(p=>String(p.id)===pid)?.name||"Jugador")+": "+r.done+" terminados, "+r.correct+" aciertos").join(". "):"");
     $("ah-letras").textContent = ah.wrong.length ? "Letras que no están: " + ah.wrong.join(", ") : "";
-    $("btn-ah-mandar").disabled = !mine;
-    $("btn-ah-voz").disabled = !mine;
-    $("ah-input").disabled = !mine;
+    const ahReady=!ah.campaign||ah.clock_started;
+    $("btn-ah-mandar").disabled = !mine||!ahReady;
+    $("btn-ah-voz").disabled = !mine||!ahReady;
+    $("ah-input").disabled = !mine||!ahReady;
+    $("ah-start").hidden=!ah.campaign;$("ah-start").disabled=!mine||ahReady;
   }
   const tateti = msg.tateti;
   $("tateti").hidden = !(msg.game === "tateti" && tateti && !["lobby","gameover"].includes(msg.phase));
@@ -16696,6 +16747,7 @@ const siete = msg.siete;
     $("bb-input").disabled = !mine;
   }
   const mst = msg.misterio;
+  $("difficulty-panel").hidden=msg.game==="misterio"&&!!mst?.campaign;
   $("clima-panel").hidden=msg.game!=="paises";
   $("clima-escena").textContent=msg.country_scene_text || "El escenario aparece al comenzar la categoría.";
   syncRoomAmbience();
@@ -16704,14 +16756,26 @@ const siete = msg.siete;
     syncRoomAmbience();
     $("mst-titulo").textContent = "Misterio: " + mst.title;
     $("mst-caso").textContent = mst.case;
+    if(mst.campaign){
+      $("mst-category").textContent=mst.watching?"Espectador: solo se comparte el marcador.":"Ruleta de apartados: "+mst.category+". Tu caso "+mst.position+" de "+mst.total+". Orden sorteado compartido, avance individual.";
+      $("mst-clock").textContent=mst.ready?"Tiempo personal restante: "+mst.remaining+" segundos.":"Reloj personal en pausa.";
+      $("mst-private").textContent=(mst.feedback||"")+(mst.hint?" Pista privada: "+mst.hint:"");
+      $("mst-vidas").textContent=mst.watching?"":"Tus intentos: "+mst.lives+". Resueltos: "+mst.completed+" de "+mst.total+". "+(mst.ready?"Reloj personal en marcha.":"Reloj personal en pausa.");
+      const progress=mst.progress||[],high=Math.max(0,...progress.map(p=>p.solved)),leaders=progress.filter(p=>p.solved===high).map(p=>p.name);
+      $("mst-scoreboard").textContent=progress.map(p=>p.name+": "+p.solved+" de "+mst.total).join(". ")+". "+(high===0?"Todavía nadie resolvió el primer caso.":(leaders.length>1?"Van adelante empatados: ":"Va adelante: ")+leaders.join(", ")+".");
+      for(const id of ["btn-mst-mandar","btn-mst-voz","mst-input"])$(id).disabled=watching||mst.watching||!mst.ready||msg.phase!=="misterio";
+      for(const id of ["mst-start","mst-repeat","mst-hint","mst-progress"])$(id).disabled=watching||mst.watching||msg.phase!=="misterio";
+      $("mst-start").disabled=$("mst-start").disabled||mst.ready;
+    }else{
     const myLives = mst.lives && myId != null ? mst.lives[myId] : null;
     const owner = msg.team_count && me ? "equipo:" + me.team : myId;
     const mySolved = mst.solved && owner != null ? (mst.solved[owner] || 0) : 0;
     ["btn-mst-mandar", "btn-mst-voz", "mst-input"].forEach(id => $(id).disabled = watching || !!(me && me.out));
     $("mst-vidas").textContent = (myLives != null ? "Tus vidas: " + myLives + ". " : "") +
       "Casos tuyos: " + mySolved + " de " + mst.to_win + ".";
+    }
   }
-  if (newTurn && !party && !toy && !["tesoros","laberinto","ppt","series","escondida","piedritas","motos","western","pueblos","flipper","rompebloques","bloques","feria","amigos","soldados","topo", "cocinando","veoveo", "tesoros_setup", "laberinto_setup", "ppt_setup", "series_setup", "series_spin", "series_question", "escondida_setup", "escondida_hide", "escondida_search", "piedritas_setup", "motos_setup", "motos_reading", "motos_result", "western_setup", "western_reward", "western_result", "pueblos_setup", "pueblos_between", "pueblos_result", "flipper_setup", "flipper_result", "rompebloques_setup", "rompebloques_result", "rompebloques_between", "bloques_setup", "bloques_result", "feria_setup", "feria_result", "feria_between", "amigos_setup", "amigos_result", "amigos_between", "soldados_setup", "soldados_reward", "soldados_result", "topo_setup", "cocinando_setup", "veoveo_setup", "tesoros_result", "laberinto_result", "ppt_result", "piedritas_result", "topo_result", "cocinando_result", "veoveo_result", "cadena", "cadena_setup", "cadena_result", "stop", "stop_setup", "stop_review", "stop_result", "simon", "simon_setup", "mochila", "mochila_setup", "vistiendo", "vistiendo_setup", "muneco", "muneco_setup", "muneco_result", "grua", "grua_setup", "grua_result", "pool_setup", "pool_ready", "pool_aiming", "pool_result", "metegol_setup", "metegol_ready", "metegol_aiming", "metegol_result", "metegol_between", "dinosaurios_wave", "dinosaurios_result", "dinosaurios_pause", "dinosaurios_reward", "dinosaurios_retry", "zombi_wave", "zombi_result", "zombi_pause", "zombi_reward", "zombi_retry", "castillo_elegir", "castillo_reto", "castillo_giro", "castillo_result", "fantasmas_puerta", "fantasmas_reto", "fantasmas_giro", "fantasmas_result", "comepuntos", "comepuntos_result", "viborita", "viborita_result", "race", "race_result", "torre", "torre_result", "ajedrez", "ajedrez_result", "question", "escalera_question", "rosco_question", "pistas_clue", "pistas_guess", "pistas_setup", "pistas_category", "hockey_defend", "bolos_frames", "aim_mode", "aim_ready", "aiming", "spin_ready", "country_spin_ready", "verdad_reto_ready"].includes(msg.phase) && msg.phase !== "lobby" && msg.phase !== "gameover") { startClock(msg.game === "bomba" && bb ? bb.fuse : msg.game === "misterio" ? (msg.case_seconds||150) : (msg.turn_seconds||60)); startTicking(msg.game === "bomba" && bb ? bb.fuse : msg.game === "misterio" ? (msg.case_seconds||150) : (msg.turn_seconds||60)); }
+  if (!(msg.game==="misterio"&&mst?.campaign) && !(msg.game==="ahorcado"&&ah?.campaign) && newTurn && !party && !toy && !["tesoros","laberinto","ppt","series","escondida","piedritas","motos","western","pueblos","flipper","rompebloques","bloques","feria","amigos","soldados","topo", "cocinando","veoveo", "tesoros_setup", "laberinto_setup", "ppt_setup", "series_setup", "series_spin", "series_question", "escondida_setup", "escondida_hide", "escondida_search", "piedritas_setup", "motos_setup", "motos_reading", "motos_result", "western_setup", "western_reward", "western_result", "pueblos_setup", "pueblos_between", "pueblos_result", "flipper_setup", "flipper_result", "rompebloques_setup", "rompebloques_result", "rompebloques_between", "bloques_setup", "bloques_result", "feria_setup", "feria_result", "feria_between", "amigos_setup", "amigos_result", "amigos_between", "soldados_setup", "soldados_reward", "soldados_result", "topo_setup", "cocinando_setup", "veoveo_setup", "tesoros_result", "laberinto_result", "ppt_result", "piedritas_result", "topo_result", "cocinando_result", "veoveo_result", "cadena", "cadena_setup", "cadena_result", "stop", "stop_setup", "stop_review", "stop_result", "simon", "simon_setup", "mochila", "mochila_setup", "vistiendo", "vistiendo_setup", "muneco", "muneco_setup", "muneco_result", "grua", "grua_setup", "grua_result", "pool_setup", "pool_ready", "pool_aiming", "pool_result", "metegol_setup", "metegol_ready", "metegol_aiming", "metegol_result", "metegol_between", "dinosaurios_wave", "dinosaurios_result", "dinosaurios_pause", "dinosaurios_reward", "dinosaurios_retry", "zombi_wave", "zombi_result", "zombi_pause", "zombi_reward", "zombi_retry", "castillo_elegir", "castillo_reto", "castillo_giro", "castillo_result", "fantasmas_puerta", "fantasmas_reto", "fantasmas_giro", "fantasmas_result", "comepuntos", "comepuntos_result", "viborita", "viborita_result", "race", "race_result", "torre", "torre_result", "ajedrez", "ajedrez_result", "question", "escalera_question", "rosco_question", "pistas_clue", "pistas_guess", "pistas_setup", "pistas_category", "hockey_defend", "bolos_frames", "aim_mode", "aim_ready", "aiming", "spin_ready", "country_spin_ready", "verdad_reto_ready"].includes(msg.phase) && msg.phase !== "lobby" && msg.phase !== "gameover") { startClock(msg.game === "bomba" && bb ? bb.fuse : msg.game === "misterio" ? (msg.case_seconds||150) : (msg.turn_seconds||60)); startTicking(msg.game === "bomba" && bb ? bb.fuse : msg.game === "misterio" ? (msg.case_seconds||150) : (msg.turn_seconds||60)); }
   if (msg.phase === "lobby" || msg.phase === "gameover") { stopTicking(); lastHint = null; }
   if (msg.phase === "gameover") { clearInterval(timerInterval); $("temporizador").textContent = ""; }
   syncCardArtwork(msg);
@@ -17529,6 +17593,7 @@ function sendGuess() {
   ws.send(JSON.stringify({action: "guess", text: t}));
   $("ah-input").value = "";
 }
+$("ah-start").onclick=()=>{if(ws&&ws.readyState===1)ws.send(JSON.stringify({action:"ah-campaign-ready",token:lastState?.ahorcado?.reading_token}));};
 $("btn-ah-mandar").addEventListener("click", sendGuess);
 $("ah-input").addEventListener("keydown", (e) => { if (e.key === "Enter") sendGuess(); });
 
@@ -17538,7 +17603,7 @@ function sendVoiceText(text, pescaTiming=null) {
 function oneTapVoice(id) {
   $(id).addEventListener("click", async () => {
     if (micActive) return;
-    const pescaTiming=id==="btn-sd-voice"?{aim_token:lastState?.soldados?.token,release_ms:0}:id==="btn-ba-voice"?{aim_token:lastState?.amigos?.token,release_ms:0}:id==="btn-fr-voice"?{aim_token:lastState?.feria?.token,release_ms:0}:id==="btn-bq-voice"?{aim_token:lastState?.bloques?.token,release_ms:0}:id==="btn-rb-voice"?{aim_token:lastState?.rompebloques?.token,release_ms:0}:id==="btn-fp-voice"?{aim_token:lastState?.flipper?.token,release_ms:0}:id==="btn-pb-voice"?{aim_token:lastState?.pueblos?.token,release_ms:0}:id==="btn-wt-voice"?{aim_token:lastState?.western?.token,release_ms:0}:id==="btn-mt-voice"?{aim_token:lastState?.motos?.token,release_ms:0}:id==="btn-eh-voz"?{aim_token:lastState?.escondida?.token,release_ms:0}:id==="btn-pd-voz"&&pdLocal?{aim_token:pdLocal.token,release_ms:pdElapsed()}:id==="btn-pesca-voz"&&pescaBite?{bite_id:pescaBite,reaction_ms:pescaReaction()}:id==="btn-pl-voz"&&plLocal?{aim_token:plLocal.token,release_ms:plReaction()}:id==="btn-mg-voz"&&mgLocal?{aim_token:mgLocal.token,release_ms:mgReaction()}:id==="btn-aim-voz"&&aimLocal?{aim_token:aimLocal.token,release_ms:aimReaction()}:null;
+    const pescaTiming=id==="btn-mst-voz"?{mst_token:lastState?.misterio?.token}:id==="btn-sd-voice"?{aim_token:lastState?.soldados?.token,release_ms:0}:id==="btn-ba-voice"?{aim_token:lastState?.amigos?.token,release_ms:0}:id==="btn-fr-voice"?{aim_token:lastState?.feria?.token,release_ms:0}:id==="btn-bq-voice"?{aim_token:lastState?.bloques?.token,release_ms:0}:id==="btn-rb-voice"?{aim_token:lastState?.rompebloques?.token,release_ms:0}:id==="btn-fp-voice"?{aim_token:lastState?.flipper?.token,release_ms:0}:id==="btn-pb-voice"?{aim_token:lastState?.pueblos?.token,release_ms:0}:id==="btn-wt-voice"?{aim_token:lastState?.western?.token,release_ms:0}:id==="btn-mt-voice"?{aim_token:lastState?.motos?.token,release_ms:0}:id==="btn-eh-voz"?{aim_token:lastState?.escondida?.token,release_ms:0}:id==="btn-pd-voz"&&pdLocal?{aim_token:pdLocal.token,release_ms:pdElapsed()}:id==="btn-pesca-voz"&&pescaBite?{bite_id:pescaBite,reaction_ms:pescaReaction()}:id==="btn-pl-voz"&&plLocal?{aim_token:plLocal.token,release_ms:plReaction()}:id==="btn-mg-voz"&&mgLocal?{aim_token:mgLocal.token,release_ms:mgReaction()}:id==="btn-aim-voz"&&aimLocal?{aim_token:aimLocal.token,release_ms:aimReaction()}:null;
     unlockAudio();
     setMic(true);
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -17716,9 +17781,11 @@ $("bb-input").addEventListener("keydown", (e) => { if (e.key === "Enter") sendBo
 function sendMisterio() {
   const t = $("mst-input").value.trim();
   if (!t || !ws || ws.readyState !== 1) return;
-  ws.send(JSON.stringify({action: "guess", text: t}));
+  ws.send(JSON.stringify({action: "guess", text: t,mst_token:lastState?.misterio?.token}));
   $("mst-input").value = "";
 }
+for(const [id,kind]of [["mst-start","ready"],["mst-repeat","read"],["mst-hint","hint"],["mst-progress","progress"]])$(id).onclick=()=>{if(ws&&ws.readyState===1)ws.send(JSON.stringify({action:"mst-campaign",kind,token:lastState?.misterio?.token}));};
+$("mst-time").onclick=()=>announce($("mst-clock").textContent||"El reloj está en pausa.");
 $("btn-mst-mandar").addEventListener("click", sendMisterio);
 $("mst-input").addEventListener("keydown", (e) => { if (e.key === "Enter") sendMisterio(); });
 

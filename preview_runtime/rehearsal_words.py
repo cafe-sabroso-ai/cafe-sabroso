@@ -147,3 +147,8 @@ AHORCADO_LETTER_NAMES = {
     "te": "T", "u": "U", "uve": "V", "ve": "V", "equis": "X",
     "ye": "Y", "i griega": "Y", "zeta": "Z",
 }
+
+# Rehearsal-only original extensions.
+import json as _json
+from pathlib import Path as _Path
+AHORCADO_BANK += [tuple(x) for x in _json.loads(_Path(__file__).with_name("ahorcado_extra.json").read_text())]

@@ -1,0 +1,1378 @@
+[
+  {
+    "id": "m01",
+    "category": "Objetos fuera de lugar",
+    "title": "La llave viajera",
+    "story": "Ada deja una llave sobre una bandeja vacía. Bruno mueve la bandeja completa al armario sin tocar la llave. Nadie más entra. Ada vuelve al lugar original y no la encuentra. ¿Dónde debe buscar primero?",
+    "solution": "Dentro del armario, sobre la bandeja.",
+    "accepted": [
+      "Dentro del armario, sobre la bandeja.",
+      "en el armario",
+      "sobre la bandeja del armario"
+    ],
+    "hints": [
+      "Seguí el recipiente, no el lugar original.",
+      "La llave no se separó de la bandeja."
+    ],
+    "near": [
+      "bandeja",
+      "recipiente"
+    ],
+    "difficulty": 1,
+    "rejected": [
+      "en el suelo",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m02",
+    "category": "Objetos fuera de lugar",
+    "title": "La etiqueta suelta",
+    "story": "Hay dos cajas cerradas: té y tornillos. Cada una tenía la etiqueta correcta, pero alguien intercambió las dos etiquetas y nada más. Vera quiere té. ¿Abre la que ahora dice té o la que dice tornillos?",
+    "solution": "La que ahora dice tornillos.",
+    "accepted": [
+      "La que ahora dice tornillos.",
+      "la de tornillos",
+      "la caja etiquetada tornillos"
+    ],
+    "hints": [
+      "Cambió lo que dice afuera, no lo de adentro.",
+      "Las dos etiquetas fueron intercambiadas."
+    ],
+    "near": [
+      "etiqueta",
+      "cajas"
+    ],
+    "difficulty": 1,
+    "rejected": [
+      "la caja que dice te",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m03",
+    "category": "Objetos fuera de lugar",
+    "title": "El sobre en el libro",
+    "story": "Nico usa un sobre como señalador en un libro. Lo cierra y lo lleva a la biblioteca. Alguien guarda ese mismo libro en un cajón sin abrirlo. ¿Dónde está el sobre?",
+    "solution": "Dentro del libro que está en el cajón.",
+    "accepted": [
+      "Dentro del libro que está en el cajón.",
+      "dentro del libro",
+      "en el libro del cajon"
+    ],
+    "hints": [
+      "El último traslado fue del libro completo.",
+      "Nadie retiró el señalador."
+    ],
+    "near": [
+      "cajon",
+      "senalador"
+    ],
+    "difficulty": 1,
+    "rejected": [
+      "en la mochila",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m04",
+    "category": "Objetos fuera de lugar",
+    "title": "El bolsillo nuevo",
+    "story": "Lola puso una ficha en el bolsillo de su campera. Luego colgó esa campera y se puso otra con bolsillos vacíos. Sin buscar en la primera, dice que perdió la ficha. ¿Qué prenda debe revisar?",
+    "solution": "La primera campera, la que dejó colgada.",
+    "accepted": [
+      "La primera campera, la que dejó colgada.",
+      "la campera colgada",
+      "la primera campera"
+    ],
+    "hints": [
+      "Cambió de prenda, no cambió la ficha de bolsillo.",
+      "La segunda campera nunca tuvo la ficha."
+    ],
+    "near": [
+      "campera",
+      "bolsillo"
+    ],
+    "difficulty": 2,
+    "rejected": [
+      "la segunda campera",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m05",
+    "category": "Objetos fuera de lugar",
+    "title": "La marca de harina",
+    "story": "Un frasco cerrado de arroz estuvo sobre una base recién espolvoreada con harina. La base quedó con la marca circular del frasco. Después pusieron el frasco sobre una bandeja limpia sin harina. Una sola de las dos superficies tiene la marca. ¿Cuál?",
+    "solution": "La base donde estaba el frasco.",
+    "accepted": [
+      "La base donde estaba el frasco.",
+      "la base",
+      "la base con harina"
+    ],
+    "hints": [
+      "La marca se formó antes del traslado.",
+      "Mover el frasco no lleva consigo la harina que quedó alrededor."
+    ],
+    "near": [
+      "harina",
+      "marca"
+    ],
+    "difficulty": 2,
+    "rejected": [
+      "la bandeja limpia",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m06",
+    "category": "Objetos fuera de lugar",
+    "title": "La bolsa doblada",
+    "story": "Una tarjeta cae dentro de una bolsa abierta. Emi dobla la bolsa sin vaciarla y la guarda en una caja. ¿Qué debe desplegar después de abrir la caja para recuperar la tarjeta?",
+    "solution": "La bolsa doblada.",
+    "accepted": [
+      "La bolsa doblada.",
+      "la bolsa",
+      "desplegar la bolsa"
+    ],
+    "hints": [
+      "Abrir la caja es solo el primer paso.",
+      "La tarjeta cayó en el recipiente flexible."
+    ],
+    "near": [
+      "tarjeta",
+      "caja"
+    ],
+    "difficulty": 2,
+    "rejected": [
+      "la caja",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m07",
+    "category": "Objetos fuera de lugar",
+    "title": "Una rueda de más",
+    "story": "Un carrito tiene cuatro ruedas y un repuesto en un cajón. Se saca una rueda rota y se deja en el suelo. Se instala el repuesto. No se mueve nada más. ¿Qué queda en el cajón?",
+    "solution": "El cajón queda vacío.",
+    "accepted": [
+      "El cajón queda vacío.",
+      "nada",
+      "vacio",
+      "ninguna rueda"
+    ],
+    "hints": [
+      "El repuesto ya no está guardado.",
+      "La rueda rota quedó en el suelo."
+    ],
+    "near": [
+      "repuesto",
+      "suelo"
+    ],
+    "difficulty": 2,
+    "rejected": [
+      "la rueda rota",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m08",
+    "category": "Objetos fuera de lugar",
+    "title": "El retorno equivocado",
+    "story": "Las tijeras estaban en la caja A. Un empleado las lleva a la mesa B. Luego devuelve la caja A al estante, pero no devuelve las tijeras. ¿Dónde siguen las tijeras?",
+    "solution": "En la mesa B.",
+    "accepted": [
+      "En la mesa B.",
+      "mesa b",
+      "en b"
+    ],
+    "hints": [
+      "Devolver la caja no devuelve lo que no está dentro.",
+      "Las tijeras no salieron de la mesa después de usarse."
+    ],
+    "near": [
+      "caja",
+      "estante"
+    ],
+    "difficulty": 3,
+    "rejected": [
+      "en el estante",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m09",
+    "category": "Objetos fuera de lugar",
+    "title": "El llavero incompleto",
+    "story": "Dos llaves distintas cuelgan del mismo aro: patio y depósito. El aro se abre accidentalmente sobre una mesa. Una llave queda en la mesa y la otra sigue en el aro. La llave del patio ya no está en el aro y no cayó al suelo. ¿Qué llave está en la mesa?",
+    "solution": "La llave del patio.",
+    "accepted": [
+      "La llave del patio.",
+      "la del patio",
+      "patio",
+      "llave del patio"
+    ],
+    "hints": [
+      "Hay solo dos llaves y dos ubicaciones posibles.",
+      "La del patio no está en el aro ni en el suelo."
+    ],
+    "near": [
+      "aro",
+      "mesa"
+    ],
+    "difficulty": 3,
+    "rejected": [
+      "la llave del deposito",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m10",
+    "category": "Objetos fuera de lugar",
+    "title": "La funda vacía",
+    "story": "Sol saca una grabadora de su funda para cargarla en una repisa. Después guarda únicamente la funda en la mochila. Nadie mueve la grabadora. ¿Dónde quedó el aparato?",
+    "solution": "En la repisa donde se estaba cargando.",
+    "accepted": [
+      "En la repisa donde se estaba cargando.",
+      "en la repisa",
+      "la repisa"
+    ],
+    "hints": [
+      "Guardar el envase no mueve el aparato.",
+      "Su último lugar fue el de carga."
+    ],
+    "near": [
+      "funda",
+      "cargar"
+    ],
+    "difficulty": 3,
+    "rejected": [
+      "en la mochila",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m11",
+    "category": "Enigmas del café y la casa",
+    "title": "La jarra reservada",
+    "story": "Hay dos jarras: la primera tiene agua y la segunda está vacía. Julia vuelca toda el agua de la primera a la segunda, sin derramar. ¿Cuál queda vacía?",
+    "solution": "La primera jarra.",
+    "accepted": [
+      "La primera jarra.",
+      "la primera",
+      "primera"
+    ],
+    "hints": [
+      "Seguí el líquido hasta su nuevo recipiente.",
+      "La primera se vació por completo."
+    ],
+    "near": [
+      "jarra",
+      "agua"
+    ],
+    "difficulty": 1,
+    "rejected": [
+      "la segunda",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m12",
+    "category": "Enigmas del café y la casa",
+    "title": "Pan para cuatro",
+    "story": "Cuatro personas reciben un pan cada una, sin cortar ni compartir. Una se va llevando su pan. ¿Cuántos panes quedan con las personas que siguen en la mesa?",
+    "solution": "Tres panes.",
+    "accepted": [
+      "Tres panes.",
+      "tres",
+      "3"
+    ],
+    "hints": [
+      "Quien se fue llevó el suyo.",
+      "Quedan tres personas con un pan cada una."
+    ],
+    "near": [
+      "pan",
+      "mesa"
+    ],
+    "difficulty": 1,
+    "rejected": [
+      "cuatro",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m13",
+    "category": "Enigmas del café y la casa",
+    "title": "El turno del horno",
+    "story": "El horno admite una sola bandeja. La de galletas está dentro; faltan cinco minutos. La de pan espera afuera. No se interrumpe ninguna cocción. ¿Qué bandeja puede entrar después?",
+    "solution": "La bandeja de pan, cuando salgan las galletas.",
+    "accepted": [
+      "La bandeja de pan, cuando salgan las galletas.",
+      "el pan",
+      "la de pan"
+    ],
+    "hints": [
+      "Lo que espera afuera todavía no se cocina.",
+      "Primero termina la bandeja que ocupa el horno."
+    ],
+    "near": [
+      "horno",
+      "bandeja"
+    ],
+    "difficulty": 1,
+    "rejected": [
+      "las galletas",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m14",
+    "category": "Enigmas del café y la casa",
+    "title": "La sopa que volvió",
+    "story": "En el café se retiraron tres platos de sopa: uno vacío de Ana, otro vacío de Beto y uno lleno de Ciro. Nadie cambió ni compartió platos y todos recibieron la misma cantidad. ¿Quién no tomó su sopa?",
+    "solution": "Ciro.",
+    "accepted": [
+      "Ciro.",
+      "ciro",
+      "fue ciro"
+    ],
+    "hints": [
+      "Buscá el plato que volvió sin consumir.",
+      "Solo uno se retiró lleno."
+    ],
+    "near": [
+      "plato",
+      "lleno"
+    ],
+    "difficulty": 2,
+    "rejected": [
+      "ana",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m15",
+    "category": "Enigmas del café y la casa",
+    "title": "La mesa que espera",
+    "story": "Una reserva se libera exactamente a las ocho si nadie llegó. Son las siete y cincuenta y cinco y la mesa sigue vacía. ¿Cuántos minutos faltan para liberarla?",
+    "solution": "Cinco minutos.",
+    "accepted": [
+      "Cinco minutos.",
+      "cinco",
+      "5"
+    ],
+    "hints": [
+      "Compará siete y cincuenta y cinco con ocho.",
+      "No hay que esperar una hora completa."
+    ],
+    "near": [
+      "ocho",
+      "reserva"
+    ],
+    "difficulty": 2,
+    "rejected": [
+      "diez",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m16",
+    "category": "Enigmas del café y la casa",
+    "title": "La compra pendiente",
+    "story": "Mara necesita seis cucharas. Tiene dos limpias y tres sucias que puede lavar. Compra solo las que falten después de lavar. ¿Cuántas compra?",
+    "solution": "Una cuchara.",
+    "accepted": [
+      "Una cuchara.",
+      "una",
+      "1"
+    ],
+    "hints": [
+      "Las sucias no están perdidas.",
+      "Después de lavar tendrá cinco utilizables."
+    ],
+    "near": [
+      "cucharas",
+      "lavar"
+    ],
+    "difficulty": 2,
+    "rejected": [
+      "dos",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m17",
+    "category": "Enigmas del café y la casa",
+    "title": "La puerta entreabierta",
+    "story": "La puerta del depósito se cierra sola salvo que tenga una cuña. Al irse Eva, quedó abierta. No hubo viento, falla ni nadie sosteniéndola. Entre dos objetos, una cuña y una escoba que no toca la puerta, ¿cuál explica que siguiera abierta?",
+    "solution": "La cuña.",
+    "accepted": [
+      "La cuña.",
+      "la cuna",
+      "una cuna",
+      "cuna"
+    ],
+    "hints": [
+      "Solo uno de los objetos impide que la puerta se cierre.",
+      "La escoba no toca la puerta."
+    ],
+    "near": [
+      "puerta",
+      "sostener"
+    ],
+    "difficulty": 2,
+    "rejected": [
+      "la escoba",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m18",
+    "category": "Enigmas del café y la casa",
+    "title": "La taza que no salió",
+    "story": "Hay tres tazas preparadas, una para cada mesa A, B y C. El mozo lleva dos: una a A y otra a C, sin confundirlas. Queda una taza en la barra. ¿Para qué mesa es?",
+    "solution": "Para la mesa B.",
+    "accepted": [
+      "Para la mesa B.",
+      "mesa b",
+      "b",
+      "la b",
+      "para b"
+    ],
+    "hints": [
+      "Dos mesas ya recibieron la suya.",
+      "La mesa que falta está entre A y C."
+    ],
+    "near": [
+      "mesa",
+      "barra"
+    ],
+    "difficulty": 3,
+    "rejected": [
+      "mesa a",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m19",
+    "category": "Enigmas del café y la casa",
+    "title": "El desayuno adelantado",
+    "story": "Rita prepara el desayuno diez minutos antes de una alarma fijada a las ocho. No cambia la alarma. ¿A qué hora prepara el desayuno?",
+    "solution": "A las siete y cincuenta.",
+    "accepted": [
+      "A las siete y cincuenta.",
+      "siete cincuenta",
+      "7 50",
+      "a las siete y cincuenta"
+    ],
+    "hints": [
+      "Retrocedé diez minutos desde las ocho.",
+      "No es siete y diez."
+    ],
+    "near": [
+      "alarma",
+      "diez"
+    ],
+    "difficulty": 3,
+    "rejected": [
+      "a las ocho y diez",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m20",
+    "category": "Enigmas del café y la casa",
+    "title": "El estante equivocado",
+    "story": "La heladera del juego tiene dos estantes, Ana y Beto. Solo Ana puso leche hoy y solo Beto puso yogur. Al revisar, ambos productos están juntos en el estante de Beto. Si solo uno se guardó en el estante ajeno, ¿cuál fue?",
+    "solution": "La leche de Ana.",
+    "accepted": [
+      "La leche de Ana.",
+      "la leche",
+      "leche",
+      "leche de ana"
+    ],
+    "hints": [
+      "El yogur está donde corresponde a quien lo guardó.",
+      "El producto de Ana terminó en el estante de Beto."
+    ],
+    "near": [
+      "estante",
+      "producto"
+    ],
+    "difficulty": 3,
+    "rejected": [
+      "el yogur",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m21",
+    "category": "Viajes y encuentros",
+    "title": "La parada adelantada",
+    "story": "Un micro sigue A, B, C y D en ese orden, sin volver atrás. Elena sube en B y baja en la parada siguiente. ¿En cuál baja?",
+    "solution": "En C.",
+    "accepted": [
+      "En C.",
+      "c",
+      "la c",
+      "parada c"
+    ],
+    "hints": [
+      "El viaje de Elena empieza en B.",
+      "Después de B viene C."
+    ],
+    "near": [
+      "siguiente",
+      "orden"
+    ],
+    "difficulty": 1,
+    "rejected": [
+      "b",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m22",
+    "category": "Viajes y encuentros",
+    "title": "La valija acompañada",
+    "story": "Tomi y Luz viajan con una sola valija. Tomi baja en Norte y Luz sigue con la valija hasta Sur. Nadie más la toca. ¿En qué estación baja la valija?",
+    "solution": "En Sur, con Luz.",
+    "accepted": [
+      "En Sur, con Luz.",
+      "sur",
+      "en sur"
+    ],
+    "hints": [
+      "Seguí a quien conservó el equipaje.",
+      "La valija no bajó con Tomi."
+    ],
+    "near": [
+      "luz",
+      "valija"
+    ],
+    "difficulty": 1,
+    "rejected": [
+      "norte",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m23",
+    "category": "Viajes y encuentros",
+    "title": "El cartel del andén",
+    "story": "Dos carteles indican destinos: el uno dice Norte y el dos dice Sur. El personal confirma que uno de los carteles está mal y que ambos trenes van al Norte. ¿Qué cartel está mal?",
+    "solution": "El del andén dos, que dice Sur.",
+    "accepted": [
+      "El del andén dos, que dice Sur.",
+      "el dos",
+      "dos",
+      "2",
+      "el de sur"
+    ],
+    "hints": [
+      "Solo hay un destino real para ambos trenes.",
+      "Compará cada cartel con Norte."
+    ],
+    "near": [
+      "cartel",
+      "destino"
+    ],
+    "difficulty": 1,
+    "rejected": [
+      "el uno",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m24",
+    "category": "Viajes y encuentros",
+    "title": "La espera corta",
+    "story": "Iván llega a la parada a las nueve y diez. El colectivo llega puntualmente a las nueve y veinticinco. ¿Cuántos minutos espera?",
+    "solution": "Quince minutos.",
+    "accepted": [
+      "Quince minutos.",
+      "quince",
+      "15"
+    ],
+    "hints": [
+      "Restá minutos dentro de la misma hora.",
+      "Veinticinco menos diez."
+    ],
+    "near": [
+      "espera",
+      "horario"
+    ],
+    "difficulty": 2,
+    "rejected": [
+      "veinte",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m25",
+    "category": "Viajes y encuentros",
+    "title": "La silla de Paz",
+    "story": "Nora dejó dos sobres, uno para Paz y otro para Uli, en sillas distintas. El de Paz tenía una cinta; el de Uli no. Una persona se llevó el sobre sin cinta y nadie movió el otro. ¿De quién es el sobre que sigue en la silla?",
+    "solution": "De Paz.",
+    "accepted": [
+      "De Paz.",
+      "paz",
+      "de paz",
+      "el de paz"
+    ],
+    "hints": [
+      "La cinta permite distinguirlos sin abrirlos.",
+      "El que no tenía cinta ya no está."
+    ],
+    "near": [
+      "cinta",
+      "sobre"
+    ],
+    "difficulty": 2,
+    "rejected": [
+      "uli",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m26",
+    "category": "Viajes y encuentros",
+    "title": "La ruta cerrada",
+    "story": "Del café a la plaza solo hay dos caminos permitidos: el puente y la calle larga. Antes de salir se cierra el puente. No se puede salir de los caminos. ¿Por dónde pueden ir?",
+    "solution": "Por la calle larga.",
+    "accepted": [
+      "Por la calle larga.",
+      "la calle larga",
+      "calle larga"
+    ],
+    "hints": [
+      "Uno de los caminos dejó de estar disponible.",
+      "No se puede inventar un tercero."
+    ],
+    "near": [
+      "puente",
+      "camino"
+    ],
+    "difficulty": 2,
+    "rejected": [
+      "por el puente",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m27",
+    "category": "Viajes y encuentros",
+    "title": "El paraguas del museo",
+    "story": "El café no presta paraguas y el museo sí. Sol sale del café sin paraguas, va directo al museo y vuelve con uno prestado. No visita otro lugar ni se cruza con nadie. ¿Qué lugar se lo prestó?",
+    "solution": "El museo.",
+    "accepted": [
+      "El museo.",
+      "museo",
+      "el museo",
+      "en el museo"
+    ],
+    "hints": [
+      "Descartá el lugar que no presta.",
+      "Solo visitó dos lugares."
+    ],
+    "near": [
+      "paraguas",
+      "prestado"
+    ],
+    "difficulty": 2,
+    "rejected": [
+      "en el cafe",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m28",
+    "category": "Viajes y encuentros",
+    "title": "Un asiento reservado",
+    "story": "Hay ocho asientos para pasajeros. Seis están ocupados y otro está reservado y no puede ocuparse. No hay más reservas. ¿Cuántos puede elegir una persona nueva?",
+    "solution": "Uno.",
+    "accepted": [
+      "Uno.",
+      "uno",
+      "1",
+      "un asiento"
+    ],
+    "hints": [
+      "Un asiento vacío puede no estar disponible.",
+      "Ocho menos seis menos una reserva."
+    ],
+    "near": [
+      "asiento",
+      "reserva"
+    ],
+    "difficulty": 3,
+    "rejected": [
+      "dos",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m29",
+    "category": "Viajes y encuentros",
+    "title": "La entrega en orden",
+    "story": "Un mensajero debe entregar primero en A y después en B. Sale desde B hacia A llevando ambos paquetes y no cambia el orden acordado. ¿Dónde hace la primera entrega?",
+    "solution": "En el local A.",
+    "accepted": [
+      "En el local A.",
+      "a",
+      "local a",
+      "en a"
+    ],
+    "hints": [
+      "Estar en B no obliga a entregar allí.",
+      "El orden de entregas está especificado."
+    ],
+    "near": [
+      "entrega",
+      "orden"
+    ],
+    "difficulty": 3,
+    "rejected": [
+      "en b",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m30",
+    "category": "Viajes y encuentros",
+    "title": "La demora explicada",
+    "story": "Un viaje debía durar veinte minutos. El vehículo avanzó esos veinte minutos y además estuvo detenido diez, sin avanzar. No hubo ningún otro retraso. ¿Cuántos minutos tardó en total?",
+    "solution": "Treinta minutos.",
+    "accepted": [
+      "Treinta minutos.",
+      "treinta",
+      "30",
+      "media hora"
+    ],
+    "hints": [
+      "Sumá tiempo en movimiento y tiempo detenido.",
+      "Veinte más diez."
+    ],
+    "near": [
+      "demora",
+      "detenido"
+    ],
+    "difficulty": 3,
+    "rejected": [
+      "veinte",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m31",
+    "category": "Mensajes y pistas",
+    "title": "La cuenta de las tazas",
+    "story": "Una nota de control marca cinco tazas entregadas. En la barra estaban ocho y ahora quedan tres. No se rompió ninguna ni se prepararon otras. ¿La nota coincide con el cambio de la barra? Respondé sí o no.",
+    "solution": "Sí, faltan cinco y fueron entregadas.",
+    "accepted": [
+      "Sí, faltan cinco y fueron entregadas.",
+      "si",
+      "si coincide",
+      "coincide"
+    ],
+    "hints": [
+      "Compará la cantidad inicial con la final.",
+      "Ocho menos tres da cinco."
+    ],
+    "near": [
+      "cuenta",
+      "barra"
+    ],
+    "difficulty": 1,
+    "rejected": [
+      "no",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m32",
+    "category": "Mensajes y pistas",
+    "title": "El aviso que llegó tarde",
+    "story": "La entrada de un encuentro cierra a las diez y los mensajes dicen su hora de envío. El de Ada se envió a las nueve y cincuenta, el de Bruno a las diez y diez. Ninguno se reenviaba ni tenía demora. ¿Quién avisó después del cierre?",
+    "solution": "Bruno.",
+    "accepted": [
+      "Bruno.",
+      "bruno",
+      "fue bruno"
+    ],
+    "hints": [
+      "Compará los dos horarios con las diez.",
+      "Diez y diez ya es posterior al cierre."
+    ],
+    "near": [
+      "hora",
+      "cierre"
+    ],
+    "difficulty": 1,
+    "rejected": [
+      "ada",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m33",
+    "category": "Mensajes y pistas",
+    "title": "La clave del cajón",
+    "story": "La clave tiene dos cifras: cantidad de letras de SOL, seguida de cantidad de letras de LUNA. No se suman. ¿Cuál es?",
+    "solution": "34.",
+    "accepted": [
+      "34.",
+      "tres cuatro",
+      "treinta y cuatro",
+      "3 4"
+    ],
+    "hints": [
+      "Contá las palabras por separado.",
+      "SOL tiene tres letras y LUNA cuatro."
+    ],
+    "near": [
+      "letras",
+      "sol"
+    ],
+    "difficulty": 1,
+    "rejected": [
+      "7",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m34",
+    "category": "Mensajes y pistas",
+    "title": "La firma que falta",
+    "story": "Tres pedidos pertenecen a Lea, Omar y Paz, uno a cada persona. Dos están firmados: uno por Lea y otro por Paz. Nadie firmó por otro y no hay duplicados. ¿De quién es el pedido sin firma?",
+    "solution": "De Omar.",
+    "accepted": [
+      "De Omar.",
+      "omar",
+      "de omar",
+      "el de omar"
+    ],
+    "hints": [
+      "Cada persona tiene exactamente un pedido.",
+      "Lea y Paz ya están identificadas."
+    ],
+    "near": [
+      "firma",
+      "pedido"
+    ],
+    "difficulty": 2,
+    "rejected": [
+      "lea",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m35",
+    "category": "Mensajes y pistas",
+    "title": "La palabra repetida",
+    "story": "Elegí la única palabra repetida en la lista: mesa, taza, silla, taza, banco. ¿Cuál es?",
+    "solution": "Taza.",
+    "accepted": [
+      "Taza.",
+      "taza"
+    ],
+    "hints": [
+      "Contá apariciones, no letras.",
+      "Es un recipiente mencionado dos veces."
+    ],
+    "near": [
+      "lista",
+      "recipiente"
+    ],
+    "difficulty": 2,
+    "rejected": [
+      "mesa",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m36",
+    "category": "Mensajes y pistas",
+    "title": "La visita anterior",
+    "story": "En el registro de visitas, una línea dice que Vera entró antes que Dani. Otra dice que Dani entró antes que Sol. No entraron a la vez. ¿Quién entró última entre las tres?",
+    "solution": "Sol.",
+    "accepted": [
+      "Sol.",
+      "sol",
+      "fue sol"
+    ],
+    "hints": [
+      "Ordená los nombres usando antes que.",
+      "Vera precede a Dani y Dani a Sol."
+    ],
+    "near": [
+      "registro",
+      "antes"
+    ],
+    "difficulty": 2,
+    "rejected": [
+      "dani",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m37",
+    "category": "Mensajes y pistas",
+    "title": "El sobre que pesa",
+    "story": "Tres sobres vacíos pesan lo mismo. Luego se colocan en ellos fichas idénticas: una en el primero, dos en el segundo y tres en el tercero. El mensaje dice que se entregó el más pesado y que ninguno tenía otro contenido. ¿Cuántas fichas tenía el entregado?",
+    "solution": "Tres fichas.",
+    "accepted": [
+      "Tres fichas.",
+      "tres",
+      "3"
+    ],
+    "hints": [
+      "El peso depende aquí solo del número de fichas.",
+      "Más fichas iguales significa mayor peso."
+    ],
+    "near": [
+      "sobre",
+      "peso"
+    ],
+    "difficulty": 2,
+    "rejected": [
+      "dos",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m38",
+    "category": "Mensajes y pistas",
+    "title": "El recado desmentido",
+    "story": "Un recado afirma que el patio está seco y el depósito mojado. La encargada confirma que las dos afirmaciones son falsas. ¿Está seco o mojado el patio? Solo existen esas dos posibilidades en este juego.",
+    "solution": "El patio está mojado.",
+    "accepted": [
+      "El patio está mojado.",
+      "mojado",
+      "esta mojado",
+      "el patio mojado"
+    ],
+    "hints": [
+      "Invertí solo la afirmación sobre el patio.",
+      "Si no está seco y solo hay dos estados, queda el otro."
+    ],
+    "near": [
+      "patio",
+      "falso"
+    ],
+    "difficulty": 3,
+    "rejected": [
+      "seco",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m39",
+    "category": "Mensajes y pistas",
+    "title": "Las iniciales del pedido",
+    "story": "El código se forma con la primera letra de pan, agua y sal, en ese orden, sin usar cantidades. ¿Qué código resulta?",
+    "solution": "PAS.",
+    "accepted": [
+      "PAS.",
+      "p a s",
+      "pe a ese",
+      "pas"
+    ],
+    "hints": [
+      "Tomá una letra de cada palabra.",
+      "Pan aporta P, agua A y sal S."
+    ],
+    "near": [
+      "iniciales",
+      "codigo"
+    ],
+    "difficulty": 3,
+    "rejected": [
+      "sap",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m40",
+    "category": "Mensajes y pistas",
+    "title": "La copia sin firma",
+    "story": "Hay dos copias idénticas de una autorización, pero solo una está firmada. La regla exige llevar la firmada. Ari se llevó la que no tiene firma. ¿Qué copia debe cambiar por la otra?",
+    "solution": "La copia sin firma que llevó Ari.",
+    "accepted": [
+      "La copia sin firma que llevó Ari.",
+      "la sin firma",
+      "la copia sin firma",
+      "sin firma"
+    ],
+    "hints": [
+      "No se cuestiona el texto sino el requisito de firma.",
+      "La copia útil es la que quedó."
+    ],
+    "near": [
+      "copia",
+      "firma"
+    ],
+    "difficulty": 3,
+    "rejected": [
+      "la firmada",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m41",
+    "category": "Lógica de todos los días",
+    "title": "Las tazas en fila",
+    "story": "Hay tres tazas en fila. La de Ana está antes que la de Beto y la de Beto antes que la de Cami. ¿De quién es la taza del medio?",
+    "solution": "De Beto.",
+    "accepted": [
+      "De Beto.",
+      "beto",
+      "de beto"
+    ],
+    "hints": [
+      "Ordená los tres nombres.",
+      "Ana va primera y Cami última."
+    ],
+    "near": [
+      "fila",
+      "orden"
+    ],
+    "difficulty": 1,
+    "rejected": [
+      "ana",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m42",
+    "category": "Lógica de todos los días",
+    "title": "La única persona posible",
+    "story": "Solo Ana, Beto y Ciro pudieron guardar un paquete. Ana estuvo fuera todo el día y Ciro no entró al local. Los registros son correctos y uno de los tres lo guardó. ¿Quién?",
+    "solution": "Beto.",
+    "accepted": [
+      "Beto.",
+      "beto",
+      "fue beto"
+    ],
+    "hints": [
+      "Eliminá a quienes no pudieron estar.",
+      "De los tres nombres solo queda uno."
+    ],
+    "near": [
+      "paquete",
+      "registro"
+    ],
+    "difficulty": 1,
+    "rejected": [
+      "ana",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m43",
+    "category": "Lógica de todos los días",
+    "title": "La caja suficiente",
+    "story": "Hay que guardar siete fichas. La caja chica admite cinco y la grande diez. Hay que usar una sola y no dejar ninguna ficha afuera. ¿Cuál sirve?",
+    "solution": "La caja grande.",
+    "accepted": [
+      "La caja grande.",
+      "grande",
+      "la grande"
+    ],
+    "hints": [
+      "Compará siete con cada capacidad.",
+      "Cinco lugares no alcanzan."
+    ],
+    "near": [
+      "capacidad",
+      "fichas"
+    ],
+    "difficulty": 1,
+    "rejected": [
+      "la chica",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m44",
+    "category": "Lógica de todos los días",
+    "title": "La bolsa más pesada",
+    "story": "Dos bolsas vacías pesan lo mismo. En una ponen tres libros idénticos y en la otra un libro del mismo tipo. No contienen nada más. ¿Cuál pesa más: la de tres libros o la de uno?",
+    "solution": "La de tres libros.",
+    "accepted": [
+      "La de tres libros.",
+      "la de tres",
+      "tres libros",
+      "la bolsa de tres libros"
+    ],
+    "hints": [
+      "El envase no hace diferencia.",
+      "Tres libros iguales pesan más que uno."
+    ],
+    "near": [
+      "libros",
+      "bolsa"
+    ],
+    "difficulty": 2,
+    "rejected": [
+      "la de uno",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m45",
+    "category": "Lógica de todos los días",
+    "title": "El lugar libre",
+    "story": "Una fila tiene cuatro lugares. Ana ocupa el primero, Beto el último y Ciro el segundo. Nadie comparte lugar. ¿Qué posición queda libre?",
+    "solution": "La tercera.",
+    "accepted": [
+      "La tercera.",
+      "tercera",
+      "el tercero",
+      "tercero",
+      "3",
+      "tres"
+    ],
+    "hints": [
+      "Escribí ocupadas las posiciones uno, cuatro y dos.",
+      "La libre está entre Ciro y Beto."
+    ],
+    "near": [
+      "fila",
+      "posicion"
+    ],
+    "difficulty": 2,
+    "rejected": [
+      "primera",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m46",
+    "category": "Lógica de todos los días",
+    "title": "La única combinación",
+    "story": "Una puerta abre con una llave o con una tarjeta, cualquiera de las dos alcanza. Vera no tiene llave, pero sí la tarjeta correcta. ¿Puede abrirla según esa regla? Respondé sí o no.",
+    "solution": "Sí, con la tarjeta alcanza.",
+    "accepted": [
+      "Sí, con la tarjeta alcanza.",
+      "si",
+      "si puede",
+      "puede"
+    ],
+    "hints": [
+      "Esta regla dice o, no exige ambas cosas juntas.",
+      "Tiene uno de los medios válidos."
+    ],
+    "near": [
+      "tarjeta",
+      "regla"
+    ],
+    "difficulty": 2,
+    "rejected": [
+      "no",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m47",
+    "category": "Lógica de todos los días",
+    "title": "El orden invertido",
+    "story": "Una grabación enumera río, puente, café. La lista se reproduce en orden inverso, sin invertir las letras de las palabras. ¿Qué palabra se escucha primero?",
+    "solution": "Café.",
+    "accepted": [
+      "Café.",
+      "cafe"
+    ],
+    "hints": [
+      "Invertí elementos, no pronunciaciones.",
+      "El último elemento original pasa al principio."
+    ],
+    "near": [
+      "inverso",
+      "lista"
+    ],
+    "difficulty": 2,
+    "rejected": [
+      "rio",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m48",
+    "category": "Lógica de todos los días",
+    "title": "El reparto que sobra",
+    "story": "Hay nueve fichas y dos personas reciben cuatro cada una. Ninguna devuelve ni pierde fichas. ¿Cuántas quedan sin repartir?",
+    "solution": "Una ficha.",
+    "accepted": [
+      "Una ficha.",
+      "una",
+      "1"
+    ],
+    "hints": [
+      "Se repartieron dos grupos de cuatro.",
+      "Nueve menos ocho."
+    ],
+    "near": [
+      "fichas",
+      "reparto"
+    ],
+    "difficulty": 3,
+    "rejected": [
+      "dos",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m49",
+    "category": "Lógica de todos los días",
+    "title": "El casillero compatible",
+    "story": "Los casilleros A, B y C admiten objetos de hasta diez, veinte y treinta centímetros, respectivamente. Un objeto mide veinticinco y no se puede doblar. ¿En cuál cabe?",
+    "solution": "En C.",
+    "accepted": [
+      "En C.",
+      "c",
+      "casillero c",
+      "el c"
+    ],
+    "hints": [
+      "Veinticinco supera dos de los límites.",
+      "Solo lo admite el de treinta."
+    ],
+    "near": [
+      "largo",
+      "limite"
+    ],
+    "difficulty": 3,
+    "rejected": [
+      "b",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  },
+  {
+    "id": "m50",
+    "category": "Lógica de todos los días",
+    "title": "La tarea necesaria",
+    "story": "Para entregar una carta hay que escribirla, ponerla en un sobre y cerrar el sobre, en ese orden. La carta ya está escrita y dentro del sobre, que sigue abierto. ¿Qué paso falta?",
+    "solution": "Cerrar el sobre.",
+    "accepted": [
+      "Cerrar el sobre.",
+      "cerrar sobre",
+      "cerrar el sobre",
+      "cerrarlo"
+    ],
+    "hints": [
+      "Los dos primeros pasos ya se hicieron.",
+      "Todavía se puede abrir el sobre sin romper nada."
+    ],
+    "near": [
+      "carta",
+      "sobre"
+    ],
+    "difficulty": 3,
+    "rejected": [
+      "escribir la carta",
+      "un avion invisible",
+      "una silla espacial"
+    ],
+    "review_status": "Borrador original para revisión de Rocky; dificultad sin medir"
+  }
+]

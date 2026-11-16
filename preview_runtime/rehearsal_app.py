@@ -15,6 +15,16 @@ async def synthesize(text,voice=None):
 rehearsal_words.synthesize=synthesize
 sys.modules['app']=rehearsal_words
 import webapp
+import mystery_race,hangman_campaign
+mystery_race.install(webapp)
+hangman_campaign.install(webapp)
+# Keep live descriptions aligned with the rehearsal rules.
+for _game,_description in {
+ 'ahorcado':'Ensayo largo de Ahorcado: cien palabras distintas por persona, sin repetir. Cada desafío termina al acertar o agotar intentos; el marcador cuenta solo aciertos. La palabra y sus intentos se conservan al pasar el turno. El recorrido termina sin reiniciarse solo. Son cinco tramos por longitud, no cien dificultades medidas. Solo o carrera de progreso individual, sin puntaje de equipo en este ensayo.',
+ 'misterio':'Misterio: cincuenta casos originales de lógica y observación, en cinco apartados para revisar con Rocky. Carrera individual: el mismo orden sorteado para todos, cada persona avanza al acertar y gana quien complete los cincuenta primero. Lecturas, respuestas y pistas privadas; solo nombres y cantidad resuelta se comparten. Una frase no revisada no se penaliza ni se acepta automáticamente. Todos disponen de ciento cincuenta segundos por intento; la dificultad no está medida. Sin rival máquina ni equipos en esta carrera. El reloj personal espera la lectura y puede iniciarse con un botón.'
+}.items():
+ webapp.PAGE=webapp.PAGE.replace(webapp.GAME_DESCRIPTIONS[_game],_description)
+ webapp.GAME_DESCRIPTIONS[_game]=_description
 app=FastAPI(title='Ensayo de mejoras de Corazón')
 app.include_router(webapp.router)
 @app.get('/')
@@ -30,12 +40,14 @@ webapp.PAGE=webapp.PAGE.replace('</body>', '''<script>
   if(!chosen.has(key)){b.disabled=true;const card=b.closest('.cm-card');if(card)card.hidden=true;}
  }
  const note=document.getElementById('corazon-trial-note');
+ note.querySelector('p').textContent='Borrador local para revisión, no aprobado ni publicado. Ahorcado: cien palabras únicas por persona, cien desafíos, aciertos por separado. Misterio: carrera individual de cincuenta casos de lógica y observación en cinco apartados; teorías y pistas privadas, solo marcador compartido. Equipos y rival máquina no están incluidos en esta carrera. Las partidas se pierden si se reinicia el servidor. Bomba conserva sus tiempos.';
  document.querySelector('main').prepend(note);
  const actions=document.createElement('div');
  for(const [key,label] of [['ahorcado','Probar El ahorcado'],['bomba','Probar La bomba'],['misterio','Probar Resolver el misterio']]){
   const b=document.createElement('button');b.textContent=label;b.onclick=()=>{pendingMode='solo';unlockAudio();document.getElementById('btn-modo-'+key).click();};actions.appendChild(b);
  }
  note.appendChild(actions);
+ const privacy=document.createElement('p');privacy.textContent='La privacidad es entre dispositivos: si están en el mismo lugar, usen auriculares. El chat general comparte lo que mandes allí. Los casos no se envían al chat. Banco de lógica inicial, dificultad no medida y formas de respuesta por revisar.';note.appendChild(privacy);
  const label=document.createElement('label');label.textContent='Cómo querés que te despidamos: ';
  const select=document.createElement('select');select.setAttribute('aria-label','Trato en las despedidas');
  for(const [value,text] of [['neutral','Con mi nombre, sin género'],['femenino','Amiga'],['masculino','Amigo']]){const option=document.createElement('option');option.value=value;option.textContent=text;select.appendChild(option);}
