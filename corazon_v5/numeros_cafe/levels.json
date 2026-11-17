@@ -1,0 +1,42 @@
+[
+  {
+    "level": 1,
+    "label": "Primeros pasos"
+  },
+  {
+    "level": 2,
+    "label": "Fácil"
+  },
+  {
+    "level": 3,
+    "label": "Práctica inicial"
+  },
+  {
+    "level": 4,
+    "label": "Intermedio inicial"
+  },
+  {
+    "level": 5,
+    "label": "Intermedio"
+  },
+  {
+    "level": 6,
+    "label": "Intermedio alto"
+  },
+  {
+    "level": 7,
+    "label": "Difícil inicial"
+  },
+  {
+    "level": 8,
+    "label": "Varios pasos"
+  },
+  {
+    "level": 9,
+    "label": "Gran desafío"
+  },
+  {
+    "level": 10,
+    "label": "Desafío experto"
+  }
+]

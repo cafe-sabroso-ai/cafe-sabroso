@@ -14220,6 +14220,7 @@ PAGE = """<!DOCTYPE html>
     </section>
 
     <section id="pantalla-modo" hidden aria-label="A qué querés jugar">
+      <p><a id="link-numeros-cafe" href="/numeros-cafe/">Números al Café: sumas, restas, multiplicaciones, divisiones y problemas</a>. 2500 ejercicios, individual o con amistades; dificultad automática en diez tramos.</p>
       <p><a id="link-ruleta-cafe" href="/ruleta-cafe/">La Ruleta del Café: siete categorías, individual o con amistades por enlace</a>. Tres vidas y treinta segundos activos por pregunta.</p>
       <p><a id="link-macetas" href="/jardin/">Macetas al Ataque: campaña individual de 30 niveles y 13 personajes</a>. El avance se guarda en tu navegador; no es multijugador.</p>
       <button id="btn-modo-cat" aria-label="Ruleta de todas las categorías">Ruleta de categorías</button>
@@ -15009,6 +15010,7 @@ PAGE = """<!DOCTYPE html>
 </section>
 <button id="btn-party-shortcut" class="secondary" hidden aria-label="Ir a retos y verdades, cambiar toda la sala con confirmación">Ir a retos y verdades</button>
       <h2 id="sala-titulo">Sala de juegos</h2>
+      <p><a href="/numeros-cafe/" target="_blank" rel="noopener">Abrir Números al Café en otra pestaña</a>. Creá allí una sala y compartí su enlace; no comparte la partida de esta sala.</p>
       <p><a href="/ruleta-cafe/" target="_blank" rel="noopener">Abrir La Ruleta del Café en otra pestaña</a>. Creá allí una sala y compartí su enlace; no comparte la partida de esta sala.</p>
       <p><a href="/jardin/" target="_blank" rel="noopener">Abrir Macetas al Ataque en otra pestaña: campaña individual de 30 niveles</a>. No comparte la partida de esta sala.</p>
       <div id="chat">

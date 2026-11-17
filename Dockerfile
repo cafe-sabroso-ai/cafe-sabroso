@@ -130,3 +130,6 @@ RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); a
 
 # Separate question game, preserving existing games.
 RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_ruleta_cafe' not in s; p.write_text(s+'\nfrom ruleta_cafe_integration import install as _install_ruleta_cafe\n_install_ruleta_cafe(app)\n')"
+
+# Separate mathematics game, preserving existing games.
+RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_numeros_cafe' not in s; p.write_text(s+'\nfrom numeros_cafe_integration import install as _install_numeros_cafe\n_install_numeros_cafe(app)\n')"
