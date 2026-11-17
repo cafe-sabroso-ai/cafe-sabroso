@@ -121,3 +121,6 @@ RUN python -m compileall -q /app
 
 # Mount reviewed Colina separately; preserve all existing production integrations.
 RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_colina' not in s; p.write_text(s+'\nfrom colina_integration import install as _install_colina\n_install_colina(app)\n')"
+
+# Mount the approved Bomba separately, without changing the existing Bomba.
+RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_bomba_nueva' not in s; p.write_text(s+'\nfrom bomba_nueva_integration import install as _install_bomba_nueva\n_install_bomba_nueva(app)\n')"

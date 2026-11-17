@@ -1,0 +1,1747 @@
+[
+  {
+    "id": "palabras-1-1",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 1,
+    "question": "¿Cuántas letras tiene la palabra casa?",
+    "options": [
+      "4",
+      "5",
+      "6"
+    ],
+    "correct": 0,
+    "explanation": "casa tiene 4 letras.",
+    "source": "Cálculo sobre el texto de la pregunta",
+    "proof": {
+      "kind": "length",
+      "word": "casa"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-1-2",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 1,
+    "question": "¿Cuántas letras tiene la palabra pelota?",
+    "options": [
+      "6",
+      "7",
+      "8"
+    ],
+    "correct": 0,
+    "explanation": "pelota tiene 6 letras.",
+    "source": "Cálculo sobre el texto de la pregunta",
+    "proof": {
+      "kind": "length",
+      "word": "pelota"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-1-3",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 1,
+    "question": "¿Cuántas letras tiene la palabra camino?",
+    "options": [
+      "6",
+      "7",
+      "8"
+    ],
+    "correct": 0,
+    "explanation": "camino tiene 6 letras.",
+    "source": "Cálculo sobre el texto de la pregunta",
+    "proof": {
+      "kind": "length",
+      "word": "camino"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-1-4",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 1,
+    "question": "¿Cuántas letras tiene la palabra mariposa?",
+    "options": [
+      "8",
+      "9",
+      "10"
+    ],
+    "correct": 0,
+    "explanation": "mariposa tiene 8 letras.",
+    "source": "Cálculo sobre el texto de la pregunta",
+    "proof": {
+      "kind": "length",
+      "word": "mariposa"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-1-5",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 1,
+    "question": "¿Cuántas letras tiene la palabra ventana?",
+    "options": [
+      "7",
+      "8",
+      "9"
+    ],
+    "correct": 0,
+    "explanation": "ventana tiene 7 letras.",
+    "source": "Cálculo sobre el texto de la pregunta",
+    "proof": {
+      "kind": "length",
+      "word": "ventana"
+    },
+    "pool": "rescue"
+  },
+  {
+    "id": "palabras-1-6",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 1,
+    "question": "¿Cuántas letras tiene la palabra caracol?",
+    "options": [
+      "7",
+      "8",
+      "9"
+    ],
+    "correct": 0,
+    "explanation": "caracol tiene 7 letras.",
+    "source": "Cálculo sobre el texto de la pregunta",
+    "proof": {
+      "kind": "length",
+      "word": "caracol"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-1-7",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 1,
+    "question": "¿Cuántas letras tiene la palabra biblioteca?",
+    "options": [
+      "10",
+      "11",
+      "12"
+    ],
+    "correct": 0,
+    "explanation": "biblioteca tiene 10 letras.",
+    "source": "Cálculo sobre el texto de la pregunta",
+    "proof": {
+      "kind": "length",
+      "word": "biblioteca"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-1-8",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 1,
+    "question": "¿Cuántas letras tiene la palabra murciélago?",
+    "options": [
+      "10",
+      "11",
+      "12"
+    ],
+    "correct": 0,
+    "explanation": "murciélago tiene 10 letras.",
+    "source": "Cálculo sobre el texto de la pregunta",
+    "proof": {
+      "kind": "length",
+      "word": "murciélago"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-1-9",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 1,
+    "question": "¿Cuántas letras tiene la palabra paraguas?",
+    "options": [
+      "8",
+      "9",
+      "10"
+    ],
+    "correct": 0,
+    "explanation": "paraguas tiene 8 letras.",
+    "source": "Cálculo sobre el texto de la pregunta",
+    "proof": {
+      "kind": "length",
+      "word": "paraguas"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-1-10",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 1,
+    "question": "¿Cuántas letras tiene la palabra calendario?",
+    "options": [
+      "10",
+      "11",
+      "12"
+    ],
+    "correct": 0,
+    "explanation": "calendario tiene 10 letras.",
+    "source": "Cálculo sobre el texto de la pregunta",
+    "proof": {
+      "kind": "length",
+      "word": "calendario"
+    },
+    "pool": "rescue"
+  },
+  {
+    "id": "palabras-2-1",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 2,
+    "question": "Contando también las vocales con tilde, ¿cuántas vocales tiene almohada?",
+    "options": [
+      "4",
+      "5",
+      "6"
+    ],
+    "correct": 0,
+    "explanation": "Las vocales de almohada son: a, o, a, a. En total, 4.",
+    "source": "Conteo de vocales con normalización de tildes",
+    "proof": {
+      "kind": "vowels",
+      "word": "almohada"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-2-2",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 2,
+    "question": "Contando también las vocales con tilde, ¿cuántas vocales tiene enciclopedia?",
+    "options": [
+      "6",
+      "7",
+      "8"
+    ],
+    "correct": 0,
+    "explanation": "Las vocales de enciclopedia son: e, i, o, e, i, a. En total, 6.",
+    "source": "Conteo de vocales con normalización de tildes",
+    "proof": {
+      "kind": "vowels",
+      "word": "enciclopedia"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-2-3",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 2,
+    "question": "Contando también las vocales con tilde, ¿cuántas vocales tiene electricidad?",
+    "options": [
+      "5",
+      "6",
+      "7"
+    ],
+    "correct": 0,
+    "explanation": "Las vocales de electricidad son: e, e, i, i, a. En total, 5.",
+    "source": "Conteo de vocales con normalización de tildes",
+    "proof": {
+      "kind": "vowels",
+      "word": "electricidad"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-2-4",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 2,
+    "question": "Contando también las vocales con tilde, ¿cuántas vocales tiene aeropuerto?",
+    "options": [
+      "6",
+      "7",
+      "8"
+    ],
+    "correct": 0,
+    "explanation": "Las vocales de aeropuerto son: a, e, o, u, e, o. En total, 6.",
+    "source": "Conteo de vocales con normalización de tildes",
+    "proof": {
+      "kind": "vowels",
+      "word": "aeropuerto"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-2-5",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 2,
+    "question": "Contando también las vocales con tilde, ¿cuántas vocales tiene extraordinario?",
+    "options": [
+      "7",
+      "8",
+      "9"
+    ],
+    "correct": 0,
+    "explanation": "Las vocales de extraordinario son: e, a, o, i, a, i, o. En total, 7.",
+    "source": "Conteo de vocales con normalización de tildes",
+    "proof": {
+      "kind": "vowels",
+      "word": "extraordinario"
+    },
+    "pool": "rescue"
+  },
+  {
+    "id": "palabras-2-6",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 2,
+    "question": "Contando también las vocales con tilde, ¿cuántas vocales tiene heladería?",
+    "options": [
+      "5",
+      "6",
+      "7"
+    ],
+    "correct": 0,
+    "explanation": "Las vocales de heladería son: e, a, e, í, a. En total, 5.",
+    "source": "Conteo de vocales con normalización de tildes",
+    "proof": {
+      "kind": "vowels",
+      "word": "heladería"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-2-7",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 2,
+    "question": "Contando también las vocales con tilde, ¿cuántas vocales tiene ferrocarril?",
+    "options": [
+      "4",
+      "5",
+      "6"
+    ],
+    "correct": 0,
+    "explanation": "Las vocales de ferrocarril son: e, o, a, i. En total, 4.",
+    "source": "Conteo de vocales con normalización de tildes",
+    "proof": {
+      "kind": "vowels",
+      "word": "ferrocarril"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-2-8",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 2,
+    "question": "Contando también las vocales con tilde, ¿cuántas vocales tiene panadería?",
+    "options": [
+      "5",
+      "6",
+      "7"
+    ],
+    "correct": 0,
+    "explanation": "Las vocales de panadería son: a, a, e, í, a. En total, 5.",
+    "source": "Conteo de vocales con normalización de tildes",
+    "proof": {
+      "kind": "vowels",
+      "word": "panadería"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-2-9",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 2,
+    "question": "Contando también las vocales con tilde, ¿cuántas vocales tiene imaginación?",
+    "options": [
+      "6",
+      "7",
+      "8"
+    ],
+    "correct": 0,
+    "explanation": "Las vocales de imaginación son: i, a, i, a, i, ó. En total, 6.",
+    "source": "Conteo de vocales con normalización de tildes",
+    "proof": {
+      "kind": "vowels",
+      "word": "imaginación"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-2-10",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 2,
+    "question": "Contando también las vocales con tilde, ¿cuántas vocales tiene universidad?",
+    "options": [
+      "5",
+      "6",
+      "7"
+    ],
+    "correct": 0,
+    "explanation": "Las vocales de universidad son: u, i, e, i, a. En total, 5.",
+    "source": "Conteo de vocales con normalización de tildes",
+    "proof": {
+      "kind": "vowels",
+      "word": "universidad"
+    },
+    "pool": "rescue"
+  },
+  {
+    "id": "palabras-3-1",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 3,
+    "question": "En esta frase, ¿cuántas palabras tienen cinco letras o más? Frase: La casa de la esquina tiene una ventana.",
+    "options": [
+      "3",
+      "4",
+      "5"
+    ],
+    "correct": 0,
+    "explanation": "Las palabras de cinco letras o más son: esquina, tiene, ventana. Son 3.",
+    "source": "Conteo explícito de letras y palabras",
+    "proof": {
+      "kind": "long_words",
+      "sentence": "La casa de la esquina tiene una ventana"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-3-2",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 3,
+    "question": "En esta frase, ¿cuántas palabras tienen cinco letras o más? Frase: El camino largo llega hasta la plaza.",
+    "options": [
+      "5",
+      "6",
+      "7"
+    ],
+    "correct": 0,
+    "explanation": "Las palabras de cinco letras o más son: camino, largo, llega, hasta, plaza. Son 5.",
+    "source": "Conteo explícito de letras y palabras",
+    "proof": {
+      "kind": "long_words",
+      "sentence": "El camino largo llega hasta la plaza"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-3-3",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 3,
+    "question": "En esta frase, ¿cuántas palabras tienen cinco letras o más? Frase: Una pequeña mariposa vuela sobre la mesa.",
+    "options": [
+      "4",
+      "5",
+      "6"
+    ],
+    "correct": 0,
+    "explanation": "Las palabras de cinco letras o más son: pequeña, mariposa, vuela, sobre. Son 4.",
+    "source": "Conteo explícito de letras y palabras",
+    "proof": {
+      "kind": "long_words",
+      "sentence": "Una pequeña mariposa vuela sobre la mesa"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-3-4",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 3,
+    "question": "En esta frase, ¿cuántas palabras tienen cinco letras o más? Frase: Las personas escuchan todas las opciones con calma.",
+    "options": [
+      "5",
+      "6",
+      "7"
+    ],
+    "correct": 0,
+    "explanation": "Las palabras de cinco letras o más son: personas, escuchan, todas, opciones, calma. Son 5.",
+    "source": "Conteo explícito de letras y palabras",
+    "proof": {
+      "kind": "long_words",
+      "sentence": "Las personas escuchan todas las opciones con calma"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-3-5",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 3,
+    "question": "En esta frase, ¿cuántas palabras tienen cinco letras o más? Frase: La biblioteca guarda libros para cada visitante.",
+    "options": [
+      "4",
+      "5",
+      "6"
+    ],
+    "correct": 0,
+    "explanation": "Las palabras de cinco letras o más son: biblioteca, guarda, libros, visitante. Son 4.",
+    "source": "Conteo explícito de letras y palabras",
+    "proof": {
+      "kind": "long_words",
+      "sentence": "La biblioteca guarda libros para cada visitante"
+    },
+    "pool": "rescue"
+  },
+  {
+    "id": "palabras-3-6",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 3,
+    "question": "En esta frase, ¿cuántas palabras tienen cinco letras o más? Frase: El caracol camina sobre una hoja verde.",
+    "options": [
+      "4",
+      "5",
+      "6"
+    ],
+    "correct": 0,
+    "explanation": "Las palabras de cinco letras o más son: caracol, camina, sobre, verde. Son 4.",
+    "source": "Conteo explícito de letras y palabras",
+    "proof": {
+      "kind": "long_words",
+      "sentence": "El caracol camina sobre una hoja verde"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-3-7",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 3,
+    "question": "En esta frase, ¿cuántas palabras tienen cinco letras o más? Frase: Hoy caminamos lentamente por el parque cercano.",
+    "options": [
+      "4",
+      "5",
+      "6"
+    ],
+    "correct": 0,
+    "explanation": "Las palabras de cinco letras o más son: caminamos, lentamente, parque, cercano. Son 4.",
+    "source": "Conteo explícito de letras y palabras",
+    "proof": {
+      "kind": "long_words",
+      "sentence": "Hoy caminamos lentamente por el parque cercano"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-3-8",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 3,
+    "question": "En esta frase, ¿cuántas palabras tienen cinco letras o más? Frase: La ventana abierta deja pasar aire fresco.",
+    "options": [
+      "4",
+      "5",
+      "6"
+    ],
+    "correct": 0,
+    "explanation": "Las palabras de cinco letras o más son: ventana, abierta, pasar, fresco. Son 4.",
+    "source": "Conteo explícito de letras y palabras",
+    "proof": {
+      "kind": "long_words",
+      "sentence": "La ventana abierta deja pasar aire fresco"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-3-9",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 3,
+    "question": "En esta frase, ¿cuántas palabras tienen cinco letras o más? Frase: Una persona prepara pan para la merienda.",
+    "options": [
+      "3",
+      "4",
+      "5"
+    ],
+    "correct": 0,
+    "explanation": "Las palabras de cinco letras o más son: persona, prepara, merienda. Son 3.",
+    "source": "Conteo explícito de letras y palabras",
+    "proof": {
+      "kind": "long_words",
+      "sentence": "Una persona prepara pan para la merienda"
+    },
+    "pool": "main"
+  },
+  {
+    "id": "palabras-3-10",
+    "category_key": "palabras",
+    "category": "Palabras y lenguaje",
+    "level": 3,
+    "question": "En esta frase, ¿cuántas palabras tienen cinco letras o más? Frase: El calendario nuevo cuelga sobre la pared.",
+    "options": [
+      "5",
+      "6",
+      "7"
+    ],
+    "correct": 0,
+    "explanation": "Las palabras de cinco letras o más son: calendario, nuevo, cuelga, sobre, pared. Son 5.",
+    "source": "Conteo explícito de letras y palabras",
+    "proof": {
+      "kind": "long_words",
+      "sentence": "El calendario nuevo cuelga sobre la pared"
+    },
+    "pool": "rescue"
+  },
+  {
+    "id": "logica-1-1",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 1,
+    "question": "¿Cuánto es 7 más 8?",
+    "options": [
+      "15",
+      "17",
+      "13"
+    ],
+    "correct": 0,
+    "explanation": "7 más 8 es 15.",
+    "source": "Operación entera verificada por Python",
+    "proof": {
+      "kind": "sum",
+      "a": 7,
+      "b": 8
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-1-2",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 1,
+    "question": "¿Cuánto es 14 más 9?",
+    "options": [
+      "23",
+      "25",
+      "21"
+    ],
+    "correct": 0,
+    "explanation": "14 más 9 es 23.",
+    "source": "Operación entera verificada por Python",
+    "proof": {
+      "kind": "sum",
+      "a": 14,
+      "b": 9
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-1-3",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 1,
+    "question": "¿Cuánto es 23 más 18?",
+    "options": [
+      "41",
+      "43",
+      "39"
+    ],
+    "correct": 0,
+    "explanation": "23 más 18 es 41.",
+    "source": "Operación entera verificada por Python",
+    "proof": {
+      "kind": "sum",
+      "a": 23,
+      "b": 18
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-1-4",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 1,
+    "question": "¿Cuánto es 32 más 19?",
+    "options": [
+      "51",
+      "53",
+      "49"
+    ],
+    "correct": 0,
+    "explanation": "32 más 19 es 51.",
+    "source": "Operación entera verificada por Python",
+    "proof": {
+      "kind": "sum",
+      "a": 32,
+      "b": 19
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-1-5",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 1,
+    "question": "¿Cuánto es 45 más 28?",
+    "options": [
+      "73",
+      "75",
+      "71"
+    ],
+    "correct": 0,
+    "explanation": "45 más 28 es 73.",
+    "source": "Operación entera verificada por Python",
+    "proof": {
+      "kind": "sum",
+      "a": 45,
+      "b": 28
+    },
+    "pool": "rescue"
+  },
+  {
+    "id": "logica-1-6",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 1,
+    "question": "Tenés 18 fichas y entregás 7. ¿Cuántas te quedan?",
+    "options": [
+      "11",
+      "13",
+      "9"
+    ],
+    "correct": 0,
+    "explanation": "18 menos 7 es 11.",
+    "source": "Operación entera verificada por Python",
+    "proof": {
+      "kind": "subtract",
+      "a": 18,
+      "b": 7
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-1-7",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 1,
+    "question": "Tenés 35 fichas y entregás 16. ¿Cuántas te quedan?",
+    "options": [
+      "19",
+      "21",
+      "17"
+    ],
+    "correct": 0,
+    "explanation": "35 menos 16 es 19.",
+    "source": "Operación entera verificada por Python",
+    "proof": {
+      "kind": "subtract",
+      "a": 35,
+      "b": 16
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-1-8",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 1,
+    "question": "Tenés 42 fichas y entregás 18. ¿Cuántas te quedan?",
+    "options": [
+      "24",
+      "26",
+      "22"
+    ],
+    "correct": 0,
+    "explanation": "42 menos 18 es 24.",
+    "source": "Operación entera verificada por Python",
+    "proof": {
+      "kind": "subtract",
+      "a": 42,
+      "b": 18
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-1-9",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 1,
+    "question": "Tenés 57 fichas y entregás 29. ¿Cuántas te quedan?",
+    "options": [
+      "28",
+      "30",
+      "26"
+    ],
+    "correct": 0,
+    "explanation": "57 menos 29 es 28.",
+    "source": "Operación entera verificada por Python",
+    "proof": {
+      "kind": "subtract",
+      "a": 57,
+      "b": 29
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-1-10",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 1,
+    "question": "Tenés 64 fichas y entregás 37. ¿Cuántas te quedan?",
+    "options": [
+      "27",
+      "29",
+      "25"
+    ],
+    "correct": 0,
+    "explanation": "64 menos 37 es 27.",
+    "source": "Operación entera verificada por Python",
+    "proof": {
+      "kind": "subtract",
+      "a": 64,
+      "b": 37
+    },
+    "pool": "rescue"
+  },
+  {
+    "id": "logica-2-1",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 2,
+    "question": "Hay 4 bolsas con 6 fichas en cada una. ¿Cuántas fichas hay en total?",
+    "options": [
+      "24",
+      "28",
+      "20"
+    ],
+    "correct": 0,
+    "explanation": "4 por 6 es 24.",
+    "source": "Operación entera verificada por Python",
+    "proof": {
+      "kind": "multiply",
+      "a": 4,
+      "b": 6
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-2-2",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 2,
+    "question": "Hay 7 bolsas con 8 fichas en cada una. ¿Cuántas fichas hay en total?",
+    "options": [
+      "56",
+      "63",
+      "49"
+    ],
+    "correct": 0,
+    "explanation": "7 por 8 es 56.",
+    "source": "Operación entera verificada por Python",
+    "proof": {
+      "kind": "multiply",
+      "a": 7,
+      "b": 8
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-2-3",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 2,
+    "question": "Hay 9 bolsas con 6 fichas en cada una. ¿Cuántas fichas hay en total?",
+    "options": [
+      "54",
+      "63",
+      "45"
+    ],
+    "correct": 0,
+    "explanation": "9 por 6 es 54.",
+    "source": "Operación entera verificada por Python",
+    "proof": {
+      "kind": "multiply",
+      "a": 9,
+      "b": 6
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-2-4",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 2,
+    "question": "Hay 8 bolsas con 11 fichas en cada una. ¿Cuántas fichas hay en total?",
+    "options": [
+      "88",
+      "96",
+      "80"
+    ],
+    "correct": 0,
+    "explanation": "8 por 11 es 88.",
+    "source": "Operación entera verificada por Python",
+    "proof": {
+      "kind": "multiply",
+      "a": 8,
+      "b": 11
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-2-5",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 2,
+    "question": "Hay 12 bolsas con 7 fichas en cada una. ¿Cuántas fichas hay en total?",
+    "options": [
+      "84",
+      "96",
+      "72"
+    ],
+    "correct": 0,
+    "explanation": "12 por 7 es 84.",
+    "source": "Operación entera verificada por Python",
+    "proof": {
+      "kind": "multiply",
+      "a": 12,
+      "b": 7
+    },
+    "pool": "rescue"
+  },
+  {
+    "id": "logica-2-6",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 2,
+    "question": "La regla es sumar siempre la misma cantidad. ¿Qué sigue después de 3, 7, 11, 15?",
+    "options": [
+      "19",
+      "23",
+      "18"
+    ],
+    "correct": 0,
+    "explanation": "En cada paso se suman 4. El siguiente es 19.",
+    "source": "Sucesión aritmética con regla explícita",
+    "proof": {
+      "kind": "sequence",
+      "a": 3,
+      "step": 4
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-2-7",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 2,
+    "question": "La regla es sumar siempre la misma cantidad. ¿Qué sigue después de 7, 12, 17, 22?",
+    "options": [
+      "27",
+      "32",
+      "26"
+    ],
+    "correct": 0,
+    "explanation": "En cada paso se suman 5. El siguiente es 27.",
+    "source": "Sucesión aritmética con regla explícita",
+    "proof": {
+      "kind": "sequence",
+      "a": 7,
+      "step": 5
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-2-8",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 2,
+    "question": "La regla es sumar siempre la misma cantidad. ¿Qué sigue después de 12, 18, 24, 30?",
+    "options": [
+      "36",
+      "42",
+      "35"
+    ],
+    "correct": 0,
+    "explanation": "En cada paso se suman 6. El siguiente es 36.",
+    "source": "Sucesión aritmética con regla explícita",
+    "proof": {
+      "kind": "sequence",
+      "a": 12,
+      "step": 6
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-2-9",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 2,
+    "question": "La regla es sumar siempre la misma cantidad. ¿Qué sigue después de 21, 28, 35, 42?",
+    "options": [
+      "49",
+      "56",
+      "48"
+    ],
+    "correct": 0,
+    "explanation": "En cada paso se suman 7. El siguiente es 49.",
+    "source": "Sucesión aritmética con regla explícita",
+    "proof": {
+      "kind": "sequence",
+      "a": 21,
+      "step": 7
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-2-10",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 2,
+    "question": "La regla es sumar siempre la misma cantidad. ¿Qué sigue después de 33, 41, 49, 57?",
+    "options": [
+      "65",
+      "73",
+      "64"
+    ],
+    "correct": 0,
+    "explanation": "En cada paso se suman 8. El siguiente es 65.",
+    "source": "Sucesión aritmética con regla explícita",
+    "proof": {
+      "kind": "sequence",
+      "a": 33,
+      "step": 8
+    },
+    "pool": "rescue"
+  },
+  {
+    "id": "logica-3-1",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 3,
+    "question": "Tenés 6 cajas de 8 fichas. Regalás 11 fichas en total. ¿Cuántas conservás?",
+    "options": [
+      "37",
+      "39",
+      "35"
+    ],
+    "correct": 0,
+    "explanation": "Primero, 6 por 8 da 48. Restando 11, quedan 37.",
+    "source": "Dos operaciones enteras verificadas por Python",
+    "proof": {
+      "kind": "multi",
+      "a": 6,
+      "b": 8,
+      "c": 11
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-3-2",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 3,
+    "question": "Tenés 7 cajas de 9 fichas. Regalás 14 fichas en total. ¿Cuántas conservás?",
+    "options": [
+      "49",
+      "51",
+      "47"
+    ],
+    "correct": 0,
+    "explanation": "Primero, 7 por 9 da 63. Restando 14, quedan 49.",
+    "source": "Dos operaciones enteras verificadas por Python",
+    "proof": {
+      "kind": "multi",
+      "a": 7,
+      "b": 9,
+      "c": 14
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-3-3",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 3,
+    "question": "Tenés 8 cajas de 12 fichas. Regalás 17 fichas en total. ¿Cuántas conservás?",
+    "options": [
+      "79",
+      "81",
+      "77"
+    ],
+    "correct": 0,
+    "explanation": "Primero, 8 por 12 da 96. Restando 17, quedan 79.",
+    "source": "Dos operaciones enteras verificadas por Python",
+    "proof": {
+      "kind": "multi",
+      "a": 8,
+      "b": 12,
+      "c": 17
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-3-4",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 3,
+    "question": "Tenés 9 cajas de 11 fichas. Regalás 23 fichas en total. ¿Cuántas conservás?",
+    "options": [
+      "76",
+      "78",
+      "74"
+    ],
+    "correct": 0,
+    "explanation": "Primero, 9 por 11 da 99. Restando 23, quedan 76.",
+    "source": "Dos operaciones enteras verificadas por Python",
+    "proof": {
+      "kind": "multi",
+      "a": 9,
+      "b": 11,
+      "c": 23
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-3-5",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 3,
+    "question": "Tenés 12 cajas de 13 fichas. Regalás 29 fichas en total. ¿Cuántas conservás?",
+    "options": [
+      "127",
+      "129",
+      "125"
+    ],
+    "correct": 0,
+    "explanation": "Primero, 12 por 13 da 156. Restando 29, quedan 127.",
+    "source": "Dos operaciones enteras verificadas por Python",
+    "proof": {
+      "kind": "multi",
+      "a": 12,
+      "b": 13,
+      "c": 29
+    },
+    "pool": "rescue"
+  },
+  {
+    "id": "logica-3-6",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 3,
+    "question": "Hay 5 bolsas con 8 fichas cada una. Se reparte la mitad de todas las fichas. ¿Cuántas se reparten?",
+    "options": [
+      "20",
+      "25",
+      "15"
+    ],
+    "correct": 0,
+    "explanation": "Hay 40 fichas en total; su mitad es 20.",
+    "source": "Producto y división exacta verificados por Python",
+    "proof": {
+      "kind": "half",
+      "a": 5,
+      "b": 8
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-3-7",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 3,
+    "question": "Hay 7 bolsas con 12 fichas cada una. Se reparte la mitad de todas las fichas. ¿Cuántas se reparten?",
+    "options": [
+      "42",
+      "49",
+      "35"
+    ],
+    "correct": 0,
+    "explanation": "Hay 84 fichas en total; su mitad es 42.",
+    "source": "Producto y división exacta verificados por Python",
+    "proof": {
+      "kind": "half",
+      "a": 7,
+      "b": 12
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-3-8",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 3,
+    "question": "Hay 9 bolsas con 14 fichas cada una. Se reparte la mitad de todas las fichas. ¿Cuántas se reparten?",
+    "options": [
+      "63",
+      "72",
+      "54"
+    ],
+    "correct": 0,
+    "explanation": "Hay 126 fichas en total; su mitad es 63.",
+    "source": "Producto y división exacta verificados por Python",
+    "proof": {
+      "kind": "half",
+      "a": 9,
+      "b": 14
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-3-9",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 3,
+    "question": "Hay 11 bolsas con 16 fichas cada una. Se reparte la mitad de todas las fichas. ¿Cuántas se reparten?",
+    "options": [
+      "88",
+      "99",
+      "77"
+    ],
+    "correct": 0,
+    "explanation": "Hay 176 fichas en total; su mitad es 88.",
+    "source": "Producto y división exacta verificados por Python",
+    "proof": {
+      "kind": "half",
+      "a": 11,
+      "b": 16
+    },
+    "pool": "main"
+  },
+  {
+    "id": "logica-3-10",
+    "category_key": "logica",
+    "category": "Lógica y números",
+    "level": 3,
+    "question": "Hay 13 bolsas con 18 fichas cada una. Se reparte la mitad de todas las fichas. ¿Cuántas se reparten?",
+    "options": [
+      "117",
+      "130",
+      "104"
+    ],
+    "correct": 0,
+    "explanation": "Hay 234 fichas en total; su mitad es 117.",
+    "source": "Producto y división exacta verificados por Python",
+    "proof": {
+      "kind": "half",
+      "a": 13,
+      "b": 18
+    },
+    "pool": "rescue"
+  },
+  {
+    "id": "mundo-1-1",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 1,
+    "question": "¿Cuál es nuestro planeta?",
+    "options": [
+      "La Tierra",
+      "Marte",
+      "Saturno"
+    ],
+    "correct": 0,
+    "explanation": "Nuestro planeta es la Tierra.",
+    "source": "https://science.nasa.gov/solar-system/planets/",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-1-2",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 1,
+    "question": "¿Qué cuerpo es el satélite natural de la Tierra?",
+    "options": [
+      "La Luna",
+      "El Sol",
+      "Júpiter"
+    ],
+    "correct": 0,
+    "explanation": "La Luna es el satélite natural de la Tierra.",
+    "source": "https://science.nasa.gov/moon/facts/",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-1-3",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 1,
+    "question": "¿Cuántos planetas hay en el sistema solar según la clasificación actual?",
+    "options": [
+      "Ocho",
+      "Seis",
+      "Diez"
+    ],
+    "correct": 0,
+    "explanation": "La clasificación actual reconoce ocho planetas en el sistema solar.",
+    "source": "https://science.nasa.gov/solar-system/planets/",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-1-4",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 1,
+    "question": "¿Qué planeta es el más cercano al Sol?",
+    "options": [
+      "Mercurio",
+      "Neptuno",
+      "Marte"
+    ],
+    "correct": 0,
+    "explanation": "Mercurio ocupa la órbita planetaria más cercana al Sol.",
+    "source": "https://science.nasa.gov/solar-system/planets/",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-1-5",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 1,
+    "question": "¿Qué planeta es el mayor del sistema solar?",
+    "options": [
+      "Júpiter",
+      "Mercurio",
+      "La Tierra"
+    ],
+    "correct": 0,
+    "explanation": "Júpiter es el planeta de mayor tamaño del sistema solar.",
+    "source": "https://science.nasa.gov/solar-system/planets/",
+    "proof": null,
+    "pool": "rescue"
+  },
+  {
+    "id": "mundo-1-6",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 1,
+    "question": "¿Cuál de estas masas de agua es un océano?",
+    "options": [
+      "El Pacífico",
+      "El río Paraná",
+      "El lago Titicaca"
+    ],
+    "correct": 0,
+    "explanation": "El Pacífico es uno de los océanos terrestres.",
+    "source": "https://kids.britannica.com/kids/article/ocean/346185",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-1-7",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 1,
+    "question": "¿Cómo es principalmente el agua de los océanos?",
+    "options": [
+      "Salada",
+      "Dulce",
+      "Sin sales"
+    ],
+    "correct": 0,
+    "explanation": "Los océanos son grandes masas de agua salada.",
+    "source": "https://kids.britannica.com/kids/article/ocean/346185",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-1-8",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 1,
+    "question": "En música, ¿qué marca el tempo?",
+    "options": [
+      "La velocidad del pulso",
+      "El color de un instrumento",
+      "La altura de una persona"
+    ],
+    "correct": 0,
+    "explanation": "El tempo indica la velocidad del pulso musical.",
+    "source": "https://kids.britannica.com/kids/article/music/399978",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-1-9",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 1,
+    "question": "¿Cuál es un instrumento de cuerda de una orquesta?",
+    "options": [
+      "El violín",
+      "La trompeta",
+      "Los platillos"
+    ],
+    "correct": 0,
+    "explanation": "El violín pertenece a la familia de las cuerdas.",
+    "source": "https://kids.britannica.com/students/article/orchestra/276204",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-1-10",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 1,
+    "question": "¿Cuál de estos instrumentos es de percusión?",
+    "options": [
+      "Los platillos",
+      "El violín",
+      "La flauta"
+    ],
+    "correct": 0,
+    "explanation": "Los platillos pertenecen a la percusión.",
+    "source": "https://kids.britannica.com/students/article/orchestra/276204",
+    "proof": null,
+    "pool": "rescue"
+  },
+  {
+    "id": "mundo-2-1",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 2,
+    "question": "¿Qué planeta ocupa el tercer lugar contando desde el Sol?",
+    "options": [
+      "La Tierra",
+      "Venus",
+      "Marte"
+    ],
+    "correct": 0,
+    "explanation": "Desde el Sol: Mercurio, Venus y Tierra.",
+    "source": "https://science.nasa.gov/solar-system/planets/",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-2-2",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 2,
+    "question": "¿Cuál es el planeta más alejado del Sol entre los ocho planetas?",
+    "options": [
+      "Neptuno",
+      "Urano",
+      "Saturno"
+    ],
+    "correct": 0,
+    "explanation": "Neptuno ocupa el octavo lugar desde el Sol.",
+    "source": "https://science.nasa.gov/solar-system/planets/",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-2-3",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 2,
+    "question": "¿Cuál es el planeta más pequeño del sistema solar?",
+    "options": [
+      "Mercurio",
+      "Marte",
+      "Venus"
+    ],
+    "correct": 0,
+    "explanation": "Mercurio es el menor de los ocho planetas.",
+    "source": "https://science.nasa.gov/solar-system/planets/",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-2-4",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 2,
+    "question": "¿En qué galaxia está el sistema solar?",
+    "options": [
+      "La Vía Láctea",
+      "Andrómeda",
+      "La Nube Mayor de Magallanes"
+    ],
+    "correct": 0,
+    "explanation": "El sistema solar se encuentra en la Vía Láctea.",
+    "source": "https://science.nasa.gov/solar-system/solar-system-facts/",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-2-5",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 2,
+    "question": "¿Cerca del centro de qué continente está el Polo Sur?",
+    "options": [
+      "La Antártida",
+      "África",
+      "Asia"
+    ],
+    "correct": 0,
+    "explanation": "El Polo Sur está en la Antártida.",
+    "source": "https://kids.britannica.com/students/article/geography/274524",
+    "proof": null,
+    "pool": "rescue"
+  },
+  {
+    "id": "mundo-2-6",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 2,
+    "question": "¿Qué océano rodea el Polo Norte?",
+    "options": [
+      "El Ártico",
+      "El Índico",
+      "El Pacífico"
+    ],
+    "correct": 0,
+    "explanation": "El Polo Norte se encuentra en el océano Ártico.",
+    "source": "https://www.pmel.noaa.gov/arctic-zone/faq.html",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-2-7",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 2,
+    "question": "¿Qué ocupa más superficie de la Tierra?",
+    "options": [
+      "Los océanos",
+      "Los continentes",
+      "Océanos y continentes por igual"
+    ],
+    "correct": 0,
+    "explanation": "Los océanos cubren aproximadamente el 71 por ciento de la superficie terrestre.",
+    "source": "https://kids.britannica.com/kids/article/ocean/346185",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-2-8",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 2,
+    "question": "¿Qué componente musical organiza los sonidos en el tiempo?",
+    "options": [
+      "El ritmo",
+      "El material del escenario",
+      "El color de la partitura"
+    ],
+    "correct": 0,
+    "explanation": "El ritmo organiza la duración y los pulsos de los sonidos.",
+    "source": "https://kids.britannica.com/kids/article/music/399978",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-2-9",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 2,
+    "question": "En una orquesta, ¿a qué familia pertenece la trompeta?",
+    "options": [
+      "Viento metal",
+      "Cuerda frotada",
+      "Percusión"
+    ],
+    "correct": 0,
+    "explanation": "La trompeta se incluye entre los instrumentos de viento metal.",
+    "source": "https://kids.britannica.com/students/article/orchestra/276204",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-2-10",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 2,
+    "question": "¿Qué indicación de tempo se asocia con una ejecución rápida?",
+    "options": [
+      "Allegro",
+      "Lento",
+      "Largo"
+    ],
+    "correct": 0,
+    "explanation": "Allegro es una indicación de tempo rápido.",
+    "source": "https://kids.britannica.com/scholars/article/tempo/636095",
+    "proof": null,
+    "pool": "rescue"
+  },
+  {
+    "id": "mundo-3-1",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 3,
+    "question": "¿Qué par está formado por gigantes de hielo?",
+    "options": [
+      "Urano y Neptuno",
+      "Júpiter y Saturno",
+      "La Tierra y Marte"
+    ],
+    "correct": 0,
+    "explanation": "Urano y Neptuno se clasifican como gigantes de hielo.",
+    "source": "https://science.nasa.gov/solar-system/planets/",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-3-2",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 3,
+    "question": "¿Qué par está formado por gigantes gaseosos?",
+    "options": [
+      "Júpiter y Saturno",
+      "Urano y Neptuno",
+      "Mercurio y Venus"
+    ],
+    "correct": 0,
+    "explanation": "Júpiter y Saturno se clasifican como gigantes gaseosos.",
+    "source": "https://science.nasa.gov/solar-system/planets/",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-3-3",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 3,
+    "question": "¿Qué dos planetas del sistema solar no tienen lunas?",
+    "options": [
+      "Mercurio y Venus",
+      "La Tierra y Marte",
+      "Júpiter y Saturno"
+    ],
+    "correct": 0,
+    "explanation": "Mercurio y Venus son los dos planetas sin lunas.",
+    "source": "https://science.nasa.gov/solar-system/solar-system-facts/",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-3-4",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 3,
+    "question": "¿Cuál de estos grupos contiene solo planetas rocosos interiores?",
+    "options": [
+      "Mercurio, Venus y Marte",
+      "Júpiter, Saturno y Neptuno",
+      "Urano, Neptuno y Saturno"
+    ],
+    "correct": 0,
+    "explanation": "Mercurio, Venus, Tierra y Marte forman el grupo de los planetas rocosos interiores.",
+    "source": "https://science.nasa.gov/solar-system/planets/",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-3-5",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 3,
+    "question": "¿Qué planeta queda entre las órbitas de Saturno y Neptuno?",
+    "options": [
+      "Urano",
+      "Júpiter",
+      "Marte"
+    ],
+    "correct": 0,
+    "explanation": "El orden es Saturno, Urano y Neptuno.",
+    "source": "https://science.nasa.gov/solar-system/planets/",
+    "proof": null,
+    "pool": "rescue"
+  },
+  {
+    "id": "mundo-3-6",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 3,
+    "question": "¿Por qué desde la Tierra vemos siempre casi la misma cara de la Luna?",
+    "options": [
+      "Gira sobre sí misma al mismo ritmo que completa su órbita",
+      "La Luna no gira sobre sí misma",
+      "La Luna produce luz propia"
+    ],
+    "correct": 0,
+    "explanation": "La rotación y la órbita lunar están sincronizadas.",
+    "source": "https://science.nasa.gov/moon/facts/",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-3-7",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 3,
+    "question": "¿De dónde viene la luz que permite ver la Luna?",
+    "options": [
+      "Del Sol, que la ilumina",
+      "De fuego en la superficie lunar",
+      "De luces eléctricas en la Luna"
+    ],
+    "correct": 0,
+    "explanation": "Las fases dependen de qué parte de la Luna está iluminada por el Sol.",
+    "source": "https://science.nasa.gov/moon/facts/",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-3-8",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 3,
+    "question": "¿Qué explica que en algunos mapas se hable de Eurasia?",
+    "options": [
+      "Europa y Asia forman una masa terrestre continua",
+      "Europa y África son una isla",
+      "Asia y Oceanía tienen un solo gobierno"
+    ],
+    "correct": 0,
+    "explanation": "Europa y Asia están unidas y pueden agruparse como Eurasia.",
+    "source": "https://kids.britannica.com/students/article/continent/273790",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-3-9",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 3,
+    "question": "En una orquesta sinfónica, ¿qué suele ocurrir con una misma parte de cuerdas?",
+    "options": [
+      "La interpretan varios instrumentistas",
+      "Siempre la toca una sola persona",
+      "No se usan instrumentos de cuerda"
+    ],
+    "correct": 0,
+    "explanation": "En la orquesta, varios músicos suelen interpretar cada parte de cuerdas.",
+    "source": "https://kids.britannica.com/students/article/orchestra/276204",
+    "proof": null,
+    "pool": "main"
+  },
+  {
+    "id": "mundo-3-10",
+    "category_key": "mundo",
+    "category": "Mundo y cultura",
+    "level": 3,
+    "question": "Además de palabras como allegro, ¿cómo puede indicarse el tempo?",
+    "options": [
+      "Con una indicación de metrónomo",
+      "Con la cantidad de sillas del público",
+      "Con el tamaño de una puerta"
+    ],
+    "correct": 0,
+    "explanation": "El tempo puede indicarse con palabras o con una referencia metronómica.",
+    "source": "https://kids.britannica.com/scholars/article/tempo/636095",
+    "proof": null,
+    "pool": "rescue"
+  }
+]
