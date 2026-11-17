@@ -55,3 +55,7 @@ webapp.PAGE=webapp.PAGE.replace('</body>', '''<script>
 
 })();
 </script></body>''',1)
+
+# Colina stays a separate application and room bank, rehearsal only.
+from colina.app import app as colina_app
+app.mount("/colina", colina_app)
