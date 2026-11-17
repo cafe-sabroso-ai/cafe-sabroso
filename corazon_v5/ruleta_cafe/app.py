@@ -14,7 +14,7 @@ HEADERS={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer
 @app.get('/')
 async def home():return HTMLResponse((ROOT/'index.html').read_text(),headers=HEADERS)
 @app.get('/health')
-async def health():return {'ok':True,'local':False,'version':'1.0.0','categories':len(CATEGORIES)}
+async def health():return {'ok':True,'local':False,'version':'1.0.1','categories':len(CATEGORIES)}
 @app.get('/{asset}')
 async def asset(asset:str):
  if asset not in ('app.js','style.css'):raise HTTPException(404)
