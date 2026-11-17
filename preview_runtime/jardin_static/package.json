@@ -1,10 +1,16 @@
 {
-  "name": "jardin-chiflado-local",
-  "version": "0.1.0",
+  "name": "macetas-al-ataque-local",
+  "version": "0.6.0",
   "private": true,
   "scripts": {
-    "test": "node test-engine.cjs",
-    "test:browser": "node test-browser.cjs"
+    "test": "node test-engine.cjs && node test-characters.cjs && node test-campaign.cjs && node test-campaign-mechanics.cjs && node test-difficulty.cjs && node test-clock-roulette.cjs && node test-chapter2.cjs",
+    "test:browser": "node test-browser.cjs",
+    "test:visual": "node test-visual.cjs",
+    "test:ambience": "node test-ambience.cjs",
+    "test:music": "node test-music.cjs",
+    "test:difficulty-browser": "node test-difficulty-browser.cjs",
+    "test:clock-roulette-browser": "node test-clock-roulette-browser.cjs",
+    "test:chapter2-browser": "node test-chapter2-browser.cjs"
   },
   "devDependencies": {
     "playwright": "1.65.1",

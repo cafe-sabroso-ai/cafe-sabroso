@@ -5,3 +5,20 @@
 .characters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:20px 0}.characters button{display:flex;flex-direction:column;align-items:start}.characters svg{width:120px;height:100px;margin:auto}.characters strong{display:block;font-size:20px}.characters button[aria-pressed=true]{outline:3px solid #f6d78d;outline-offset:3px}#character-state{background:#12251c;border:1px solid #829589;border-radius:10px;padding:16px}#boost{margin:12px 0 22px}@media(max-width:650px){.characters{grid-template-columns:1fr}.characters button{display:grid;grid-template-columns:90px 1fr;align-items:center;gap:10px}.characters svg{grid-row:span 2;width:85px;height:85px}.characters span{margin:0}}
 
 meter{display:block;width:min(100%,360px);height:24px;margin:10px 0 20px;accent-color:#f6d78d}meter::-webkit-meter-bar{background:#12251c;border:1px solid #a0b5a3;border-radius:8px}meter::-webkit-meter-optimum-value{background:#f6d78d;border-radius:7px}
+
+.gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.gallery article{border:1px solid #829589;border-radius:12px;padding:18px}.gallery-art svg{width:110px;height:110px;display:block;margin:auto}.enemy-enter{animation:arrive .5s ease-out}.enemy-walk{animation:walk 1.7s ease-in-out infinite;transform-box:fill-box;transform-origin:center bottom}.characters svg{animation:walk 2.7s ease-in-out infinite}.effect-bite .enemy-walk{animation:chomp .4s ease-out,walk 1.7s .4s ease-in-out infinite}.effect-hit .enemy-walk{animation:recoil .35s ease-out,walk 1.7s .35s ease-in-out infinite}@keyframes walk{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-3px) rotate(2deg)}}@keyframes arrive{from{opacity:.5;translate:0 -8px}to{opacity:1;translate:0 0}}@keyframes chomp{0%,100%{scale:1}50%{scale:.94 1.03}}@keyframes recoil{0%,100%{translate:0 0}50%{translate:4px 0}}.no-motion *, .no-motion *::before,.no-motion *::after{animation:none!important;transition:none!important}@media(max-width:650px){.gallery{grid-template-columns:1fr}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.scene{aspect-ratio:900/750}.scene svg{width:100%;height:100%}.enemy-walk.hit{animation:recoil .35s ease-out,walk 1.7s .35s ease-in-out infinite}.enemy-walk.bite{animation:chomp .4s ease-out,walk 1.7s .4s ease-in-out infinite}.hero-walk>svg{animation:walk 2.4s ease-in-out infinite}.section-head{flex-wrap:wrap}.pill{white-space:normal}.gallery button{width:100%;overflow-wrap:anywhere}
+
+.enemy-walk{animation-delay:var(--walk-delay,0s)}.scene.biting .plant-mouth{animation:mouth-close .45s ease-out;transform-box:fill-box;transform-origin:center}.game-paused *{animation-play-state:paused!important}.hero-action>svg{animation:hero-push .35s ease-out,walk 2.4s .35s ease-in-out infinite}@keyframes mouth-close{0%,100%{scale:1 1}50%{scale:1 .3}}@keyframes hero-push{0%,100%{translate:0 0}50%{translate:0 -6px}}
+
+#rain-volume{display:block;width:min(100%,360px);height:36px}.boss-line{padding:16px;border-left:4px solid #f6d78d;background:#12251c}.rain-decor{animation:rain-fall 2.4s linear infinite}.fog-decor{animation:fog-drift 9s ease-in-out infinite alternate}@keyframes rain-fall{0%{translate:0 -5px}100%{translate:-4px 7px}}@keyframes fog-drift{from{translate:-6px 0}to{translate:6px 0}}
+button[aria-pressed=true]:hover:not(:disabled){background:#d5e7a0;color:#18271e}
+
+select{font:inherit;min-height:48px;max-width:100%;padding:8px 16px;background:#213e32;color:#edf4e8;border:2px solid #a0b5a3;border-radius:8px}select:disabled{opacity:.8}
+
+#music-volume{display:block;width:min(100%,360px);height:36px}
+
+#clock-panel{margin-top:24px;background:#162a22}#clock-status{font-size:21px;font-weight:700}.level-passed{text-decoration:line-through;color:#c6d3c8}#level-checklist li{margin:12px 0}
+
+.level-passed{text-decoration:none}.level-passed .level-name{text-decoration:line-through}#mode-choice{margin:20px 0}#roulette{margin:12px 0}
