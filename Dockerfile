@@ -118,3 +118,6 @@ RUN cat /tmp/sonido-v7/sonido-v7-part*.b64 | base64 -d > /tmp/sonido-v7.tar.xz \
 RUN echo "e6d20eb44a867771606412f81adfbf22f15ef9a494b0e908e2fa9ae22bfb698e  /app/webapp.py" | sha256sum -c -
 COPY corazon_v5/ /app/
 RUN python -m compileall -q /app
+
+# Mount reviewed Colina separately; preserve all existing production integrations.
+RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_colina' not in s; p.write_text(s+'\nfrom colina_integration import install as _install_colina\n_install_colina(app)\n')"
