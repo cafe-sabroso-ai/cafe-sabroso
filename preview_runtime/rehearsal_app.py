@@ -59,3 +59,7 @@ webapp.PAGE=webapp.PAGE.replace('</body>', '''<script>
 # Colina stays a separate application and room bank, rehearsal only.
 from colina.app import app as colina_app
 app.mount("/colina", colina_app)
+
+# New Bomba trial has its own rooms and clock; legacy Bomba is unchanged.
+from bomba_nueva.app import app as bomba_nueva_app
+app.mount("/bomba-nueva", bomba_nueva_app)
