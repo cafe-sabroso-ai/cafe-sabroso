@@ -1,3 +1,55 @@
+# Revisión local: Brotañam, personajes, carnívora enemiga y barras
+
+Esta revisión NO ESTÁ PUBLICADA. El jardín remoto sigue siendo la base 72d0a0e sin estas novedades. No hay autorización actual para subir esta revisión al ensayo ni a Corazón.
+
+## Brotañam defensora (propuesta concreta)
+
+5 rayitos, ocupa la única plaza de planta en una entrada. No reemplaza otra planta ni ataca sola. Elegí esa entrada y tocá Dar un mordisco con Brotañam. Cuenta una acción igual que semillas o insecticida, da rayito de día/tarde y hace avanzar al resto de los adversarios.
+
+- Si el objetivo tiene MÁS de la mitad de su vida máxima, el mordisco lo deja exactamente en esa mitad.
+- Si está en la mitad o menos, lo frena y suma uno a su meta. No hay azar de agarrarlo bien/mal, daño variable oculto ni falla aleatoria.
+- Un bicho de 3 queda con 1,5 puntos; el lector recibe número con coma. No es la mitad de la vida ACTUAL cada vez.
+- Mordisco no consume el refuerzo de Pepa, que es solo para semillas. No hay recarga en este piloto. Una entrada vacía o sin Brotañam no gasta acción ni da rayitos.
+- Costo y activación son diseño de esta prueba local, no cifras dictadas por Rocky.
+
+Salpicadura suave abstracta, de círculos como pintura: verde al zombi, celeste al esqueleto, violeta al bicho y dorada a Boca de Brote. Estática, sin destellos, gore o nuevas temporizaciones. Se muestra después del mordisco hasta la próxima acción o cambio de momento. El texto anuncia color/efecto; ninguna información depende del color. Brotañam no tiene barra de salud propia porque las plantas en este piloto no reciben daño. El helecho tiene su uso único como antes.
+
+Barras de salud visuales para todos los adversarios y el jardín. HTML meter con etiqueta, valor numérico y valor accesible. Vidas del jardín expresadas como 2 vidas y media, etc. Los dibujos tienen barra pequeña y número de apoyo; toda la información también está en la lista legible.
+
+Pruebas adicionales de mordisco con los cuatro tipos: máximo a mitad, mitad a frenado, costo, no consumir refuerzo y sin planta no avanzar. Prueba real de interfaz de plantar, morder y frenar al segundo mordisco. Axe limpio con barras y efecto. Capturas de mordisco/barras y selección inspeccionadas. La captura prepara un adversario y reserva de puntos localmente para mostrar el efecto, no es una partida remota ni evidencia de balance real.
+
+## Documentación previa (lo anterior prevalece)
+
+# Revisión local: tres personajes para el jardín
+
+NO PUBLICADA. Base anterior en ensayo: 72d0a0e. Esta carpeta agrega personajes solo localmente. El nombre Jardín Chiflado sigue provisional y Rocky confirmó un personaje fijo para toda la partida. Ningún cambio en ensayo/Corazón.
+
+## Carnívora enemiga nueva
+
+Boca de Brote es un cuarto adversario original, con SVG y cuatro tonos propios. Tiene 4 puntos de vida y aparece una vez por cada momento (además de las metas de los tres tipos anteriores). Si llega, quita media vida. Las fracciones se anuncian como 2 vidas y media o media vida. No come a otros adversarios: esa parte de la idea sigue sin aclarar. Los escudos funcionan también contra ella y no cuenta como frenada si llegó. El piloto pasa a 18 adversarios si ninguno llega; sin ayudas requiere 26 defensas válidas. Ni esa cantidad ni el balance se presentan como cifras dictadas por Rocky.
+
+## Cambios
+
+Elección explícita ANTES de empezar. No hay personaje preseleccionado en la interfaz. Fijo durante los tres momentos; solo se cambia reiniciando toda la partida, con confirmación que avisa pérdida de progreso.
+
+- Regadera Rita: seis rayitos iniciales, tres vidas.
+- Caracol Tito: cuatro vidas iniciales, cuatro rayitos.
+- Lata Pepa: tres vidas y cuatro rayitos; prepara con botón un +1 al próximo disparo de semillas, una vez por cada día/tarde/noche. No se apila ni acumula entre momentos. Insecticida y entrada vacía no lo consumen. Con malvón, semillas pasan de tres a cuatro. Prepararlo no mueve enemigos ni da rayitos.
+
+Mismas plantas/armas para cualquiera, sin costo real o desbloqueos. Dibujos vectoriales propios para la selección. Estado de personaje y habilidad en texto y en Escuchar situación. Voz opcional/lector como antes, sin prueba física Samsung/TalkBack todavía.
+
+Pruebas adicionales: 750 partidas completas (250 por personaje), además de los 1.000 juegos base actualizados con carnívora; Tito/Rita recursos correctos, Pepa una vez por momento, conservación con insecticida/entrada vacía, reinicio y combinación con malvón. Los quince tests base se conservan (inician sin habilidad de personaje como referencia del motor anterior). Prueba UI completa con Pepa y elección/reinicio con Tito y Rita, sin errores, Axe limpio incluyendo selección móvil y situación con media vida. Verificadas pérdida de media vida, reposición y derrota al perder la última media vida. Inspeccionada la selección real de 430 px. La narración de la prueba sigue sustituida, no se verificó audición física.
+
+```
+node test-engine.cjs
+node test-characters.cjs
+npm install
+npx playwright install chromium
+npm run test:browser
+```
+
+## Documentación de la base (las excepciones anteriores prevalecen)
+
 # Jardín Chiflado (nombre provisional)
 
 Prototipo local separado, hecho el 17 de noviembre de 2026. No está en el ensayo ni en Corazón. No modifica la Bomba ni ningún juego publicado. Falta elegir el nombre y probarlo con Rocky. Sin grant de publicación.
