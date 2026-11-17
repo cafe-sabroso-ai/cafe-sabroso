@@ -1,0 +1,1192 @@
+[
+  {
+    "id": "records-1",
+    "category": "records",
+    "question": "¿Qué edificio de Dubái, inaugurado en 2010, aparece en Guinness con 828 metros de altura?",
+    "options": [
+      "Burj Khalifa",
+      "Torre Eiffel",
+      "Empire State Building",
+      "Torre de Pisa"
+    ],
+    "correct": 0,
+    "explanation": "La ficha de Guinness registra al Burj Khalifa con 828 metros; se inauguró el 4 de enero de 2010.",
+    "source": "https://www.guinnessworldrecords.com/world-records/tallest-building",
+    "source_label": "Guinness World Records",
+    "checked_on": "2026-11-17",
+    "region": "Asia"
+  },
+  {
+    "id": "records-2",
+    "category": "records",
+    "question": "¿Qué viaducto francés figura en Guinness por alcanzar una altura estructural de 336,4 metros en 2004?",
+    "options": [
+      "Viaducto de Millau",
+      "Puente de Brooklyn",
+      "Puente de la Torre de Londres",
+      "Puente de Rialto"
+    ],
+    "correct": 0,
+    "explanation": "La medida citada para Millau es estructural: incluye pila y mástil. No debe confundirse con la altura de la calzada sobre el agua.",
+    "source": "https://guinnessworldrecords.com/world-records/tallest-bridge",
+    "source_label": "Guinness World Records",
+    "checked_on": "2026-11-17",
+    "region": "Europa"
+  },
+  {
+    "id": "records-3",
+    "category": "records",
+    "question": "En la ficha de Guinness, ¿qué puente ferroviario chino alcanza unos 164 kilómetros de largo?",
+    "options": [
+      "Gran Puente Danyang-Kunshan",
+      "Golden Gate",
+      "Puente de Carlos",
+      "Puente de los Suspiros"
+    ],
+    "correct": 0,
+    "explanation": "El Danyang-Kunshan forma parte de la línea de alta velocidad Pekín-Shanghái y abrió en 2011.",
+    "source": "https://www.guinnessworldrecords.com/world-records/longest-bridge",
+    "source_label": "Guinness World Records",
+    "checked_on": "2026-11-17",
+    "region": "Asia"
+  },
+  {
+    "id": "records-4",
+    "category": "records",
+    "question": "¿En qué país está el túnel de base de San Gotardo, registrado por Guinness con 57 kilómetros?",
+    "options": [
+      "Suiza",
+      "Canadá",
+      "Japón",
+      "Marruecos"
+    ],
+    "correct": 0,
+    "explanation": "La ficha del túnel ferroviario sitúa sus extremos entre Erstfeld y Bodio, en Suiza.",
+    "source": "https://www.guinnessworldrecords.com/world-records/longest-rail-tunnel",
+    "source_label": "Guinness World Records",
+    "checked_on": "2026-11-17",
+    "region": "Europa"
+  },
+  {
+    "id": "records-5",
+    "category": "records",
+    "question": "¿Qué lengua registra Guinness en su ficha de alfabeto más largo, contando letras incluso fuera de uso actual?",
+    "options": [
+      "Jemer, de Camboya",
+      "Español",
+      "Italiano",
+      "Finés"
+    ],
+    "correct": 0,
+    "explanation": "La ficha cuenta 74 letras del jemer, incluidas algunas sin uso actual. El resultado depende de ese criterio de conteo.",
+    "source": "https://www.guinnessworldrecords.com/world-records/longest-alphabet",
+    "source_label": "Guinness World Records",
+    "checked_on": "2026-11-17",
+    "region": "Asia"
+  },
+  {
+    "id": "records-6",
+    "category": "records",
+    "question": "¿Qué medio de transporte pilotó Jeannette Piccard para ser la primera mujer en llegar a la estratosfera en 1934?",
+    "options": [
+      "Un globo",
+      "Un helicóptero",
+      "Un cohete orbital",
+      "Un dirigible rígido"
+    ],
+    "correct": 0,
+    "explanation": "Piccard pilotó el globo Century of Progress; fue un vuelo estratosférico, no un viaje orbital.",
+    "source": "https://www.guinnessworldrecords.com/news/2026/3/jeannette-piccard-the-first-woman-in-the-stratosphere",
+    "source_label": "Guinness World Records",
+    "checked_on": "2026-11-17",
+    "region": "América del Norte"
+  },
+  {
+    "id": "records-7",
+    "category": "records",
+    "question": "¿Qué túnel construido en 1793 en Derbyshire documenta Guinness como el ferroviario más antiguo?",
+    "options": [
+      "Fritchley",
+      "San Gotardo",
+      "Seikan",
+      "Canal de la Mancha"
+    ],
+    "correct": 0,
+    "explanation": "La ficha de Fritchley atribuye su construcción a Benjamin Outram en 1793.",
+    "source": "https://guinnessworldrecords.com/world-records/114184-oldest-railway-tunnel",
+    "source_label": "Guinness World Records",
+    "checked_on": "2026-11-17",
+    "region": "Europa"
+  },
+  {
+    "id": "records-8",
+    "category": "records",
+    "question": "¿Qué dos ciudades une la línea citada por Guinness en el récord ferroviario de alta velocidad abierto en diciembre de 2012?",
+    "options": [
+      "Pekín y Cantón",
+      "Madrid y Lisboa",
+      "Roma y Atenas",
+      "Tokio y Seúl"
+    ],
+    "correct": 0,
+    "explanation": "La ficha documenta la línea Pekín-Cantón, también llamada Beijing-Guangzhou. Es un registro fechado, no una promesa de récord permanente.",
+    "source": "https://www.guinnessworldrecords.com/world-records/106728-longest-high-speed-railway-line",
+    "source_label": "Guinness World Records",
+    "checked_on": "2026-11-17",
+    "region": "Asia"
+  },
+  {
+    "id": "records-9",
+    "category": "records",
+    "question": "¿Qué lago africano identifica Guinness como el más largo, con unos 673 kilómetros?",
+    "options": [
+      "Tanganica",
+      "Titicaca",
+      "Ginebra",
+      "Erie"
+    ],
+    "correct": 0,
+    "explanation": "Guinness distingue longitud de profundidad: aquí se pregunta por la longitud del lago Tanganica.",
+    "source": "https://www.guinnessworldrecords.com/world-records/497936-longest-lake",
+    "source_label": "Guinness World Records",
+    "checked_on": "2026-11-17",
+    "region": "África"
+  },
+  {
+    "id": "records-10",
+    "category": "records",
+    "question": "En la ficha de muro más largo de Guinness, ¿qué construcción tiene una línea principal y numerosos ramales?",
+    "options": [
+      "La Gran Muralla China",
+      "El Muro de Berlín",
+      "El Muro de Adriano",
+      "El Muro de las Lamentaciones"
+    ],
+    "correct": 0,
+    "explanation": "La ficha identifica la Gran Muralla. Las cifras cambian según se cuente la línea principal, los ramales o distintas épocas de construcción.",
+    "source": "https://www.guinnessworldrecords.com/world-records/longest-wall",
+    "source_label": "Guinness World Records",
+    "checked_on": "2026-11-17",
+    "region": "Asia"
+  },
+  {
+    "id": "curiosities-1",
+    "category": "curiosities",
+    "question": "¿Para qué servía el antiguo mecanismo de Anticitera según el Science Museum?",
+    "options": [
+      "Calcular movimientos astronómicos",
+      "Medir la presión de neumáticos",
+      "Grabar voces",
+      "Enviar mensajes por radio"
+    ],
+    "correct": 0,
+    "explanation": "Sus engranajes representaban ciclos del cielo y permitían predecir posiciones y eclipses.",
+    "source": "https://blog.sciencemuseum.org.uk/ancient-greek-computing/",
+    "source_label": "Science Museum",
+    "checked_on": "2026-11-17",
+    "region": "Europa"
+  },
+  {
+    "id": "curiosities-2",
+    "category": "curiosities",
+    "question": "¿En qué tipo de hallazgo apareció el mecanismo de Anticitera?",
+    "options": [
+      "Los restos de un naufragio",
+      "Una mina de carbón",
+      "Una estación espacial",
+      "Un árbol hueco"
+    ],
+    "correct": 0,
+    "explanation": "Partes del mecanismo se recuperaron entre los restos de un barco; no era un aparato electrónico.",
+    "source": "https://blog.sciencemuseum.org.uk/ancient-greek-computing/",
+    "source_label": "Science Museum",
+    "checked_on": "2026-11-17",
+    "region": "Europa"
+  },
+  {
+    "id": "curiosities-3",
+    "category": "curiosities",
+    "question": "Según la Biblioteca Beinecke, ¿qué sigue sin identificarse de forma concluyente en el manuscrito Voynich?",
+    "options": [
+      "Su escritura y el significado del texto",
+      "El color de todas sus páginas",
+      "El nombre de su actual biblioteca",
+      "Si tiene ilustraciones"
+    ],
+    "correct": 0,
+    "explanation": "La biblioteca describe una escritura no identificada y un texto sin descifrar; las teorías no equivalen a una solución aceptada.",
+    "source": "https://beinecke.library.yale.edu/beinecke/collections/beinecke-cipher-voynich-manuscript",
+    "source_label": "Biblioteca Beinecke, Universidad de Yale",
+    "checked_on": "2026-11-17",
+    "region": "Europa y América del Norte"
+  },
+  {
+    "id": "curiosities-4",
+    "category": "curiosities",
+    "question": "¿Qué institución conserva el manuscrito Voynich y ofrece imágenes de sus páginas para investigar?",
+    "options": [
+      "La Biblioteca Beinecke de Yale",
+      "El observatorio de Greenwich",
+      "El acuario de Lisboa",
+      "La agencia espacial japonesa"
+    ],
+    "correct": 0,
+    "explanation": "El manuscrito forma parte de la colección Beinecke de la Universidad de Yale.",
+    "source": "https://beinecke.library.yale.edu/beinecke/collections/beinecke-cipher-voynich-manuscript",
+    "source_label": "Biblioteca Beinecke, Universidad de Yale",
+    "checked_on": "2026-11-17",
+    "region": "América del Norte"
+  },
+  {
+    "id": "curiosities-5",
+    "category": "curiosities",
+    "question": "¿Qué combinación de escrituras permitió comparar el mismo decreto en la Piedra de Rosetta?",
+    "options": [
+      "Jeroglífica, demótica y griega",
+      "Latina, cirílica y japonesa",
+      "Braille, morse y taquigrafía",
+      "Rúnica, china y árabe"
+    ],
+    "correct": 0,
+    "explanation": "Son tres escrituras, no tres lenguas independientes: dos formas de escritura egipcia y griego antiguo.",
+    "source": "https://www.britishmuseum.org/blog/everything-you-ever-wanted-know-about-rosetta-stone",
+    "source_label": "British Museum",
+    "checked_on": "2026-11-17",
+    "region": "África"
+  },
+  {
+    "id": "curiosities-6",
+    "category": "curiosities",
+    "question": "¿Qué clase de mensaje contiene la Piedra de Rosetta?",
+    "options": [
+      "Un decreto referido a Ptolomeo V",
+      "Una receta de pan",
+      "Una lista de constelaciones",
+      "El plano de un barco"
+    ],
+    "correct": 0,
+    "explanation": "El British Museum la describe como una estela con un decreto sobre el rey Ptolomeo V.",
+    "source": "https://www.britishmuseum.org/blog/everything-you-ever-wanted-know-about-rosetta-stone",
+    "source_label": "British Museum",
+    "checked_on": "2026-11-17",
+    "region": "África"
+  },
+  {
+    "id": "curiosities-7",
+    "category": "curiosities",
+    "question": "¿Qué tono puede destacar cerca del Sol durante los atardeceres marcianos observados por la NASA?",
+    "options": [
+      "Azulado",
+      "Verde neón",
+      "Rosa fluorescente",
+      "Negro uniforme"
+    ],
+    "correct": 0,
+    "explanation": "El polvo fino de la atmósfera marciana hace más visible el azul en la zona cercana al Sol. No todos los atardeceres tienen idéntica intensidad.",
+    "source": "https://science.nasa.gov/solar-system/planets/mars/what-does-a-sunrise-sunset-look-like-on-mars/",
+    "source_label": "NASA",
+    "checked_on": "2026-11-17",
+    "region": "Mundo"
+  },
+  {
+    "id": "curiosities-8",
+    "category": "curiosities",
+    "question": "¿Qué material de la atmósfera ayuda a producir el tono azulado en los atardeceres de Marte?",
+    "options": [
+      "Polvo fino",
+      "Algodón",
+      "Humo de ciudades",
+      "Vapor de océanos de superficie"
+    ],
+    "correct": 0,
+    "explanation": "La NASA explica el efecto por cómo el polvo fino dispersa y deja pasar la luz.",
+    "source": "https://science.nasa.gov/solar-system/planets/mars/what-does-a-sunrise-sunset-look-like-on-mars/",
+    "source_label": "NASA",
+    "checked_on": "2026-11-17",
+    "region": "Mundo"
+  },
+  {
+    "id": "curiosities-9",
+    "category": "curiosities",
+    "question": "¿En qué planeta una rotación sobre su eje tarda unos 243 días terrestres y la vuelta al Sol unos 225?",
+    "options": [
+      "Venus",
+      "Marte",
+      "Neptuno",
+      "Júpiter"
+    ],
+    "correct": 0,
+    "explanation": "Se compara el período de rotación con el orbital. No hay que confundirlo con el día solar entre dos amaneceres.",
+    "source": "https://science.nasa.gov/venus/venus-facts/",
+    "source_label": "NASA",
+    "checked_on": "2026-11-17",
+    "region": "Mundo"
+  },
+  {
+    "id": "curiosities-10",
+    "category": "curiosities",
+    "question": "¿Cómo se llama el tipo de campo magnético de Venus producido por la interacción del viento solar con su atmósfera?",
+    "options": [
+      "Campo magnético inducido",
+      "Campo de un imán de barra interno",
+      "Campo acústico",
+      "Campo gravitatorio artificial"
+    ],
+    "correct": 0,
+    "explanation": "La NASA distingue su campo inducido de un campo generado internamente como el terrestre.",
+    "source": "https://science.nasa.gov/venus/venus-facts/",
+    "source_label": "NASA",
+    "checked_on": "2026-11-17",
+    "region": "Mundo"
+  },
+  {
+    "id": "myths-1",
+    "category": "myths",
+    "question": "En la leyenda del fénix, ¿de dónde surge el nuevo pájaro al morir el anterior?",
+    "options": [
+      "De sus cenizas",
+      "De un iceberg",
+      "De una concha marina",
+      "De una semilla de roble"
+    ],
+    "correct": 0,
+    "explanation": "Se trata de un relato mítico de renovación, no de una especie animal comprobada.",
+    "source": "https://kids.britannica.com/kids/article/animals-legendary/352758",
+    "source_label": "Britannica Kids",
+    "checked_on": "2026-11-17",
+    "region": "África y Europa"
+  },
+  {
+    "id": "myths-2",
+    "category": "myths",
+    "question": "¿Qué rasgo distingue al unicornio de las leyendas?",
+    "options": [
+      "Un cuerno en la frente",
+      "Tres colas de pez",
+      "Una rueda en el lomo",
+      "Dos trompas"
+    ],
+    "correct": 0,
+    "explanation": "Las representaciones legendarias varían, pero el cuerno único es su rasgo característico.",
+    "source": "https://kids.britannica.com/kids/article/animals-legendary/352758",
+    "source_label": "Britannica Kids",
+    "checked_on": "2026-11-17",
+    "region": "Asia y Europa"
+  },
+  {
+    "id": "myths-3",
+    "category": "myths",
+    "question": "¿Qué criatura del folclore marino noruego se describe como enorme y parecida a un pulpo?",
+    "options": [
+      "El kraken",
+      "El unicornio",
+      "El fénix",
+      "El minotauro"
+    ],
+    "correct": 0,
+    "explanation": "El kraken pertenece al folclore; no se presenta aquí como un animal real.",
+    "source": "https://kids.britannica.com/kids/article/animals-legendary/352758",
+    "source_label": "Britannica Kids",
+    "checked_on": "2026-11-17",
+    "region": "Europa"
+  },
+  {
+    "id": "myths-4",
+    "category": "myths",
+    "question": "En relatos tradicionales, ¿qué forma suele tener una sirena marina?",
+    "options": [
+      "Torso humano y cola de pez",
+      "Cabeza de caballo y alas de abeja",
+      "Cuerpo de árbol y patas de piedra",
+      "Cabeza de pez y cola de ave"
+    ],
+    "correct": 0,
+    "explanation": "Es la figura mítica marina descrita por la fuente; existen variantes en distintas tradiciones.",
+    "source": "https://kids.britannica.com/kids/article/animals-legendary/352758",
+    "source_label": "Britannica Kids",
+    "checked_on": "2026-11-17",
+    "region": "Mundo"
+  },
+  {
+    "id": "myths-5",
+    "category": "myths",
+    "question": "¿Con qué cordillera se asocia al yeti en las leyendas?",
+    "options": [
+      "El Himalaya",
+      "Los Alpes",
+      "Los Andes",
+      "Los Pirineos"
+    ],
+    "correct": 0,
+    "explanation": "La asociación pertenece a relatos y supuestas observaciones, no prueba que la criatura exista.",
+    "source": "https://kids.britannica.com/kids/article/animals-legendary/352758",
+    "source_label": "Britannica Kids",
+    "checked_on": "2026-11-17",
+    "region": "Asia"
+  },
+  {
+    "id": "myths-6",
+    "category": "myths",
+    "question": "¿Qué lago escocés da nombre a una famosa criatura legendaria cuya existencia no está probada?",
+    "options": [
+      "Loch Ness",
+      "Lago Como",
+      "Lago Victoria",
+      "Lago Ontario"
+    ],
+    "correct": 0,
+    "explanation": "Britannica distingue los relatos sobre el monstruo de una prueba de su existencia.",
+    "source": "https://kids.britannica.com/kids/article/animals-legendary/352758",
+    "source_label": "Britannica Kids",
+    "checked_on": "2026-11-17",
+    "region": "Europa"
+  },
+  {
+    "id": "myths-7",
+    "category": "myths",
+    "question": "En muchas narraciones de África occidental, ¿qué animal representa Anansi?",
+    "options": [
+      "Una araña",
+      "Un caballo",
+      "Un pingüino",
+      "Una jirafa"
+    ],
+    "correct": 0,
+    "explanation": "Anansi es una figura astuta de tradiciones de África occidental; los relatos tienen variantes.",
+    "source": "https://kids.britannica.com/scholars/article/trickster-tale/73359",
+    "source_label": "Britannica",
+    "checked_on": "2026-11-17",
+    "region": "África"
+  },
+  {
+    "id": "myths-8",
+    "category": "myths",
+    "question": "¿Qué acción se atribuye a Māui en numerosos relatos de Oceanía?",
+    "options": [
+      "Sacar tierra del mar como si pescara",
+      "Inventar el tren de vapor",
+      "Construir la Torre Eiffel",
+      "Descubrir los rayos X"
+    ],
+    "correct": 0,
+    "explanation": "Es una hazaña de los relatos míticos de Māui, no un hecho geológico.",
+    "source": "https://kids.britannica.com/scholars/article/trickster-tale/73359",
+    "source_label": "Britannica",
+    "checked_on": "2026-11-17",
+    "region": "Oceanía"
+  },
+  {
+    "id": "myths-9",
+    "category": "myths",
+    "question": "¿Con qué animal se relaciona el kitsune de los relatos japoneses?",
+    "options": [
+      "El zorro",
+      "La ballena",
+      "El escarabajo",
+      "El caballo"
+    ],
+    "correct": 0,
+    "explanation": "El kitsune aparece como zorro capaz de transformarse en diversas narraciones japonesas.",
+    "source": "https://kids.britannica.com/scholars/article/trickster-tale/73359",
+    "source_label": "Britannica",
+    "checked_on": "2026-11-17",
+    "region": "Asia"
+  },
+  {
+    "id": "myths-10",
+    "category": "myths",
+    "question": "¿Qué imagen expresa el nombre y la representación de Quetzalcóatl?",
+    "options": [
+      "Una serpiente emplumada",
+      "Un león de hielo",
+      "Un pez de cristal",
+      "Un caballo de fuego"
+    ],
+    "correct": 0,
+    "explanation": "La serpiente emplumada forma parte de tradiciones mesoamericanas; sus representaciones e historias cambian con el contexto.",
+    "source": "https://kids.britannica.com/scholars/article/Quetzalc%C3%B3atl/62250",
+    "source_label": "Britannica",
+    "checked_on": "2026-11-17",
+    "region": "América del Norte"
+  },
+  {
+    "id": "jobs-1",
+    "category": "jobs",
+    "question": "¿Qué profesión crea y actualiza mapas a partir de información geográfica?",
+    "options": [
+      "Cartografía",
+      "Sastrería",
+      "Odontología",
+      "Pastelería"
+    ],
+    "correct": 0,
+    "explanation": "La cartografía reúne y representa información espacial para elaborar mapas.",
+    "source": "https://www.bls.gov/ooh/architecture-and-engineering/cartographers-and-photogrammetrists.htm",
+    "source_label": "Bureau of Labor Statistics",
+    "checked_on": "2026-11-17",
+    "region": "Mundo"
+  },
+  {
+    "id": "jobs-2",
+    "category": "jobs",
+    "question": "¿Qué especialidad utiliza fotografías y otras imágenes para medir y representar terrenos?",
+    "options": [
+      "Fotogrametría",
+      "Caligrafía",
+      "Encuadernación",
+      "Orfebrería"
+    ],
+    "correct": 0,
+    "explanation": "La fotogrametría trabaja con imágenes y medidas espaciales, a menudo junto con la cartografía.",
+    "source": "https://www.bls.gov/ooh/architecture-and-engineering/cartographers-and-photogrammetrists.htm",
+    "source_label": "Bureau of Labor Statistics",
+    "checked_on": "2026-11-17",
+    "region": "Mundo"
+  },
+  {
+    "id": "jobs-3",
+    "category": "jobs",
+    "question": "¿Quién convierte un texto escrito de una lengua a otra como tarea principal?",
+    "options": [
+      "Una persona traductora",
+      "Una persona meteoróloga",
+      "Una persona alfarera",
+      "Una persona electricista"
+    ],
+    "correct": 0,
+    "explanation": "La traducción trabaja principalmente con texto escrito; no es lo mismo que interpretar una conversación en vivo.",
+    "source": "https://www.bls.gov/ooh/media-and-communication/interpreters-and-translators.htm",
+    "source_label": "Bureau of Labor Statistics",
+    "checked_on": "2026-11-17",
+    "region": "Mundo"
+  },
+  {
+    "id": "jobs-4",
+    "category": "jobs",
+    "question": "¿Qué profesional facilita una conversación en vivo entre personas que usan lenguas diferentes?",
+    "options": [
+      "Una persona intérprete",
+      "Una persona cartógrafa",
+      "Una persona vidriera",
+      "Una persona ebanista"
+    ],
+    "correct": 0,
+    "explanation": "La interpretación puede trabajar con lenguas habladas o de señas.",
+    "source": "https://www.bls.gov/ooh/media-and-communication/interpreters-and-translators.htm",
+    "source_label": "Bureau of Labor Statistics",
+    "checked_on": "2026-11-17",
+    "region": "Mundo"
+  },
+  {
+    "id": "jobs-5",
+    "category": "jobs",
+    "question": "¿Qué profesión ayuda a encontrar información y a usar las colecciones de una biblioteca?",
+    "options": [
+      "Bibliotecología",
+      "Albañilería",
+      "Peluquería",
+      "Soldadura"
+    ],
+    "correct": 0,
+    "explanation": "El trabajo bibliotecario incluye organizar recursos y ayudar a las personas a encontrar y usar información.",
+    "source": "https://www.bls.gov/ooh/education-training-and-library/librarians.htm",
+    "source_label": "Bureau of Labor Statistics",
+    "checked_on": "2026-11-17",
+    "region": "Mundo"
+  },
+  {
+    "id": "jobs-6",
+    "category": "jobs",
+    "question": "¿Quién evalúa, organiza y preserva documentos con valor duradero?",
+    "options": [
+      "Una persona archivista",
+      "Una persona florista",
+      "Una persona cerrajera",
+      "Una persona buceadora"
+    ],
+    "correct": 0,
+    "explanation": "La labor archivística cuida documentos y registros para su consulta y preservación.",
+    "source": "https://www.bls.gov/ooh/education-training-and-library/curators-museum-technicians-and-conservators.htm",
+    "source_label": "Bureau of Labor Statistics",
+    "checked_on": "2026-11-17",
+    "region": "Mundo"
+  },
+  {
+    "id": "jobs-7",
+    "category": "jobs",
+    "question": "En un museo, ¿qué profesional trata y restaura objetos de una colección para conservarlos?",
+    "options": [
+      "Una persona conservadora-restauradora",
+      "Una persona controladora aérea",
+      "Una persona panadera",
+      "Una persona agrimensora"
+    ],
+    "correct": 0,
+    "explanation": "La conservación-restauración se ocupa del estado material de los objetos; no consiste en sustituirlos por copias sin registro.",
+    "source": "https://www.bls.gov/ooh/education-training-and-library/curators-museum-technicians-and-conservators.htm",
+    "source_label": "Bureau of Labor Statistics",
+    "checked_on": "2026-11-17",
+    "region": "Mundo"
+  },
+  {
+    "id": "jobs-8",
+    "category": "jobs",
+    "question": "¿Quién estudia la atmósfera y prepara pronósticos del tiempo?",
+    "options": [
+      "Una persona meteoróloga",
+      "Una persona tipógrafa",
+      "Una persona escenógrafa",
+      "Una persona joyera"
+    ],
+    "correct": 0,
+    "explanation": "La meteorología usa observaciones y modelos de la atmósfera para estudiar y pronosticar el tiempo.",
+    "source": "https://www.bls.gov/ooh/life-physical-and-social-science/atmospheric-scientists-including-meteorologists.htm",
+    "source_label": "Bureau of Labor Statistics",
+    "checked_on": "2026-11-17",
+    "region": "Mundo"
+  },
+  {
+    "id": "jobs-9",
+    "category": "jobs",
+    "question": "¿Qué profesión estudia culturas del pasado mediante restos materiales, como herramientas y cerámica?",
+    "options": [
+      "Arqueología",
+      "Podología",
+      "Tapicería",
+      "Contabilidad"
+    ],
+    "correct": 0,
+    "explanation": "La arqueología investiga restos materiales de actividades humanas.",
+    "source": "https://www.bls.gov/ooh/life-physical-and-social-science/anthropologists-and-archeologists.htm",
+    "source_label": "Bureau of Labor Statistics",
+    "checked_on": "2026-11-17",
+    "region": "Mundo"
+  },
+  {
+    "id": "jobs-10",
+    "category": "jobs",
+    "question": "¿Qué profesional investiga estrellas, planetas y otros cuerpos del universo?",
+    "options": [
+      "Una persona astrónoma",
+      "Una persona notaria",
+      "Una persona modista",
+      "Una persona carpintera"
+    ],
+    "correct": 0,
+    "explanation": "La astronomía estudia objetos y fenómenos del universo; no debe confundirse con astrología.",
+    "source": "https://www.bls.gov/ooh/life-physical-and-social-science/print/physicists-and-astronomers.htm",
+    "source_label": "Bureau of Labor Statistics",
+    "checked_on": "2026-11-17",
+    "region": "Mundo"
+  },
+  {
+    "id": "languages-1",
+    "category": "languages",
+    "question": "¿En qué lengua se usa konnichiwa como saludo general?",
+    "options": [
+      "Japonés",
+      "Sueco",
+      "Quechua de Cuzco",
+      "Suajili"
+    ],
+    "correct": 0,
+    "explanation": "Konnichiwa es una forma de saludo japonés. La voz española del dispositivo puede aproximar la pronunciación, no enseñarla con exactitud.",
+    "source": "https://www.omniglot.com/language/phrases/japanese.php",
+    "source_label": "Omniglot",
+    "checked_on": "2026-11-17",
+    "region": "Asia"
+  },
+  {
+    "id": "languages-2",
+    "category": "languages",
+    "question": "En japonés, ¿en qué situación se usa especialmente moshi moshi?",
+    "options": [
+      "Al atender el teléfono",
+      "Solo al despedir un avión",
+      "Al brindar en una boda",
+      "Al pedir silencio en un teatro"
+    ],
+    "correct": 0,
+    "explanation": "La fuente distingue el saludo telefónico moshi moshi de los saludos generales.",
+    "source": "https://www.omniglot.com/language/phrases/japanese.php",
+    "source_label": "Omniglot",
+    "checked_on": "2026-11-17",
+    "region": "Asia"
+  },
+  {
+    "id": "languages-3",
+    "category": "languages",
+    "question": "¿Qué expresa arigatō en japonés?",
+    "options": [
+      "Gracias",
+      "Buenas noches",
+      "Hasta mañana",
+      "No entiendo"
+    ],
+    "correct": 0,
+    "explanation": "Arigatō es una forma de agradecer; hay variantes más formales.",
+    "source": "https://www.omniglot.com/language/phrases/japanese.php",
+    "source_label": "Omniglot",
+    "checked_on": "2026-11-17",
+    "region": "Asia"
+  },
+  {
+    "id": "languages-4",
+    "category": "languages",
+    "question": "¿Qué lengua usa aloha tanto para saludar como para despedirse?",
+    "options": [
+      "Hawaiano",
+      "Alemán",
+      "Árabe estándar",
+      "Finés"
+    ],
+    "correct": 0,
+    "explanation": "Aloha tiene varios usos, incluidos saludo y despedida. No es una traducción única para toda situación.",
+    "source": "https://www.omniglot.com/language/phrases/hawaiian.php",
+    "source_label": "Omniglot",
+    "checked_on": "2026-11-17",
+    "region": "Oceanía"
+  },
+  {
+    "id": "languages-5",
+    "category": "languages",
+    "question": "¿Qué significa mahalo en hawaiano?",
+    "options": [
+      "Gracias",
+      "Perdón",
+      "Buenas noches",
+      "¿Dónde está?"
+    ],
+    "correct": 0,
+    "explanation": "Mahalo es una expresión de agradecimiento en hawaiano.",
+    "source": "https://www.omniglot.com/language/phrases/hawaiian.php",
+    "source_label": "Omniglot",
+    "checked_on": "2026-11-17",
+    "region": "Oceanía"
+  },
+  {
+    "id": "languages-6",
+    "category": "languages",
+    "question": "En suajili, ¿qué palabra sirve para dar la bienvenida a una persona?",
+    "options": [
+      "Karibu",
+      "Konnichiwa",
+      "Mahalo",
+      "Bonjour"
+    ],
+    "correct": 0,
+    "explanation": "Karibu es singular; la fuente da karibuni para más de una persona.",
+    "source": "https://www.omniglot.com/language/phrases/swahili.php",
+    "source_label": "Omniglot",
+    "checked_on": "2026-11-17",
+    "region": "África"
+  },
+  {
+    "id": "languages-7",
+    "category": "languages",
+    "question": "¿Qué expresa asante en suajili?",
+    "options": [
+      "Gracias",
+      "Hasta mañana",
+      "Buenas noches",
+      "No hablo"
+    ],
+    "correct": 0,
+    "explanation": "Asante se usa para agradecer; la lengua también tiene otras variantes según el contexto.",
+    "source": "https://www.omniglot.com/language/phrases/swahili.php",
+    "source_label": "Omniglot",
+    "checked_on": "2026-11-17",
+    "region": "África"
+  },
+  {
+    "id": "languages-8",
+    "category": "languages",
+    "question": "¿Con qué lengua se asocia el saludo kia ora?",
+    "options": [
+      "Maorí",
+      "Turco",
+      "Polaco",
+      "Coreano"
+    ],
+    "correct": 0,
+    "explanation": "Kia ora es un saludo de te reo Māori, lengua de Aotearoa Nueva Zelanda.",
+    "source": "https://www.omniglot.com/language/phrases/maori.php",
+    "source_label": "Omniglot",
+    "checked_on": "2026-11-17",
+    "region": "Oceanía"
+  },
+  {
+    "id": "languages-9",
+    "category": "languages",
+    "question": "¿Qué significa shukran en árabe?",
+    "options": [
+      "Gracias",
+      "Buenas noches",
+      "Adiós",
+      "Tal vez"
+    ],
+    "correct": 0,
+    "explanation": "Shukran es una forma de agradecer en árabe; se muestra aquí en transliteración.",
+    "source": "https://www.omniglot.com/language/phrases/arabic.php",
+    "source_label": "Omniglot",
+    "checked_on": "2026-11-17",
+    "region": "Asia y África"
+  },
+  {
+    "id": "languages-10",
+    "category": "languages",
+    "question": "Según las frases de quechua de Cuzco de la fuente, ¿para qué sirve rimaykullayki?",
+    "options": [
+      "Saludar",
+      "Contar hasta cien",
+      "Pedir una receta",
+      "Nombrar una herramienta"
+    ],
+    "correct": 0,
+    "explanation": "Rimaykullayki figura como saludo en esta variedad de quechua; otras variedades pueden usar formas distintas.",
+    "source": "https://www.omniglot.com/language/phrases/quechua.php",
+    "source_label": "Omniglot",
+    "checked_on": "2026-11-17",
+    "region": "América del Sur"
+  },
+  {
+    "id": "festivals-1",
+    "category": "festivals",
+    "question": "¿Qué elemento tiene un papel de limpieza simbólica y buenos deseos durante Songkran en Tailandia?",
+    "options": [
+      "El agua",
+      "El carbón",
+      "La sal seca",
+      "La arena"
+    ],
+    "correct": 0,
+    "explanation": "Verter agua y mojar a familiares o amistades son prácticas de Songkran descritas por UNESCO.",
+    "source": "https://ich.unesco.org/en/RL/songkran-in-thailand-traditional-thai-new-year-festival-01719",
+    "source_label": "UNESCO",
+    "checked_on": "2026-11-17",
+    "region": "Asia"
+  },
+  {
+    "id": "festivals-2",
+    "category": "festivals",
+    "question": "¿Qué comienzo del calendario tradicional celebra Songkran?",
+    "options": [
+      "El año nuevo tailandés",
+      "El invierno europeo",
+      "La vendimia del Mediterráneo",
+      "El primer día del calendario romano"
+    ],
+    "correct": 0,
+    "explanation": "Songkran se celebra a mediados de abril y marca el año nuevo tradicional de Tailandia.",
+    "source": "https://ich.unesco.org/en/RL/songkran-in-thailand-traditional-thai-new-year-festival-01719",
+    "source_label": "UNESCO",
+    "checked_on": "2026-11-17",
+    "region": "Asia"
+  },
+  {
+    "id": "festivals-3",
+    "category": "festivals",
+    "question": "¿Qué estación del hemisferio norte comienza junto con Nowruz en las tradiciones que describe UNESCO?",
+    "options": [
+      "La primavera",
+      "El otoño",
+      "El invierno",
+      "El verano"
+    ],
+    "correct": 0,
+    "explanation": "Nowruz marca el año nuevo y el comienzo de la primavera en una amplia zona de Asia y regiones vecinas.",
+    "source": "https://ich.unesco.org/en/decisions/4.COM/13.03",
+    "source_label": "UNESCO",
+    "checked_on": "2026-11-17",
+    "region": "Asia"
+  },
+  {
+    "id": "festivals-4",
+    "category": "festivals",
+    "question": "¿Qué valor destaca UNESCO entre los que transmite Nowruz entre generaciones y vecinos?",
+    "options": [
+      "La reconciliación y la solidaridad",
+      "La prohibición de reunirse",
+      "El aislamiento de las familias",
+      "La competencia militar"
+    ],
+    "correct": 0,
+    "explanation": "La fuente destaca paz, solidaridad, reconciliación y buena vecindad; las prácticas locales son diversas.",
+    "source": "https://ich.unesco.org/en/decisions/4.COM/13.03",
+    "source_label": "UNESCO",
+    "checked_on": "2026-11-17",
+    "region": "Asia"
+  },
+  {
+    "id": "festivals-5",
+    "category": "festivals",
+    "question": "En las comunidades indígenas mexicanas descritas por UNESCO, ¿a quiénes recuerdan las ofrendas del Día de Muertos?",
+    "options": [
+      "Familiares y seres queridos fallecidos",
+      "Solo a atletas ganadores",
+      "Solo a gobernantes vivos",
+      "A visitantes de otros planetas"
+    ],
+    "correct": 0,
+    "explanation": "La celebración conmemora el retorno transitorio de los difuntos dentro de esas creencias y tradiciones.",
+    "source": "https://ich.unesco.org/en/RL/indigenous-festivity-dedicated-to-the-dead-00054",
+    "source_label": "UNESCO",
+    "checked_on": "2026-11-17",
+    "region": "América del Norte"
+  },
+  {
+    "id": "festivals-6",
+    "category": "festivals",
+    "question": "¿Qué se coloca junto a flores y velas en las ofrendas del Día de Muertos descritas por UNESCO?",
+    "options": [
+      "Los platos preferidos de los difuntos",
+      "Piezas de motores encendidos",
+      "Solo agua congelada",
+      "Únicamente papel en blanco"
+    ],
+    "correct": 0,
+    "explanation": "Las comidas favoritas, flores y otras ofrendas forman parte de la preparación familiar descrita por la fuente.",
+    "source": "https://ich.unesco.org/en/RL/indigenous-festivity-dedicated-to-the-dead-00054",
+    "source_label": "UNESCO",
+    "checked_on": "2026-11-17",
+    "region": "América del Norte"
+  },
+  {
+    "id": "festivals-7",
+    "category": "festivals",
+    "question": "¿Qué actividad destaca en el Festival de los Barcos Dragón?",
+    "options": [
+      "Carreras de embarcaciones",
+      "Esquí en una pista de hielo",
+      "Carreras de coches de fórmula",
+      "Saltos desde paracaídas"
+    ],
+    "correct": 0,
+    "explanation": "Las prácticas varían por región, pero las carreras de barcos forman parte central del festival.",
+    "source": "https://ich.unesco.org/en/RL/dragon-boat-festival-00225",
+    "source_label": "UNESCO",
+    "checked_on": "2026-11-17",
+    "region": "Asia"
+  },
+  {
+    "id": "festivals-8",
+    "category": "festivals",
+    "question": "¿En qué mes del calendario gregoriano se celebra Songkran, el año nuevo tradicional tailandés?",
+    "options": [
+      "Abril",
+      "Enero",
+      "Agosto",
+      "Diciembre"
+    ],
+    "correct": 0,
+    "explanation": "UNESCO sitúa Songkran a mediados de abril; no es la celebración del 1 de enero.",
+    "source": "https://ich.unesco.org/en/RL/songkran-in-thailand-traditional-thai-new-year-festival-01719",
+    "source_label": "UNESCO",
+    "checked_on": "2026-11-17",
+    "region": "Asia"
+  },
+  {
+    "id": "festivals-9",
+    "category": "festivals",
+    "question": "¿Qué día del calendario lunar comienza el Festival de los Barcos Dragón según UNESCO?",
+    "options": [
+      "El quinto día del quinto mes",
+      "El primer día del primer mes",
+      "El último día del séptimo mes",
+      "El décimo día del décimo mes"
+    ],
+    "correct": 0,
+    "explanation": "La fecha se expresa según el calendario lunar, por eso no es una fecha gregoriana fija.",
+    "source": "https://ich.unesco.org/en/RL/dragon-boat-festival-00225",
+    "source_label": "UNESCO",
+    "checked_on": "2026-11-17",
+    "region": "Asia"
+  },
+  {
+    "id": "festivals-10",
+    "category": "festivals",
+    "question": "¿Qué tres juegos tradicionales son centrales en Naadam, en Mongolia?",
+    "options": [
+      "Carreras de caballos, lucha y tiro con arco",
+      "Tenis, golf y remo",
+      "Esgrima, patinaje y rugby",
+      "Béisbol, bolos y ciclismo"
+    ],
+    "correct": 0,
+    "explanation": "UNESCO describe esos tres juegos como el centro de Naadam, junto con otras expresiones culturales.",
+    "source": "https://ich.unesco.org/en/RL/naadam-mongolian-traditional-festival-00395",
+    "source_label": "UNESCO",
+    "checked_on": "2026-11-17",
+    "region": "Asia"
+  },
+  {
+    "id": "inventions-1",
+    "category": "inventions",
+    "question": "¿Dónde trabajaba Tim Berners-Lee cuando inventó la World Wide Web en 1989?",
+    "options": [
+      "En el CERN",
+      "En una imprenta de Mainz",
+      "En el faro de Alejandría",
+      "En una fábrica de globos"
+    ],
+    "correct": 0,
+    "explanation": "El CERN documenta el nacimiento de la Web como forma de compartir información entre científicos. La Web no es sinónimo de toda Internet.",
+    "source": "https://home.cern/science/computing/the-birth-of-the-web/short-history-web/",
+    "source_label": "CERN",
+    "checked_on": "2026-11-17",
+    "region": "Europa"
+  },
+  {
+    "id": "inventions-2",
+    "category": "inventions",
+    "question": "¿Qué hecho de la naturaleza inspiró a George de Mestral el cierre de ganchos y bucles conocido como velcro?",
+    "options": [
+      "Cardos o frutos con ganchos pegados a ropa y pelo",
+      "La caída de nieve",
+      "El brillo de la Luna",
+      "El sonido de una campana"
+    ],
+    "correct": 0,
+    "explanation": "Observó pequeños ganchos de frutos que se prendían a la ropa y al pelo de su perro.",
+    "source": "https://invention.si.edu/invention-stories/george-de-mestral-velcror-inventor",
+    "source_label": "Smithsonian",
+    "checked_on": "2026-11-17",
+    "region": "Europa"
+  },
+  {
+    "id": "inventions-3",
+    "category": "inventions",
+    "question": "¿Qué dos palabras francesas se combinaron para formar el nombre Velcro?",
+    "options": [
+      "Velours y crochet",
+      "Bonjour y merci",
+      "Rouge y bleu",
+      "Livre y école"
+    ],
+    "correct": 0,
+    "explanation": "La fuente del Smithsonian relaciona el nombre con terciopelo y gancho.",
+    "source": "https://invention.si.edu/invention-stories/george-de-mestral-velcror-inventor",
+    "source_label": "Smithsonian",
+    "checked_on": "2026-11-17",
+    "region": "Europa"
+  },
+  {
+    "id": "inventions-4",
+    "category": "inventions",
+    "question": "¿Qué instrumentos portátiles permiten escribir braille manualmente sobre papel?",
+    "options": [
+      "Una regleta y un punzón",
+      "Una brújula y un sextante",
+      "Un diapasón y un metrónomo",
+      "Un compás y un termómetro"
+    ],
+    "correct": 0,
+    "explanation": "El Smithsonian describe la guía o regleta y el punzón para marcar puntos. No se trata de leer con tinta en relieve de letras comunes.",
+    "source": "https://www.si.edu/spotlight/printing-presses/braille-printers",
+    "source_label": "Smithsonian",
+    "checked_on": "2026-11-17",
+    "region": "Mundo"
+  },
+  {
+    "id": "inventions-5",
+    "category": "inventions",
+    "question": "¿Qué característica del sistema de Louis Braille facilitó escribir además de leer?",
+    "options": [
+      "Sus puntos se podían marcar a mano en el papel",
+      "Solo se podía producir con una gran imprenta",
+      "Exigía una pantalla eléctrica",
+      "Usaba únicamente colores"
+    ],
+    "correct": 0,
+    "explanation": "El Smithsonian destaca que el sistema de puntos podía escribirse con un instrumento manual, sin depender de una imprenta.",
+    "source": "https://www.si.edu/spotlight/printing-presses/braille-printers",
+    "source_label": "Smithsonian",
+    "checked_on": "2026-11-17",
+    "region": "Europa"
+  },
+  {
+    "id": "inventions-6",
+    "category": "inventions",
+    "question": "¿Qué significan las letras QR en el nombre del código desarrollado por DENSO WAVE?",
+    "options": [
+      "Quick response, respuesta rápida",
+      "Quiet radio, radio silenciosa",
+      "Quality river, río de calidad",
+      "Quarter road, cuarto de camino"
+    ],
+    "correct": 0,
+    "explanation": "El nombre expresa el objetivo de lectura rápida del código.",
+    "source": "https://www.qrcode.com/en/history/",
+    "source_label": "DENSO WAVE",
+    "checked_on": "2026-11-17",
+    "region": "Asia"
+  },
+  {
+    "id": "inventions-7",
+    "category": "inventions",
+    "question": "¿En qué año anunció DENSO WAVE el código QR?",
+    "options": [
+      "1994",
+      "1894",
+      "1944",
+      "2024"
+    ],
+    "correct": 0,
+    "explanation": "La historia oficial de DENSO WAVE fecha su lanzamiento en 1994.",
+    "source": "https://www.qrcode.com/en/history/",
+    "source_label": "DENSO WAVE",
+    "checked_on": "2026-11-17",
+    "region": "Asia"
+  },
+  {
+    "id": "inventions-8",
+    "category": "inventions",
+    "question": "¿Con qué material hizo Laennec el tubo que precedió a sus estetoscopios de madera?",
+    "options": [
+      "Papel enrollado",
+      "Plomo fundido",
+      "Vidrio líquido",
+      "Hielo"
+    ],
+    "correct": 0,
+    "explanation": "En 1816 escuchó el corazón a través de un tubo de papel enrollado y luego hizo versiones de madera.",
+    "source": "https://collection.sciencemuseumgroup.org.uk/objects/co90986/laennecs-stethoscope",
+    "source_label": "Science Museum Group",
+    "checked_on": "2026-11-17",
+    "region": "Europa"
+  },
+  {
+    "id": "inventions-9",
+    "category": "inventions",
+    "question": "¿Qué tipo de computadora alojó el primer servidor de la Web en la oficina de Berners-Lee?",
+    "options": [
+      "Una NeXT",
+      "Una calculadora de bolsillo",
+      "Una consola de ocho bits",
+      "Una tableta sin conexión"
+    ],
+    "correct": 0,
+    "explanation": "La historia del CERN documenta el uso de una computadora NeXT para el primer servidor y navegador de la Web.",
+    "source": "https://home.cern/science/computing/the-birth-of-the-web/short-history-web/",
+    "source_label": "CERN",
+    "checked_on": "2026-11-17",
+    "region": "Europa"
+  },
+  {
+    "id": "inventions-10",
+    "category": "inventions",
+    "question": "¿Qué programa inicial de la Web desarrolló Nicola Pellow para que pudiera usarse en diferentes sistemas?",
+    "options": [
+      "Un navegador de modo línea",
+      "Un buscador de imágenes por satélite",
+      "Un juego de cartas multijugador",
+      "Un editor de música"
+    ],
+    "correct": 0,
+    "explanation": "El CERN atribuye a Nicola Pellow el navegador de modo línea, más fácil de usar en distintos tipos de computadora.",
+    "source": "https://home.cern/science/computing/the-birth-of-the-web/short-history-web/",
+    "source_label": "CERN",
+    "checked_on": "2026-11-17",
+    "region": "Europa"
+  }
+]

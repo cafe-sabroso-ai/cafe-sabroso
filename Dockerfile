@@ -127,3 +127,6 @@ RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); a
 
 # Approved Macetas campaign, isolated static mount; preserve other games.
 RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_jardin' not in s; p.write_text(s+'\nfrom jardin_integration import install as _install_jardin\n_install_jardin(app)\n')"
+
+# Separate question game, preserving existing games.
+RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_ruleta_cafe' not in s; p.write_text(s+'\nfrom ruleta_cafe_integration import install as _install_ruleta_cafe\n_install_ruleta_cafe(app)\n')"
