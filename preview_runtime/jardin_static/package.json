@@ -1,0 +1,13 @@
+{
+  "name": "jardin-chiflado-local",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "node test-engine.cjs",
+    "test:browser": "node test-browser.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.65.1",
+    "@axe-core/playwright": "4.14.0"
+  }
+}

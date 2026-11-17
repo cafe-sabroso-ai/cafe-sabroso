@@ -63,3 +63,8 @@ app.mount("/colina", colina_app)
 # New Bomba trial has its own rooms and clock; legacy Bomba is unchanged.
 from bomba_nueva.app import app as bomba_nueva_app
 app.mount("/bomba-nueva", bomba_nueva_app)
+
+# Original turn-based garden prototype, rehearsal only.
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
+app.mount("/jardin", StaticFiles(directory=Path(__file__).with_name("jardin_static"), html=True), name="jardin")
