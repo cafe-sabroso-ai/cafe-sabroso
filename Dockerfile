@@ -124,3 +124,6 @@ RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); a
 
 # Mount the approved Bomba separately, without changing the existing Bomba.
 RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_bomba_nueva' not in s; p.write_text(s+'\nfrom bomba_nueva_integration import install as _install_bomba_nueva\n_install_bomba_nueva(app)\n')"
+
+# Approved Macetas campaign, isolated static mount; preserve other games.
+RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_jardin' not in s; p.write_text(s+'\nfrom jardin_integration import install as _install_jardin\n_install_jardin(app)\n')"
