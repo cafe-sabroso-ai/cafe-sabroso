@@ -676,6 +676,7 @@ def room_state(room) -> dict:
         "match": room["match"],
         "goal": WIN_SCORE,
         "game": room["game"],
+        "mystery_target":room.get("mystery_target",50),
         "country": room["country"],
         "country_done": len(room["country_done"]),
         "country_categories": covered_country_categories(room.get("country")) if room.get("game") == "paises" else None,
@@ -13967,7 +13968,12 @@ async def crear_sala(request: Request):
         capacity = min(capacity or limit, limit)
     code = new_room_code()
     voice = random.choice(NARRATOR_VOICES)
+    mystery_target = data.get('mystery_target',50)
+    if type(mystery_target)is not int or mystery_target not in (10,25,50):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400,detail='Elegí 10, 25 o 50 casos antes de crear la sala.')
     rooms[code] = {
+        "mystery_target":mystery_target,
         "players": [],
         "castillo_mode":castle_mode,
         "next_id": 1,
@@ -14240,7 +14246,12 @@ PAGE = """<!DOCTYPE html>
     </p>
     <p id="estado" role="status" tabindex="-1">Bienvenido a la mesa.</p>
 
-    <section id="pantalla-inicio" aria-label="Pantalla de inicio"><aside id="corazon-trial-note" role="note" style="background:#253449;border:2px solid #ffe082;border-radius:12px;padding:16px;margin:12px 0"><h2>Ensayo de mejoras de Corazón</h2><p>No cambia tu partida en la página principal. Regla de prueba del ahorcado: cada persona conserva su palabra, letras e intentos al pasar el turno. Las notas de voz del chat se escuchan al tocar Reproducir y se pueden repetir. La bomba mantiene por ahora sus tiempos anteriores.</p></aside>
+    <section id="pantalla-inicio" aria-label="Pantalla de inicio"><section aria-labelledby="mystery-target-heading" style="padding:14px;border:2px solid #e6bc58;border-radius:12px;margin:12px 0;max-width:100%;box-sizing:border-box">
+<h2 id="mystery-target-heading">Carrera de Misterio</h2>
+<label for="mystery-target">Cuántos casos para ganar:</label>
+<select id="mystery-target"><option value="10">10 casos, carrera corta</option><option value="25">25 casos, carrera media</option><option value="50" selected>50 casos, carrera completa</option></select>
+<p>Elegí antes de crear tu partida de Misterio. La misma meta vale para toda la sala y no cambia después de empezar. Los marcadores de distintas distancias no se comparan. No se guardan récords entre partidas.</p>
+</section><aside id="corazon-trial-note" role="note" style="background:#253449;border:2px solid #ffe082;border-radius:12px;padding:16px;margin:12px 0"><h2>Ensayo de mejoras de Corazón</h2><p>No cambia tu partida en la página principal. Regla de prueba del ahorcado: cada persona conserva su palabra, letras e intentos al pasar el turno. Las notas de voz del chat se escuchan al tocar Reproducir y se pueden repetir. La bomba mantiene por ahora sus tiempos anteriores.</p></aside>
       <label for="inicio-nombre">Tu nombre o apodo (podés cambiarlo cada día):</label>
       <input id="inicio-nombre" type="text" maxlength="24" autocomplete="nickname">
       <label for="origen-inicio">Tu país de origen (elegido por vos, opcional):</label>
@@ -14575,6 +14586,7 @@ PAGE = """<!DOCTYPE html>
 
       </div>
         <button id="btn-info" class="secondary info-btn" aria-label="De qué se trata el juego elegido">¿De qué se trata?</button>
+      <p id="mystery-goal" role="status" hidden></p>
       <button id="btn-empezar" hidden aria-label="Empezar la partida ya">Empezar la partida</button>
       <p id="temporizador" role="timer" aria-hidden="true"></p>
       <div id="theme-art" aria-hidden="true" hidden></div>
@@ -15853,7 +15865,7 @@ async function crearYEntrar(mode,extra={}) {
   announce("Creando tu mesa...");
   const res = await fetch("/amor-con-aroma-a-cafe/api/salas", {
     method: "POST", headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({mode: mode,...extra}),
+    body: JSON.stringify({mode: mode,mystery_target:Number($("mystery-target").value),...extra}),
   });
   const data = await res.json();
   history.pushState(null, "", "/amor-con-aroma-a-cafe/sala/" + data.code);
@@ -16281,6 +16293,8 @@ function onState(msg) {
   $("btn-empezar").hidden = !(msg.phase === "lobby" && msg.game && msg.players.some(p => !p.spectator && p.id === myId && msg.players.find(x => !x.spectator).id === myId) && msg.capacity !== 1);
   const host = msg.players.find(p => !p.spectator);
   const imHost = !!host && host.id === myId;
+  $("mystery-goal").hidden=msg.game!=="misterio";
+  $("mystery-goal").textContent="Carrera de "+(msg.misterio?.total||msg.mystery_target||50)+" casos. Misma meta para todos; elegida antes de crear la sala. Marcador solo de esta partida, sin récords guardados.";
   $("equipos-panel").hidden = msg.phase !== "lobby" || watching || ["misterio","ahorcado"].includes(msg.game);
   $("equipos-host").hidden = !imHost;
   $("equipos-count").value = String(msg.team_count || 0);
@@ -16871,6 +16885,14 @@ const siete = msg.siete;
       for(const id of ["btn-mst-mandar","btn-mst-voz","mst-input"])$(id).disabled=watching||mst.watching||!mst.ready||msg.phase!=="misterio";
       for(const id of ["mst-start","mst-repeat","mst-hint","mst-progress"])$(id).disabled=watching||mst.watching||msg.phase!=="misterio"||(mst.needs_spin&&id!=="mst-progress");
       $("mst-start").disabled=$("mst-start").disabled||mst.ready;
+      if(mst.winner!=null){
+        const winner=(mst.progress||[]).find(p=>p.id===mst.winner);
+        $("mst-roulette").hidden=true;
+        $("mst-titulo").textContent="Carrera de "+mst.total+" casos terminada";
+        $("mst-caso").textContent=(winner?winner.name:"Una persona")+" completó los "+mst.total+" casos y ganó esta partida.";
+        $("mst-category").textContent="Meta de esta partida: "+mst.total+" casos. Resultado separado de las otras distancias.";
+        $("mst-private").textContent=mst.finished?"Completaste la carrera. No hay otro caso en esta partida.":"La carrera terminó. Tus teorías y pistas siguen siendo privadas.";
+      }
     }else{
     const myLives = mst.lives && myId != null ? mst.lives[myId] : null;
     const owner = msg.team_count && me ? "equipo:" + me.team : myId;

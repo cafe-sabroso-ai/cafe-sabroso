@@ -32,9 +32,13 @@ def order(rng=None):
   result.extend(pools[cat].pop()for cat in cats)
  return result
 
+RACE_LENGTHS=(10,25,50)
+def target(room):
+ return room.get('misterio',{}).get('target',room.get('mystery_target',50))
+
 def active_players(room):return [p for p in room['players']if not p.get('gone')and not p.get('spectator')]
 def getrun(room,pid):return room.get('misterio',{}).get('runs',{}).get(pid)
-def case_for(room,run):return BY_ID[room['misterio']['order'][run['index']]] if run['index']<len(BANK) else None
+def case_for(room,run):return BY_ID[room['misterio']['order'][run['index']]] if run['index']<target(room) else None
 
 def cancel(run):
  task=run.pop('task',None)
@@ -43,14 +47,14 @@ def cancel(run):
 
 def public(room):
  st=room.get('misterio',{})
- return {'campaign':True,'total':len(BANK),'categories':CATEGORIES,'progress':[{'id':p['id'],'name':p['name'],'solved':len(st.get('runs',{}).get(p['id'],{}).get('solved',[]))}for p in active_players(room)],'winner':st.get('winner')}
+ return {'campaign':True,'total':target(room),'result_class':f'misterio-{target(room)}','categories':CATEGORIES,'progress':[{'id':p['id'],'name':p['name'],'solved':len(st.get('runs',{}).get(p['id'],{}).get('solved',[]))}for p in active_players(room)],'winner':st.get('winner')}
 
 def view(room,pid):
  data=public(room);run=getrun(room,pid)
  if run is None:return dict(data,watching=True)
  c=case_for(room,run)
  hidden=run.get('needs_spin',False)
- return dict(data,needs_spin=hidden,title=('Girás tu ruleta antes del próximo caso' if hidden else c['title'])if c else 'Recorrido completo',case=c['story']if c and not hidden else '',category=c['category']if c and not hidden else '',position=run['index']+1 if c else len(BANK),completed=len(run['solved']),lives=run['lives'],ready=run['started']is not None,remaining=round(run['remaining']),token=run['token'],feedback=run.get('feedback',''),hint=run.get('hint',''),finished=c is None,ambience='suspenso')
+ return dict(data,needs_spin=hidden,title=('Girás tu ruleta antes del próximo caso' if hidden else c['title'])if c else 'Recorrido completo',case=c['story']if c and not hidden else '',category=c['category']if c and not hidden else '',position=run['index']+1 if c else target(room),completed=len(run['solved']),lives=run['lives'],ready=run['started']is not None,remaining=round(run['remaining']),token=run['token'],feedback=run.get('feedback',''),hint=run.get('hint',''),finished=c is None,ambience='suspenso')
 
 async def state(room,p=None):
  if p:await W.tell(p,W.room_state(room))
@@ -69,7 +73,7 @@ async def read_case(room,p,extra=''):
  c=case_for(room,run)
  if not c:return
  token=run['token'];await state(room,p)
- text=(extra+' '+f"Resultado de tu ruleta. Apartado: {c['category']}. Tu caso {run['index']+1} de {len(BANK)}: {c['title']}. {c['story']} "
+ text=(extra+' '+f"Resultado de tu ruleta. Apartado: {c['category']}. Tu caso {run['index']+1} de {target(room)}: {c['title']}. {c['story']} "
        'Tu respuesta y tus pistas son privadas. El reloj empieza al terminar la lectura o al tocar Empezar a responder.').strip()
  await W.say(room,text,to=p,grid_ack={'game':'misterio','token':token,'turn':p['id']})
 
@@ -78,17 +82,19 @@ async def prompt_spin(room,p,extra=''):
  if not run or room['phase']!='misterio':return
  cancel(run);run['awaiting_ack']=False
  await state(room,p)
- await speak(room,p,extra+' Ruleta de apartados. Tocá Girar mi ruleta para conocer tu próximo apartado y caso. El reloj sigue en pausa.')
+ await speak(room,p,extra+f' Carrera de {target(room)} casos, la misma meta para todos. Ruleta de apartados. Tocá Girar mi ruleta para conocer tu próximo apartado y caso. El reloj sigue en pausa.')
 
 async def start(room):
  for run in room.get('misterio',{}).get('runs',{}).values():cancel(run)
  W.cancel_timer(room);room['phase']='misterio';room['team_count']=0
- room['misterio']={'campaign':True,'order':order(),'runs':{},'winner':None}
+ chosen=room.get('mystery_target',50)
+ if type(chosen)is not int or chosen not in RACE_LENGTHS:raise ValueError('Distancia no válida')
+ room['misterio']={'campaign':True,'target':chosen,'order':order()[:chosen],'runs':{},'winner':None}
  for p in active_players(room):
   p['out']=False;room['scores'][p['id']]=0
   room['misterio']['runs'][p['id']]={'index':0,'solved':[],'lives':3,'remaining':150.,'started':None,'token':0,'feedback':'','hint':'','hint_count':0,'needs_spin':True,'lock':asyncio.Lock()}
  await state(room)
- await asyncio.gather(*(read_case(room,p,'Carrera individual. Todos reciben el mismo orden sorteado, cada uno avanza a su ritmo. Gana quien resuelva los cincuenta casos primero. No compartas soluciones en el chat general.')for p in active_players(room)))
+ await asyncio.gather(*(read_case(room,p,f'Carrera individual de {target(room)} casos. La misma meta y el mismo orden sorteado para todos; cada uno avanza a su ritmo. Gana quien complete los {target(room)} primero. Esta distancia se mantiene toda la partida. No compartas soluciones en el chat general.')for p in active_players(room)))
 
 async def ready(room,pid,token):
  run=getrun(room,pid)
@@ -164,7 +170,7 @@ def progress_text(room):
  rows=public(room)['progress']
  if not rows:return 'No hay personas jugando.'
  high=max(r['solved']for r in rows);leaders=[r['name']for r in rows if r['solved']==high]
- line='Marcador: '+'. '.join(f"{r['name']}: {r['solved']} de {len(BANK)} casos"for r in rows)+'. '
+ line='Marcador: '+'. '.join(f"{r['name']}: {r['solved']} de {target(room)} casos"for r in rows)+'. '
  if high==0:return line+'Todavía nadie resolvió el primer caso.'
  return line+('Van empatados adelante: 'if len(leaders)>1 else 'Va adelante: ')+', '.join(leaders)+'. No se comparten respuestas ni pistas.'
 
@@ -173,7 +179,7 @@ def leader_text(room):
  if not rows:return ''
  high=max(r['solved']for r in rows);names=[r['name']for r in rows if r['solved']==high]
  names_text=', '.join(names[:3])+(' y otras personas'if len(names)>3 else '')
- return ('Van adelante empatados: 'if len(names)>1 else 'Va adelante: ')+names_text+f', con {high} de {len(BANK)} casos. Solo compartimos progreso.'
+ return ('Van adelante empatados: 'if len(names)>1 else 'Va adelante: ')+names_text+f', con {high} de {target(room)} casos. Solo compartimos progreso.'
 
 async def guess(room,p,text,token=None):
  run=getrun(room,p['id'])
@@ -196,15 +202,16 @@ async def guess(room,p,text,token=None):
   if room['misterio'].get('winner')is not None:return
   run['solved'].append(c['id']);run['index']+=1;run['hint_count']=0;run['hint']='';run['feedback']='Caso anterior resuelto. Girá tu ruleta para el siguiente.';run['remaining']=150.;run['needs_spin']=True
   room['scores'][p['id']]=len(run['solved'])
-  if run['index']==len(BANK):
+  if run['index']==target(room):
+   run['needs_spin']=False;run['awaiting_ack']=False;run['feedback']=f'Completaste esta carrera de {target(room)} casos. No hay otro caso en esta partida.'
    room['misterio']['winner']=p['id'];room['phase']='gameover'
    for other in room['misterio']['runs'].values():cancel(other)
    await state(room)
-   await W.narrate(room,f"¡{p['name']} resolvió los cincuenta casos y ganó la carrera! No se revelan las soluciones de los demás.")
+   await W.narrate(room,f"¡{p['name']} resolvió los {target(room)} casos y ganó esta carrera de {target(room)}! No se revelan las soluciones de los demás.")
    return
   # Only progress, not current title, category, guesses or solution is public.
   await state(room)
-  await W.broadcast(room,{'event':'mst-progress','text':f"{p['name']} resolvió {len(run['solved'])} de {len(BANK)} casos. "+leader_text(room)})
+  await W.broadcast(room,{'event':'mst-progress','text':f"{p['name']} resolvió {len(run['solved'])} de {target(room)} casos. "+leader_text(room)})
   await prompt_spin(room,p,'¡Acertaste! Pasás a tu siguiente caso.')
 
 
