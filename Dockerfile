@@ -136,3 +136,6 @@ RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); a
 
 # Separate approved number-clue game; existing games unchanged.
 RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_numero_escondido' not in s; p.write_text(s+'\nfrom numero_escondido_integration import install as _install_numero_escondido\n_install_numero_escondido(app)\n')"
+
+# Approved independent 50-level color-group game.
+RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_constelaciones' not in s; p.write_text(s+'\nfrom constelaciones_integration import install as _install_constelaciones\n_install_constelaciones(app)\n')"
