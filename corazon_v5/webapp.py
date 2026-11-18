@@ -18082,3 +18082,19 @@ async def barrio_alba_preview(asset: str = "index.html"):
         return Response(status_code=404)
     data = (Path(__file__).parent / "barrio_alba_preview" / asset).read_bytes()
     return Response(content=data, media_type=allowed[asset], headers={"X-Robots-Tag": "noindex, nofollow, noarchive", "Cache-Control": "no-store"})
+
+
+# Optional gamepad views for the three approved room games, original reader UI remains default.
+@router.get('/mandos-opcionales/{asset}', include_in_schema=False)
+async def room_gamepad_asset(asset: str):
+    from pathlib import Path
+    allowed = {'zombi.js':'application/javascript','zombi.css':'text/css','brigada.js':'application/javascript','brigada.css':'text/css','guardianes.js':'application/javascript','guardianes.css':'text/css'}
+    if asset not in allowed:
+        return Response(status_code=404)
+    return Response(content=(Path(__file__).parent/'room_gamepad_static'/asset).read_bytes(), media_type=allowed[asset], headers={'Cache-Control':'no-cache'})
+PAGE = PAGE.replace('</head>', ''.join('<link rel="stylesheet" href="/mandos-opcionales/'+name+'.css?v=010">' for name in ('zombi','brigada','guardianes'))+'</head>')
+PAGE = PAGE.replace('</body>', ''.join('<script src="/mandos-opcionales/'+name+'.js?v=010"></script>' for name in ('zombi','brigada','guardianes'))+'</body>')
+# Refresh the existing version notice for pages already open before this release.
+_previous_client_build = CLIENT_BUILD
+CLIENT_BUILD = hashlib.sha256(PAGE.encode()).hexdigest()[:16]
+PAGE = PAGE.replace(_previous_client_build, CLIENT_BUILD)
