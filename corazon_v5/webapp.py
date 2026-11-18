@@ -18070,3 +18070,15 @@ for _game,_description in {
  GAME_DESCRIPTIONS[_game]=_description
 
 PAGE=PAGE.replace("Dictar texto para el chat, no se manda solo", "Dictar mensaje, revisar antes de mandar")
+
+
+# Standalone approved preview. Deliberately absent from all menus.
+@router.get("/prueba-barrio-alba-f567c0417a32c59ae3a1074e/", include_in_schema=False)
+@router.get("/prueba-barrio-alba-f567c0417a32c59ae3a1074e/{asset}", include_in_schema=False)
+async def barrio_alba_preview(asset: str = "index.html"):
+    from pathlib import Path
+    allowed = {"index.html": "text/html", "style.css": "text/css", "game.js": "application/javascript"}
+    if asset not in allowed:
+        return Response(status_code=404)
+    data = (Path(__file__).parent / "barrio_alba_preview" / asset).read_bytes()
+    return Response(content=data, media_type=allowed[asset], headers={"X-Robots-Tag": "noindex, nofollow, noarchive", "Cache-Control": "no-store"})
