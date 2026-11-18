@@ -14220,6 +14220,7 @@ PAGE = """<!DOCTYPE html>
     </section>
 
     <section id="pantalla-modo" hidden aria-label="A qué querés jugar">
+      <p><a id="link-turbo-cafe" href="/turbo-cafe/">Turbo Café: cincuenta niveles de carreras, ocho autos y poderes</a>. Vos contra siete pilotos de la máquina, pistas visibles, voces opcionales y guardado en este navegador. Por acciones, sin reloj de respuesta.</p>
       <p>Nuevo lote de cartas, con mesas privadas y bots: <a id="link-brisca-cafe" href="/cartas-del-cafe/?game=brisca">Brisca del Café, para dos o cuatro en parejas</a>; <a id="link-guerra-cafe" href="/cartas-del-cafe/?game=guerra">Guerra de Cartas, para dos</a>; <a id="link-pesca-cartas" href="/cartas-del-cafe/?game=pesca">Pesca de cartas, para dos a cinco</a>. Gratis, sin apuestas. Cada juego tiene reglas, voz opcional y botones. Las mesas no se conservan al reiniciar el servidor.</p>
       <p><a id="link-constelaciones" href="/constelaciones/">Constelaciones de colores: grupos de tres, frutas y fantasmas</a>. Cincuenta niveles individuales; puntos y tablero vacío para avanzar. Guardado en este navegador.</p>
       <p><a id="link-numero-escondido" href="/numero-escondido/">El Número Escondido: pistas y cuatro opciones, quinientos niveles</a>. Individual o con amistades; segunda oportunidad y dificultad automática.</p>

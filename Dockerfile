@@ -142,3 +142,6 @@ RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); a
 
 # Approved Brisca, Guerra and Go Fish batch, separate private rooms.
 RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_cartas_cafe' not in s; p.write_text(s+'\nfrom cartas_cafe_integration import install as _install_cartas_cafe\n_install_cartas_cafe(app)\n')"
+
+# Approved original racing campaign, separate mount and unchanged existing games.
+RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_turbo_cafe' not in s; p.write_text(s+'\nfrom turbo_cafe_integration import install as _install_turbo_cafe\n_install_turbo_cafe(app)\n')"
