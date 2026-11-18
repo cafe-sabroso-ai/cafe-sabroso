@@ -14220,6 +14220,7 @@ PAGE = """<!DOCTYPE html>
     </section>
 
     <section id="pantalla-modo" hidden aria-label="A qué querés jugar">
+      <p>Nuevo lote de cartas, con mesas privadas y bots: <a id="link-brisca-cafe" href="/cartas-del-cafe/?game=brisca">Brisca del Café, para dos o cuatro en parejas</a>; <a id="link-guerra-cafe" href="/cartas-del-cafe/?game=guerra">Guerra de Cartas, para dos</a>; <a id="link-pesca-cartas" href="/cartas-del-cafe/?game=pesca">Pesca de cartas, para dos a cinco</a>. Gratis, sin apuestas. Cada juego tiene reglas, voz opcional y botones. Las mesas no se conservan al reiniciar el servidor.</p>
       <p><a id="link-constelaciones" href="/constelaciones/">Constelaciones de colores: grupos de tres, frutas y fantasmas</a>. Cincuenta niveles individuales; puntos y tablero vacío para avanzar. Guardado en este navegador.</p>
       <p><a id="link-numero-escondido" href="/numero-escondido/">El Número Escondido: pistas y cuatro opciones, quinientos niveles</a>. Individual o con amistades; segunda oportunidad y dificultad automática.</p>
       <p><a id="link-numeros-cafe" href="/numeros-cafe/">Números al Café: sumas, restas, multiplicaciones, divisiones y problemas</a>. 2500 ejercicios, individual o con amistades; dificultad automática en diez tramos.</p>
@@ -15012,6 +15013,7 @@ PAGE = """<!DOCTYPE html>
 </section>
 <button id="btn-party-shortcut" class="secondary" hidden aria-label="Ir a retos y verdades, cambiar toda la sala con confirmación">Ir a retos y verdades</button>
       <h2 id="sala-titulo">Sala de juegos</h2>
+      <p><a href="/cartas-del-cafe/" target="_blank" rel="noopener">Abrir Brisca, Guerra y Pesca de cartas en otra pestaña</a>. Mesas propias, no comparte esta sala. Las manos son privadas; la narración puede decirlas en voz alta, usá auriculares.</p>
       <p><a href="/constelaciones/" target="_blank" rel="noopener">Abrir Constelaciones de colores en otra pestaña</a>. Campaña individual de cincuenta niveles, guardada en este navegador; no comparte la partida de esta sala.</p>
       <p><a href="/numero-escondido/" target="_blank" rel="noopener">Abrir El Número Escondido en otra pestaña</a>. Creá allí una sala y compartí su enlace; no comparte la partida de esta sala.</p>
       <p><a href="/numeros-cafe/" target="_blank" rel="noopener">Abrir Números al Café en otra pestaña</a>. Creá allí una sala y compartí su enlace; no comparte la partida de esta sala.</p>

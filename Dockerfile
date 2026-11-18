@@ -139,3 +139,6 @@ RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); a
 
 # Approved independent 50-level color-group game.
 RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_constelaciones' not in s; p.write_text(s+'\nfrom constelaciones_integration import install as _install_constelaciones\n_install_constelaciones(app)\n')"
+
+# Approved Brisca, Guerra and Go Fish batch, separate private rooms.
+RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_cartas_cafe' not in s; p.write_text(s+'\nfrom cartas_cafe_integration import install as _install_cartas_cafe\n_install_cartas_cafe(app)\n')"
