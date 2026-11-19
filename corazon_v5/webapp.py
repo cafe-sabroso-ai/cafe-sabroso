@@ -14179,6 +14179,7 @@ PAGE = """<!DOCTYPE html>
   #difficulty-buttons{display:flex;flex-wrap:wrap;gap:6px;}
   #difficulty-buttons button{min-width:0;min-height:48px;flex:1 1 150px;padding:10px;margin:0;font-size:1.05rem;}
   #difficulty-buttons button[aria-pressed=true]{outline:3px solid #f8d85a;}
+#pregunta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}#pregunta>:not(.opcion){grid-column:1/-1}#pregunta .opcion{font-size:clamp(1rem,2.4vw,1.25rem);width:100%;min-width:0;margin:0;padding:12px;overflow-wrap:anywhere;white-space:normal;line-height:1.5}#sr-options,#castle-options,#haunt-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}#sr-options button,#castle-options button,#haunt-options button{width:100%;min-width:0;margin:0;padding:12px;white-space:normal;overflow-wrap:anywhere;min-height:52px}
 </style>
 </head>
 <body>
