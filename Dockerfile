@@ -145,3 +145,6 @@ RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); a
 
 # Approved original racing campaign, separate mount and unchanged existing games.
 RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_turbo_cafe' not in s; p.write_text(s+'\nfrom turbo_cafe_integration import install as _install_turbo_cafe\n_install_turbo_cafe(app)\n')"
+
+# Approved Zombi bundle: voice repair, scene/weather, Casa and two cooperative modes.
+RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_zombi_bundle' not in s; p.write_text(s+'\nfrom zombi_bundle_integration import install as _install_zombi_bundle\n_install_zombi_bundle(app)\n')"
