@@ -118,4 +118,7 @@ async def socket(ws:WebSocket,code:str):
 
 def install(parent):
  parent.router.routes.extend(app.router.routes)
+ from fastapi.responses import FileResponse
+ @parent.get(PREFIX+'/nueve-y-media')
+ async def nine_table():return FileResponse(ROOT/'nueve_static/index.html')
  parent.mount(PREFIX,StaticFiles(directory=ROOT/'cartas_cafe_static',html=True),name='cartas-cafe')

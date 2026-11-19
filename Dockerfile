@@ -148,3 +148,6 @@ RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); a
 
 # Approved Zombi bundle: voice repair, scene/weather, Casa and two cooperative modes.
 RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_zombi_bundle' not in s; p.write_text(s+'\nfrom zombi_bundle_integration import install as _install_zombi_bundle\n_install_zombi_bundle(app)\n')"
+
+# Separate reviewed card table and counting game; no existing game engines changed.
+RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_nueve_count' not in s; p.write_text(s+'\nfrom nueve_count_integration import install as _install_nueve_count\n_install_nueve_count(app)\n')"
