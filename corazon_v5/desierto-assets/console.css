@@ -1,0 +1,40 @@
+/* Scene-first console layout. Reader mode restores complete text and normal document flow. */
+.console-mode:not(.reader) #game:not([hidden]){position:fixed;inset:0;background:#172b34;display:block;overflow:hidden;padding:0;isolation:isolate}
+.console-mode:not(.reader) #app{max-width:none;padding:0}
+.console-mode:not(.reader) .scene-panel{position:absolute;inset:0;margin:0;padding:0}
+.console-mode:not(.reader) #arcade-stage,.console-mode:not(.reader) #stage{position:absolute;inset:0;border:0;border-radius:0;width:100%;height:100%;min-height:0}
+.console-mode:not(.reader) #arcade,.console-mode:not(.reader) #map{width:100%;height:100%}
+.console-mode:not(.reader) #arcade{object-fit:contain}
+/* These remain available to assistive technology, but do not cover the scene. */
+.console-mode:not(.reader) .scene-heading,.console-mode:not(.reader) #scene-caption,.console-mode:not(.reader) #team{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}
+#console-bar{position:absolute;z-index:5;top:env(safe-area-inset-top,0px);left:env(safe-area-inset-left,0px);right:env(safe-area-inset-right,0px);display:flex;align-items:center;gap:4px;padding:4px;background:linear-gradient(#102329e8,#102329bb);min-height:52px}
+#console-bar button{font-size:12px;min-width:44px;min-height:44px;padding:4px 7px;border-width:1px;background:#15343de8}
+#console-hud{font-weight:700;font-size:13px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff0ce;text-align:center}
+#console-pad,#console-actions{position:absolute;z-index:4;bottom:max(28px,env(safe-area-inset-bottom,0px));padding:6px;border-radius:18px;background:#1023297d;display:grid;gap:5px}
+#console-pad{left:max(8px,env(safe-area-inset-left,0px));grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,48px)}
+#console-pad button,#console-actions button{min-width:44px;min-height:44px;font-size:13px;padding:4px;border-width:1px;background:#163841e8;touch-action:manipulation}
+#console-pad .pad-walk{grid-column:2;grid-row:1}#console-pad .pad-left{grid-column:1;grid-row:2}#console-pad .pad-run{grid-column:2;grid-row:2;font-size:10px}#console-pad .pad-right{grid-column:3;grid-row:2}#console-pad .pad-back{grid-column:2;grid-row:3}
+#console-actions{right:max(8px,env(safe-area-inset-right,0px));grid-template-columns:repeat(2,60px);grid-auto-rows:48px;align-content:end}
+#console-actions #attack-nearest{grid-column:1/-1;grid-row:auto;font-size:16px;background:#cdb47f;color:#142a31}
+#console-actions #view-first,#console-actions #view-map{max-width:none;font-size:11px}
+#console-cue{position:absolute;bottom:0;left:180px;right:155px;z-index:3;text-align:center;margin:0;padding:5px;background:#102329ce;font-size:13px;font-weight:700;max-height:42px;overflow:hidden;pointer-events:none}
+#console-rotate{position:absolute;z-index:3;top:60px;left:8px;right:8px;font-size:13px;text-align:center;background:#102329cc;padding:6px;display:none}
+#console-panel{position:absolute;z-index:10;inset:4px;margin:0 auto;padding:10px;max-width:880px;overflow:auto;overscroll-behavior:contain;border:2px solid #bda579;border-radius:12px;background:#102a33f7}
+#console-close{position:sticky;top:0;z-index:2;background:#ddc798;color:#122e36}
+#console-panel header .heading{display:none}#console-panel header .top-buttons{display:flex}#console-panel #controls .move:empty,#console-panel #controls .doors:empty{display:none}
+#console-panel #controls .attack{display:block}#console-panel #attack-target{width:100%;margin-top:5px}
+.console-mode.reader #game{position:static!important;padding:8px;display:block!important;overflow:visible}
+.console-mode.reader #console-bar,.console-mode.reader #console-pad,.console-mode.reader #console-actions{position:static;display:flex;flex-wrap:wrap;gap:8px;background:none;padding:8px}
+.console-mode.reader #console-panel{position:static;max-width:none;overflow:visible;padding:0;border:0;background:none}
+.console-mode.reader #console-close,.console-mode.reader #console-cue,.console-mode.reader #console-rotate{display:none}
+.console-mode.reader #console-hud{flex-basis:100%;text-align:left;white-space:normal}.console-mode.reader #team{position:static}
+@media(orientation:portrait){.console-mode:not(.reader) #console-rotate{display:block}#console-bar{flex-wrap:wrap}#console-hud{flex-basis:100%;order:2}#console-pad{grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);left:3px;padding:3px;gap:2px}#console-actions{grid-template-columns:repeat(2,54px);right:3px;padding:3px;gap:3px}#console-cue{left:3px;right:3px;font-size:12px}#console-panel .heading h1{font-size:22px}}
+@media(max-height:330px) and (orientation:landscape){#console-pad,#console-actions{bottom:18px;gap:2px;padding:3px}#console-pad{grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px)}#console-actions{grid-auto-rows:44px;grid-template-columns:repeat(2,54px)}#console-cue{font-size:11px;max-height:24px;padding:2px}}
+
+.console-mode:not(.reader) .console-sr{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%)!important;margin:-1px!important;padding:0!important}.console-mode.reader .console-sr{position:static;width:auto;height:auto;clip-path:none}
+
+.console-mode:not(.reader) #arcade>g[font-family],.console-mode:not(.reader) #arcade>text,.console-mode:not(.reader) #arcade>.fp-weapon+rect{display:none}.console-mode.reader #console-panel header .heading{display:flex}.console-mode.reader #console-panel{color:#f2efdf;background:#102329}.console-mode.reader #console-panel button[aria-pressed=true]{background:#d3dfad;color:#102a2c}
+#console-bar button[aria-pressed=true],#console-actions button[aria-pressed=true]{background:#d3dfad;color:#102a2c}
+
+#console-cue:empty{display:none}
+#app:fullscreen{overflow:auto;width:100%;height:100%;max-width:none;background:#102329}.reader #app:fullscreen{padding:8px}
