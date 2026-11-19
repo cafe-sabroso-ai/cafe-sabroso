@@ -151,3 +151,6 @@ RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); a
 
 # Separate reviewed card table and counting game; no existing game engines changed.
 RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_nueve_count' not in s; p.write_text(s+'\nfrom nueve_count_integration import install as _install_nueve_count\n_install_nueve_count(app)\n')"
+
+# Add separate Arena del Desierto0.8 namespace, without changing earlier games.
+RUN python -c "import pathlib; p=pathlib.Path('/app/app.py'); s=p.read_text(); assert '_install_desert' not in s; p.write_text(s+'\nfrom desert_integration import install as _install_desert\n_install_desert(app)\n')"
