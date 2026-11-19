@@ -40,3 +40,5 @@
 #app:fullscreen{overflow:auto;width:100%;height:100%;max-width:none;background:#102329}.reader #app:fullscreen{padding:8px}
 
 #console-bar #ready{max-width:64px;font-size:11px}#console-bar #next-level{max-width:76px}@media(orientation:portrait){#console-rotate{top:115px;font-size:11px;padding:2px}}
+
+#console-bar #ready{background:#dfd5a3;color:#153037}
