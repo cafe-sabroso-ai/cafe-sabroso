@@ -23,7 +23,7 @@ def auth(b):
  if b.token not in r['tokens']:raise HTTPException(403,'Acceso incorrecto.')
  pid=r['tokens'][b.token];r['seen'][pid]=time.monotonic();r['used']=time.monotonic();return r,pid
 def packet(r,pid):
- return {'code':r['code'],'me':pid,'players':[{'name':n,'connected':r['bots'][i]or time.monotonic()-r['seen'].get(i,0)<12,'bot':r['bots'][i]}for i,n in enumerate(r['names'])],'state':r['state'],'revision':r['revision'],'capacity':r['capacity'],'fill_bots':r['fill_bots']}
+ return {'code':r['code'],'me':pid,'players':[{'name':n,'connected':r['bots'][i]or time.monotonic()-r['seen'].get(i,0)<12,'bot':r['bots'][i]}for i,n in enumerate(r['names'])],'state':r['state'],'revision':r['revision'],'capacity':r['capacity'],'fill_bots':r['fill_bots'],'solo':r.get('solo',False)}
 def install(app,audio,gate):
  root=Path(__file__).parent
  @app.get('/no-digas-21')
@@ -39,13 +39,21 @@ def install(app,audio,gate):
   while code in rooms:code=''.join(secrets.choice('ABCDEFGHJKLMNPQRSTUVWXYZ23456789')for _ in range(6))
   token=secrets.token_urlsafe(24);r=dict(code=code,names=[name(b.name)],bots=[False],capacity=b.capacity,fill_bots=b.fill_bots,tokens={token:0},state=None,revision=0,lock=asyncio.Lock(),seen={0:time.monotonic()},used=time.monotonic());rooms[code]=r
   return packet(r,0)|{'token':token}
+ @app.post('/no-digas-21/solo')
+ async def solo(b:Create):
+  result=await create(Create(name=b.name,capacity=b.capacity,fill_bots=True))
+  r=rooms[result['code']];r['solo']=True
+  while len(r['names'])<r['capacity']:
+   r['names'].append('Bot Café '+str(len(r['names'])+1));r['bots'].append(True)
+  r['state']=E.fresh(r['names'],r['bots']);r['revision']+=1
+  return packet(r,0)|{'token':result['token']}
  @app.post('/no-digas-21/join')
  async def join(b:Join):
   r=rooms.get(b.code.upper().strip())
-  if not r:raise HTTPException(404,'No existe esa sala.')
+  if not r or r.get('solo'):raise HTTPException(404,'No existe una sala compartida con ese código.')
   async with r['lock']:
    if r['state']:raise HTTPException(409,'La ronda ya empezó. Abrí otra sala.')
-   if len(r['names'])>=r['capacity']:raise HTTPException(409,'La sala tiene cuatro personas.')
+   if len(r['names'])>=r['capacity']:raise HTTPException(409,'La partida ya está completa: '+str(r['capacity'])+' lugares.')
    n=name(b.name)
    if n.casefold()in [n.casefold()for n in r['names']]:raise HTTPException(400,'Ese apodo ya está en la sala.')
    pid=len(r['names']);r['names'].append(n);r['bots'].append(False);token=secrets.token_urlsafe(24);r['tokens'][token]=pid;r['seen'][pid]=time.monotonic();r['used']=time.monotonic();r['revision']+=1
@@ -92,5 +100,5 @@ def install(app,audio,gate):
     if not data:raise ValueError()
    key=secrets.token_urlsafe(18);audio[key]=bytes(data)
    while len(audio)>24:audio.pop(next(iter(audio)))
-   return {'url':'/nueve-y-media/api/audio/'+key+'.mp3','revision':r['revision'],'capacity':r['capacity'],'fill_bots':r['fill_bots']}
+   return {'url':'/nueve-y-media/api/audio/'+key+'.mp3','revision':r['revision'],'capacity':r['capacity'],'fill_bots':r['fill_bots'],'solo':r.get('solo',False)}
   except Exception:raise HTTPException(503,'Voz natural no disponible. El texto y los botones siguen disponibles.')
